@@ -1,69 +1,101 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Show } from "@clerk/nextjs";
+import { AkhraMark } from "@/components/mark";
+
+const STEPS = [
+  {
+    who: "Citizen",
+    text: "Reports a problem with a photograph and a location.",
+  },
+  {
+    who: "Akhra",
+    text: "Sorts it by domain, merges it with everyone else reporting the same thing, and scores how urgent it is.",
+  },
+  {
+    who: "Officer",
+    text: "Validates the report and sends it to the institution best placed to work on it.",
+  },
+  {
+    who: "University",
+    text: "Forms a student and faculty team and proposes a solution.",
+  },
+  {
+    who: "Industry",
+    text: "Backs the proposal with mentoring, funding or prototyping.",
+  },
+  {
+    who: "Citizen",
+    text: "Watches the status change until something is actually deployed.",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="mx-auto w-full max-w-4xl px-6 py-20 flex flex-col gap-14">
+      <header className="flex flex-col gap-5">
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+          Government of Jharkhand
+        </p>
+        <h1 className="flex items-center gap-4 font-display text-5xl font-extrabold sm:text-6xl">
+          <span className="text-primary">
+            <AkhraMark size={52} />
+          </span>
+          Akhra
+        </h1>
+        <p className="max-w-xl text-lg text-muted-foreground">
+          Every village in Jharkhand already has a place where the community
+          brings its problems and decides what to do about them. This is the
+          digital one &mdash; and it reaches all the way to a deployed solution.
+        </p>
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Show when="signed-out">
+            <Link
+              href="/sign-in"
+              className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Sign in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="rounded-md border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              Create an account
+            </Link>
+          </Show>
+          <Show when="signed-in">
+            <Link
+              href="/home"
+              className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              Open Akhra
+            </Link>
+          </Show>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </header>
+
+      <section className="flex flex-col gap-1">
+        <h2 className="border-b-2 border-foreground pb-2.5 text-2xl font-bold">
+          How a problem becomes a solution
+        </h2>
+        <ol className="flex flex-col">
+          {STEPS.map((step, i) => (
+            <li
+              key={step.who + i}
+              className="grid grid-cols-[2.5rem_1fr] items-baseline gap-4 border-b border-dashed border-border py-3.5 last:border-b-0"
+            >
+              <span className="font-mono text-xs font-semibold text-primary">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span>
+                <span className="block font-mono text-[0.7rem] uppercase tracking-[0.1em] text-muted-foreground">
+                  {step.who}
+                </span>
+                {step.text}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </main>
   );
 }

@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (never commit real values)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env.local
+
+# superseded by src/app/icon.svg — safe to delete
+.favicon-superseded.ico
+
+# agent tooling dropped in by the Convex CLI, not project code
+.agents/
+.claude/skills/
+skills-lock.json
+
+AGENTS.md
+CLAUDE.md
