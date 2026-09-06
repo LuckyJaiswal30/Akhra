@@ -50,5 +50,3 @@ next-env.d.ts
 .claude/skills/
 skills-lock.json
 
-AGENTS.md
-CLAUDE.md

@@ -2,9 +2,15 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
-import { PageHeader } from "@/components/page-header";
 import { RoleGate } from "@/components/role-gate";
-import { Badge, Card } from "@/components/kit";
+import {
+  Badge,
+  Card,
+  CardBody,
+  EmptyState,
+  LoadingList,
+  PageHeader,
+} from "@/components/ui";
 
 const STATUS_LABEL: Record<string, string> = {
   offered: "Offered",
@@ -26,24 +32,24 @@ function PledgesView() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader eyebrow="Industry partner" title="Our pledges">
-        <p>
-          What {mine?.name ?? "your organisation"} has committed to, and how
-          those projects are progressing.
-        </p>
-      </PageHeader>
+      <PageHeader
+        eyebrow="Industry partner"
+        title="Our pledges"
+        description={`What ${mine?.name ?? "your organisation"} has committed to, and how those projects are progressing.`}
+      />
+
+      {pledges === undefined && <LoadingList rows={2} />}
 
       {pledges?.length === 0 && (
-        <Card>
-          <p className="text-muted-foreground">
-            Nothing pledged yet. Open proposals and back one.
-          </p>
-        </Card>
+        <EmptyState
+          title="Nothing pledged yet"
+          description="Browse open proposals and back one with mentoring, funding or prototyping."
+        />
       )}
 
       <div className="flex flex-col gap-4">
         {pledges?.map((p) => (
-          <Card key={p._id} className="flex flex-col gap-3">
+          <Card key={p._id}><CardBody className="flex flex-col gap-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex flex-col gap-1">
                 <h2 className="text-lg font-bold">{p.projectTitle}</h2>
@@ -52,10 +58,10 @@ function PledgesView() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Badge tone={p.stage === "deployed" ? "go" : "neutral"}>
+                <Badge tone={p.stage === "deployed" ? "success" : "neutral"}>
                   {p.kind.replace(/_/g, " ")}
                 </Badge>
-                <Badge tone={p.status === "delivered" ? "go" : "neutral"}>
+                <Badge tone={p.status === "delivered" ? "success" : "neutral"}>
                   {STATUS_LABEL[p.status] ?? p.status}
                 </Badge>
               </div>
@@ -90,6 +96,7 @@ function PledgesView() {
                 />
               </span>
             </div>
+            </CardBody>
           </Card>
         ))}
       </div>

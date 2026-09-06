@@ -4,9 +4,19 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { PageHeader } from "@/components/page-header";
 import { RoleGate } from "@/components/role-gate";
-import { Badge, Button, Card, Input, Select } from "@/components/kit";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  EmptyState,
+  Input,
+  LoadingList,
+  PageHeader,
+  Select,
+} from "@/components/ui";
 import { DOMAIN_LABEL } from "@/lib/jharkhand";
 
 const PLEDGE_KINDS = [
@@ -54,38 +64,33 @@ function ProposalsView() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader eyebrow="Industry partner" title="Open proposals">
-        <p>
-          Solution proposals from universities, each with the citizen problem it
-          came from.
-        </p>
-      </PageHeader>
+      <PageHeader
+        eyebrow="Industry partner"
+        title="Open proposals"
+        description="Solution proposals from universities, each with the citizen problem it came from."
+      />
 
       {!mine && (
-        <Card>
-          <p className="text-muted-foreground">
-            Choose your organisation from the header before offering support.
-          </p>
-        </Card>
+        <EmptyState
+          title="Choose your organisation"
+          description="Pick it from the dropdown in the header before offering support."
+        />
       )}
 
-      {error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      )}
+      {error && <Alert tone="danger">{error}</Alert>}
+
+      {mine && proposals === undefined && <LoadingList rows={2} />}
 
       {proposals?.length === 0 && (
-        <Card>
-          <p className="text-muted-foreground">
-            No open proposals right now. A university needs to submit one first.
-          </p>
-        </Card>
+        <EmptyState
+          title="No open proposals right now"
+          description="A university needs to submit a solution proposal before it appears here."
+        />
       )}
 
       <div className="flex flex-col gap-4">
         {proposals?.map((p) => (
-          <Card key={p.projectId} className="flex flex-col gap-4">
+          <Card key={p.projectId}><CardBody className="flex flex-col gap-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex flex-col gap-1">
                 <h2 className="text-lg font-bold">{p.title}</h2>
@@ -102,7 +107,7 @@ function ProposalsView() {
                     {p.affected.toLocaleString("en-IN")}
                   </p>
                 </div>
-                {p.domain && <Badge tone="go">{DOMAIN_LABEL[p.domain]}</Badge>}
+                {p.domain && <Badge tone="primary">{DOMAIN_LABEL[p.domain]}</Badge>}
               </div>
             </div>
 
@@ -184,6 +189,7 @@ function ProposalsView() {
                 </Button>
               </div>
             )}
+            </CardBody>
           </Card>
         ))}
       </div>

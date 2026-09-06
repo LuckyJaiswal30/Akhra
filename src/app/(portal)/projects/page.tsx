@@ -4,9 +4,19 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { PageHeader } from "@/components/page-header";
 import { RoleGate } from "@/components/role-gate";
-import { Badge, Button, Card, Input, Textarea } from "@/components/kit";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  EmptyState,
+  Input,
+  LoadingList,
+  PageHeader,
+  Textarea,
+} from "@/components/ui";
 import { DOMAIN_LABEL } from "@/lib/jharkhand";
 
 const STAGE_LABEL: Record<string, string> = {
@@ -70,22 +80,21 @@ function ProjectsView() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader eyebrow="University" title="Projects">
-        <p>Work in progress on the challenges your department accepted.</p>
-      </PageHeader>
+      <PageHeader
+        eyebrow="University"
+        title="Projects"
+        description="Work in progress on the challenges your department accepted."
+      />
 
-      {error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      )}
+      {error && <Alert tone="danger">{error}</Alert>}
+
+      {projects === undefined && <LoadingList rows={2} />}
 
       {projects?.length === 0 && (
-        <Card>
-          <p className="text-muted-foreground">
-            No projects yet. Accept a challenge and one is created for you.
-          </p>
-        </Card>
+        <EmptyState
+          title="No projects yet"
+          description="Accept a challenge and a project is created for you, with you as the faculty mentor."
+        />
       )}
 
       <div className="flex flex-col gap-4">
@@ -95,7 +104,7 @@ function ProjectsView() {
           ).length;
 
           return (
-            <Card key={project._id} className="flex flex-col gap-4">
+            <Card key={project._id}><CardBody className="flex flex-col gap-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <h2 className="text-lg font-bold">{project.title}</h2>
@@ -104,11 +113,11 @@ function ProjectsView() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge tone={project.stage === "deployed" ? "go" : "neutral"}>
+                  <Badge tone={project.stage === "deployed" ? "success" : "neutral"}>
                     {STAGE_LABEL[project.stage] ?? project.stage}
                   </Badge>
                   {project.domain && (
-                    <Badge tone="go">{DOMAIN_LABEL[project.domain]}</Badge>
+                    <Badge tone="primary">{DOMAIN_LABEL[project.domain]}</Badge>
                   )}
                 </div>
               </div>
@@ -254,13 +263,13 @@ function ProjectsView() {
                         {m.title}
                       </span>
                       <span className="flex items-center gap-3">
-                        <Badge tone={m.status === "approved" ? "go" : "neutral"}>
+                        <Badge tone={m.status === "approved" ? "success" : "neutral"}>
                           {MILESTONE_LABEL[m.status]}
                         </Badge>
                         {m.status !== "approved" && (
                           <Button
                             variant="ghost"
-                            className="px-2 py-1 text-xs"
+                            size="sm"
                             disabled={busy === m._id}
                             onClick={() =>
                               run(m._id, () =>
@@ -276,6 +285,7 @@ function ProjectsView() {
                   ))}
                 </ul>
               </div>
+              </CardBody>
             </Card>
           );
         })}

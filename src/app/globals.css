@@ -180,9 +180,6 @@
   --color-info-surface: var(--info-surface);
   --color-info-border: var(--info-border);
 
-  --color-destructive: var(--danger);
-  --color-destructive-foreground: var(--danger-foreground);
-
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);

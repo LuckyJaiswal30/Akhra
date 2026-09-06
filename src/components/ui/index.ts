@@ -13,3 +13,5 @@ export {
   Tabs,
   PageHeader,
 } from "./surface";
+export { BarList, Funnel, Stat, Panel } from "./chart";
+export type { BarRow } from "./chart";
