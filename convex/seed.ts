@@ -10,7 +10,7 @@ import { INSTITUTIONS } from "./data/institutions";
 import { SEED_PROBLEMS } from "./data/problems";
 import { SEED_PARTNERS } from "./data/partners";
 import { priorityScore } from "./lib/priority";
-import { embedText } from "./lib/gemini";
+import { assertEmbedding, embedText } from "./lib/gemini";
 
 export const institutions = internalMutation({
   args: {},
@@ -82,6 +82,7 @@ export const saveDepartmentEmbedding = internalMutation({
     embedding: v.array(v.float64()),
   },
   handler: async (ctx, args) => {
+    assertEmbedding(args.embedding);
     await ctx.db.patch(args.departmentId, { embedding: args.embedding });
   },
 });
@@ -334,6 +335,7 @@ export const saveProblemEmbedding = internalMutation({
     embedding: v.array(v.float64()),
   },
   handler: async (ctx, args) => {
+    assertEmbedding(args.embedding);
     const problem = await ctx.db.get(args.problemId);
     await ctx.db.insert("problemEmbeddings", {
       problemId: args.problemId,

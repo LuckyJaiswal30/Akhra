@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getCurrentUser, requireRole, requireUser } from "./lib/auth";
+import { requireRole, requireUser } from "./lib/auth";
 
 export const list = query({
   args: {},
@@ -24,6 +24,9 @@ export const setMyUniversity = mutation({
     const user = await requireRole(ctx, "faculty", "student");
     const university = await ctx.db.get(args.universityId);
     if (!university) throw new Error("That institution does not exist.");
+    if (user.universityId && user.universityId !== args.universityId) {
+      throw new Error("Your institution is assigned by an administrator.");
+    }
     await ctx.db.patch(user._id, { universityId: args.universityId });
   },
 });
@@ -31,8 +34,8 @@ export const setMyUniversity = mutation({
 export const myUniversity = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user || (user.role !== "faculty" && user.role !== "student")) {
+    const user = await requireUser(ctx);
+    if (user.role !== "faculty" && user.role !== "student") {
       return null;
     }
     if (!user.universityId) return null;

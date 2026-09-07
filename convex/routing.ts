@@ -9,7 +9,7 @@ import {
   query,
 } from "./_generated/server";
 import { embedText } from "./lib/gemini";
-import { getCurrentUser, notify, recordAudit, requireRole } from "./lib/auth";
+import { notify, recordAudit, requireRole, requireUser } from "./lib/auth";
 import { assertCompleteProfile } from "./lib/profile";
 
 const SUGGESTIONS = 3;
@@ -195,8 +195,8 @@ function buildReason(
 export const myUniversityChallenges = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (user?.role !== "faculty" && user?.role !== "student") return [];
+    const user = await requireUser(ctx);
+    if (user.role !== "faculty" && user.role !== "student") return [];
     if (!user.universityId) return [];
 
     const rows = await ctx.db
@@ -239,6 +239,9 @@ export const acceptChallenge = mutation({
     assertCompleteProfile(user);
     const routing = await ctx.db.get(args.routingId);
     if (!routing) throw new Error("That challenge is no longer available.");
+    if (routing.status !== "suggested") {
+      throw new Error("That challenge has already been decided.");
+    }
     if (routing.universityId !== user.universityId) {
       throw new Error("That challenge was not routed to your institution.");
     }
@@ -292,8 +295,14 @@ export const declineChallenge = mutation({
     const user = await requireRole(ctx, "faculty");
     const routing = await ctx.db.get(args.routingId);
     if (!routing) throw new Error("That challenge is no longer available.");
+    if (routing.status !== "suggested") {
+      throw new Error("That challenge has already been decided.");
+    }
     if (routing.universityId !== user.universityId) {
       throw new Error("That challenge was not routed to your institution.");
+    }
+    if (args.reason.trim().length < 5) {
+      throw new Error("Give a reason of at least five characters.");
     }
 
     await ctx.db.patch(args.routingId, { status: "declined" });

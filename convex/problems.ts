@@ -1,10 +1,15 @@
 import { v } from "convex/values";
-import { mutation, query, QueryCtx } from "./_generated/server";
+import {
+  internalMutation,
+  mutation,
+  query,
+  MutationCtx,
+  QueryCtx,
+} from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { problemStatus, reporterKind } from "./schema";
 import {
-  getCurrentUser,
   notify,
   recordAudit,
   requireRole,
@@ -14,12 +19,89 @@ import { assertCompleteProfile } from "./lib/profile";
 import { priorityScore } from "./lib/priority";
 import { fuzzCoordinates } from "./lib/geo";
 import { isDistrict, isInJharkhand } from "./lib/districts";
+import {
+  MAX_ACTIVE_UPLOADS,
+  MAX_PHOTOS,
+  UPLOAD_INTENT_TTL,
+} from "./lib/upload";
 
-export const generateUploadUrl = mutation({
+const MAX_TITLE_LENGTH = 160;
+const MAX_DESCRIPTION_LENGTH = 5000;
+const MAX_LANGUAGE_LENGTH = 32;
+const MAX_BLOCK_LENGTH = 120;
+const MAX_WAIVER_LENGTH = 500;
+
+async function cleanExpiredUploadIntents(ctx: MutationCtx, now: number) {
+  const expired = await ctx.db
+    .query("uploadIntents")
+    .withIndex("by_expiry", (q) => q.lt("expiresAt", now))
+    .take(25);
+
+  for (const intent of expired) {
+    if (intent.storageId) await ctx.storage.delete(intent.storageId);
+    await ctx.db.delete(intent._id);
+  }
+}
+
+export const createUploadIntent = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireUser(ctx);
-    return await ctx.storage.generateUploadUrl();
+    const user = await requireUser(ctx);
+    const now = Date.now();
+    await cleanExpiredUploadIntents(ctx, now);
+
+    const active = (
+      await ctx.db
+        .query("uploadIntents")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect()
+    ).filter((intent) => intent.expiresAt >= now).length;
+
+    if (active >= MAX_ACTIVE_UPLOADS) {
+      throw new Error("Finish or remove your current photo uploads first.");
+    }
+
+    const uploadId = await ctx.db.insert("uploadIntents", {
+      userId: user._id,
+      createdAt: now,
+      expiresAt: now + UPLOAD_INTENT_TTL,
+    });
+
+    return {
+      uploadId,
+    };
+  },
+});
+
+export const attachUploadedFile = internalMutation({
+  args: {
+    uploadId: v.id("uploadIntents"),
+    storageId: v.id("_storage"),
+    tokenIdentifier: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token_identifier", (q) =>
+        q.eq("tokenIdentifier", args.tokenIdentifier),
+      )
+      .unique();
+    if (!user || user.status !== "active") {
+      throw new Error("You need to be signed in to upload a photo.");
+    }
+    const intent = await ctx.db.get(args.uploadId);
+    if (!intent || intent.userId !== user._id) {
+      throw new Error("That upload is not yours.");
+    }
+    if (intent.expiresAt < Date.now()) {
+      throw new Error("That upload expired. Please choose the photo again.");
+    }
+    if (intent.storageId) {
+      throw new Error("That upload has already been claimed.");
+    }
+
+    await ctx.db.patch(args.uploadId, { storageId: args.storageId });
+    return args.storageId;
   },
 });
 
@@ -49,8 +131,20 @@ export const submit = mutation({
     if (args.title.trim().length < 6) {
       throw new Error("Give the problem a title of at least six characters.");
     }
+    if (args.title.trim().length > MAX_TITLE_LENGTH) {
+      throw new Error("Keep the problem title under 160 characters.");
+    }
     if (args.description.trim().length < 20) {
       throw new Error("Describe the problem in at least twenty characters.");
+    }
+    if (args.description.trim().length > MAX_DESCRIPTION_LENGTH) {
+      throw new Error("Keep the problem description under 5,000 characters.");
+    }
+    if (args.language.trim().length > MAX_LANGUAGE_LENGTH) {
+      throw new Error("Keep the language name under 32 characters.");
+    }
+    if (args.block && args.block.trim().length > MAX_BLOCK_LENGTH) {
+      throw new Error("Keep the location detail under 120 characters.");
     }
 
     // The district decides which officer this lands on, so it is checked here
@@ -63,6 +157,12 @@ export const submit = mutation({
     }
 
     const waiver = args.photoWaiver?.trim();
+    if (waiver && waiver.length > MAX_WAIVER_LENGTH) {
+      throw new Error("Keep the photo explanation under 500 characters.");
+    }
+    if (args.photoIds.length > MAX_PHOTOS) {
+      throw new Error(`You can add up to ${MAX_PHOTOS} photos.`);
+    }
     if (args.photoIds.length === 0 && !waiver) {
       throw new Error(
         "Add a photo, or say why you cannot add one.",
@@ -98,12 +198,24 @@ export const submit = mutation({
       createdAt: Date.now(),
     });
 
+    if (new Set(args.photoIds).size !== args.photoIds.length) {
+      throw new Error("Each photo can only be attached once.");
+    }
+
     for (const storageId of args.photoIds) {
+      const intent = await ctx.db
+        .query("uploadIntents")
+        .withIndex("by_storage", (q) => q.eq("storageId", storageId))
+        .unique();
+      if (!intent || intent.userId !== user._id || intent.expiresAt < Date.now()) {
+        throw new Error("One of your photos is invalid or has expired.");
+      }
       await ctx.db.insert("problemMedia", {
         problemId,
         storageId,
         kind: "photo",
       });
+      await ctx.db.delete(intent._id);
     }
 
     await ctx.scheduler.runAfter(0, internal.ai.analyseProblem, { problemId });
@@ -123,8 +235,7 @@ export const submit = mutation({
 export const listMine = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
+    const user = await requireUser(ctx);
 
     const rows = await ctx.db
       .query("problems")
@@ -173,7 +284,7 @@ export const queue = query({
         const routings = await ctx.db
           .query("routings")
           .withIndex("by_problem", (q) => q.eq("problemId", problem._id))
-          .collect();
+          .take(MAX_PHOTOS);
 
         const suggestions = await Promise.all(
           routings
@@ -383,7 +494,7 @@ async function mediaUrls(ctx: QueryCtx, problemId: Id<"problems">) {
   const media = await ctx.db
     .query("problemMedia")
     .withIndex("by_problem", (q) => q.eq("problemId", problemId))
-    .collect();
+    .take(MAX_PHOTOS);
 
   const urls: string[] = [];
   for (const item of media) {

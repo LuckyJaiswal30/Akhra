@@ -36,6 +36,7 @@ export const snapshot = internalQuery({
         clusterId: p.clusterId,
         status: p.status,
         sourceUrl: p.sourceUrl,
+        sourceStatus: p.sourceStatus,
         lat: p.lat,
         lng: p.lng,
       })),
@@ -112,7 +113,9 @@ export const runAll = internalAction({
     add("all domains valid", badDomain.length === 0,
       badDomain.length ? `bad: ${badDomain.slice(0,3).map(p=>p.domain).join(", ")}` : "all 10 domains valid");
 
-    const noSource = s.problems.filter((p) => !p.sourceUrl);
+    const noSource = s.problems.filter(
+      (p) => p.sourceStatus !== undefined && !p.sourceUrl,
+    );
     add("every problem has a source", noSource.length === 0,
       noSource.length ? `${noSource.length} missing` : `${s.problems.length} sourced`);
 

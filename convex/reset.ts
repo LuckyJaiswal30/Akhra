@@ -1,6 +1,8 @@
 import { internalMutation } from "./_generated/server";
 
 const TABLES = [
+  "webhookEvents",
+  "uploadIntents",
   "auditLog",
   "invitations",
   "notifications",
@@ -46,6 +48,7 @@ export const wipeProblemsOnly = internalMutation({
   args: {},
   handler: async (ctx) => {
     const tables = [
+      "uploadIntents",
       "auditLog",
       "notifications",
       "pledges",
@@ -62,7 +65,13 @@ export const wipeProblemsOnly = internalMutation({
     const removed: Record<string, number> = {};
     for (const table of tables) {
       const rows = await ctx.db.query(table).collect();
-      for (const row of rows) await ctx.db.delete(row._id);
+      for (const row of rows) {
+        if (table === "uploadIntents") {
+          const intent = row as { storageId?: string };
+          if (intent.storageId) await ctx.storage.delete(intent.storageId as never);
+        }
+        await ctx.db.delete(row._id);
+      }
       removed[table] = rows.length;
     }
     return removed;

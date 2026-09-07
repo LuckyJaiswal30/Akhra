@@ -3,7 +3,7 @@ import { internal } from "./_generated/api";
 import { Doc, Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { domain } from "./schema";
-import { embedText } from "./lib/gemini";
+import { assertEmbedding, embedText } from "./lib/gemini";
 import { classify } from "./lib/classify";
 import { priorityScore } from "./lib/priority";
 import { distanceKm } from "./lib/geo";
@@ -55,6 +55,7 @@ export const storeEmbedding = internalMutation({
     embedding: v.array(v.float64()),
   },
   handler: async (ctx, args) => {
+    assertEmbedding(args.embedding);
     const problem = await ctx.db.get(args.problemId);
     if (!problem) return;
 

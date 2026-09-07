@@ -1,5 +1,5 @@
 const API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models";
-const EMBEDDING_DIMENSIONS = 768;
+import { EMBEDDING_DIMENSIONS } from "../schema";
 
 export const DOMAIN_VALUES = [
   "education",
@@ -23,6 +23,20 @@ export type Classification = {
   affectedEstimate: number;
   summary: string;
 };
+
+export function assertEmbedding(values: number[]) {
+  if (
+    values.length !== EMBEDDING_DIMENSIONS ||
+    values.some((value) => !Number.isFinite(value))
+  ) {
+    throw new Error(`Embedding response must contain ${EMBEDDING_DIMENSIONS} finite values.`);
+  }
+
+  const magnitude = Math.sqrt(
+    values.reduce((sum, value) => sum + value * value, 0),
+  );
+  if (magnitude === 0) throw new Error("Embedding response cannot be zero-valued.");
+}
 
 function apiKey() {
   const key = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -101,9 +115,9 @@ export async function embedText(text: string): Promise<number[]> {
 
   const body = json as { embedding?: { values?: number[] } };
   const values: number[] = body?.embedding?.values ?? [];
-  if (values.length === 0) throw new Error("Embedding response was empty.");
+  assertEmbedding(values);
 
-  return normalize(values.slice(0, EMBEDDING_DIMENSIONS));
+  return normalize(values);
 }
 
 function normalize(values: number[]): number[] {

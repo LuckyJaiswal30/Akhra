@@ -52,7 +52,9 @@ export default function ProjectsPage() {
 }
 
 function ProjectsView() {
+  const me = useQuery(api.users.current);
   const projects = useQuery(api.projects.mine);
+  const joinProject = useMutation(api.projects.joinProject);
   const submitProposal = useMutation(api.projects.submitProposal);
   const addMilestone = useMutation(api.projects.addMilestone);
   const advanceMilestone = useMutation(api.projects.advanceMilestone);
@@ -140,6 +142,21 @@ function ProjectsView() {
                         </li>
                       ))}
                     </ul>
+                    {me?.role === "student" &&
+                      !project.isMember &&
+                      project.stage === "team_forming" && (
+                        <Button
+                          className="mt-3 self-start"
+                          disabled={busy === project._id}
+                          onClick={() =>
+                            run(project._id, () =>
+                              joinProject({ projectId: project._id }),
+                            )
+                          }
+                        >
+                          Join this team
+                        </Button>
+                      )}
                   </div>
 
                   <div>
@@ -202,6 +219,7 @@ function ProjectsView() {
                   <div>
                     <Button
                       variant="ghost"
+                      disabled={!project.isMember}
                       onClick={() => setDrafting(project._id)}
                     >
                       Write a solution proposal
@@ -216,6 +234,7 @@ function ProjectsView() {
                     </p>
                     <Button
                       variant="ghost"
+                      disabled={!project.isMember}
                       onClick={() => setMilestoneFor(project._id)}
                     >
                       Add milestone
@@ -276,7 +295,7 @@ function ProjectsView() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              disabled={busy === m._id}
+                              disabled={busy === m._id || !project.isMember}
                               onClick={() =>
                                 run(m._id, () =>
                                   advanceMilestone({ milestoneId: m._id }),

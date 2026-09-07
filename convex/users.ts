@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getCurrentUser, notify, recordAudit } from "./lib/auth";
+import { notify, recordAudit, requireUser } from "./lib/auth";
 import { verifiedEmail } from "./lib/identity";
 import { isDistrict } from "./lib/districts";
 import { isProfileComplete, profileGaps } from "./lib/profile";
@@ -10,8 +10,7 @@ import { MutationCtx } from "./_generated/server";
 export const current = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return null;
+    const user = await requireUser(ctx);
     return {
       ...user,
       profileComplete: isProfileComplete(user),
@@ -136,14 +135,23 @@ export const ensureUser = mutation({
 
     const existing: Doc<"users"> | null = await ctx.db
       .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("by_token_identifier", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
       .unique();
+    const legacyExisting =
+      existing ??
+      (await ctx.db
+        .query("users")
+        .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+        .unique());
 
     // A deleted row is a tombstone. Signing in again with the same Clerk
     // account starts a fresh person rather than reviving the old one.
-    if (existing && existing.status === "deleted") {
+    if (legacyExisting && legacyExisting.status === "deleted") {
       const userId = await ctx.db.insert("users", {
         clerkId: identity.subject,
+        tokenIdentifier: identity.tokenIdentifier,
         name,
         email,
         emailVerified: Boolean(proven),
@@ -152,15 +160,19 @@ export const ensureUser = mutation({
         trustScore: 50,
         createdAt: Date.now(),
       });
-      await ctx.db.patch(existing._id, { clerkId: `deleted:${existing._id}` });
+      await ctx.db.patch(legacyExisting._id, {
+        clerkId: `deleted:${legacyExisting._id}`,
+        tokenIdentifier: undefined,
+      });
       if (proven) await applyInvitation(ctx, userId, proven);
       await fillProfileGaps(ctx, userId, args.district, args.designation);
       return { emailVerified: Boolean(proven) };
     }
 
-    if (!existing) {
+    if (!legacyExisting) {
       const userId = await ctx.db.insert("users", {
         clerkId: identity.subject,
+        tokenIdentifier: identity.tokenIdentifier,
         name,
         email,
         emailVerified: Boolean(proven),
@@ -175,19 +187,21 @@ export const ensureUser = mutation({
     }
 
     if (
-      existing.name !== name ||
-      existing.email !== email ||
-      existing.emailVerified !== Boolean(proven)
+      legacyExisting.name !== name ||
+      legacyExisting.email !== email ||
+      legacyExisting.emailVerified !== Boolean(proven) ||
+      legacyExisting.tokenIdentifier !== identity.tokenIdentifier
     ) {
-      await ctx.db.patch(existing._id, {
+      await ctx.db.patch(legacyExisting._id, {
         name,
         email,
         emailVerified: Boolean(proven),
+        tokenIdentifier: identity.tokenIdentifier,
       });
     }
 
-    if (proven) await applyInvitation(ctx, existing._id, proven);
-    await fillProfileGaps(ctx, existing._id, args.district, args.designation);
+    if (proven) await applyInvitation(ctx, legacyExisting._id, proven);
+    await fillProfileGaps(ctx, legacyExisting._id, args.district, args.designation);
     return { emailVerified: Boolean(proven) };
   },
 });
@@ -198,10 +212,7 @@ export const completeProfile = mutation({
     designation: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("Your account is still being set up. Try again shortly.");
-    }
+    const user = await requireUser(ctx);
 
     const district = args.district.trim();
     const designation = args.designation.trim();
@@ -237,8 +248,7 @@ export const completeProfile = mutation({
 export const unreadNotificationCount = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return 0;
+    const user = await requireUser(ctx);
     const rows = await ctx.db
       .query("notifications")
       .withIndex("by_user_and_read", (q) =>

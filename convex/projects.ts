@@ -1,15 +1,33 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { getCurrentUser, notify, recordAudit, requireRole } from "./lib/auth";
+import { mutation, query, MutationCtx } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
+import { notify, recordAudit, requireRole, requireUser } from "./lib/auth";
 import { assertCompleteProfile } from "./lib/profile";
 
 const DAY = 24 * 60 * 60 * 1000;
 
+async function requireProjectMember(
+  ctx: MutationCtx,
+  projectId: Id<"projects">,
+  userId: Id<"users">,
+) {
+  const membership = await ctx.db
+    .query("projectMembers")
+    .withIndex("by_project", (q) => q.eq("projectId", projectId))
+    .collect();
+
+  if (!membership.some((member) => member.userId === userId)) {
+    throw new Error("You are not a member of that project.");
+  }
+
+  return membership.find((member) => member.userId === userId)!;
+}
+
 export const mine = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (user?.role !== "faculty" && user?.role !== "student") return [];
+    const user = await requireUser(ctx);
+    if (user.role !== "faculty" && user.role !== "student") return [];
     if (!user.universityId) return [];
 
     const rows = await ctx.db
@@ -70,12 +88,44 @@ export const mine = query({
           domain: problem?.domain,
           priority: problem?.priority ?? 0,
           departmentName: department?.name ?? "Unknown",
+          isMember: members.some((member) => member.userId === user._id),
           members: people,
           milestones: milestones.sort((a, b) => a.order - b.order),
           backers,
         };
       }),
     );
+  },
+});
+
+export const joinProject = mutation({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, "student");
+    assertCompleteProfile(user);
+    const project = await ctx.db.get(args.projectId);
+    if (!project) throw new Error("That project no longer exists.");
+    if (project.universityId !== user.universityId) {
+      throw new Error("That project belongs to another institution.");
+    }
+    if (project.stage !== "team_forming") {
+      throw new Error("That project is no longer forming its team.");
+    }
+
+    const members = await ctx.db
+      .query("projectMembers")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+    if (members.some((member) => member.userId === user._id)) {
+      throw new Error("You are already on that project team.");
+    }
+
+    await ctx.db.insert("projectMembers", {
+      projectId: args.projectId,
+      userId: user._id,
+      position: "student",
+    });
+    await recordAudit(ctx, user._id, "join_project", "projects", args.projectId);
   },
 });
 
@@ -86,9 +136,7 @@ export const submitProposal = mutation({
     assertCompleteProfile(user);
     const project = await ctx.db.get(args.projectId);
     if (!project) throw new Error("That project no longer exists.");
-    if (project.universityId !== user.universityId) {
-      throw new Error("That project belongs to another institution.");
-    }
+    await requireProjectMember(ctx, args.projectId, user._id);
     if (args.summary.trim().length < 40) {
       throw new Error("Describe the proposed solution in at least forty characters.");
     }
@@ -130,9 +178,7 @@ export const addMilestone = mutation({
     const user = await requireRole(ctx, "faculty", "student");
     const project = await ctx.db.get(args.projectId);
     if (!project) throw new Error("That project no longer exists.");
-    if (project.universityId !== user.universityId) {
-      throw new Error("That project belongs to another institution.");
-    }
+    await requireProjectMember(ctx, args.projectId, user._id);
     if (args.title.trim().length < 5) {
       throw new Error("Give the milestone a title of at least five characters.");
     }
@@ -161,8 +207,12 @@ export const advanceMilestone = mutation({
 
     const owner = await ctx.db.get(milestone.projectId);
     if (!owner) throw new Error("That project no longer exists.");
-    if (owner.universityId !== user.universityId) {
-      throw new Error("That project belongs to another institution.");
+    const member = await requireProjectMember(ctx, milestone.projectId, user._id);
+    if (milestone.status === "approved") {
+      throw new Error("That milestone is already approved.");
+    }
+    if (milestone.status === "submitted" && member.position !== "faculty_mentor") {
+      throw new Error("Only the faculty mentor can approve a milestone.");
     }
 
     const next =

@@ -31,7 +31,10 @@ export function PortalShell({ children }: { children: ReactNode }) {
     <div className="flex flex-1 flex-col">
       <SkipLink />
 
-      <header className="border-b border-border bg-card">
+      <header
+        aria-hidden={incomplete ? true : undefined}
+        className="border-b border-border bg-card"
+      >
         <div className="mx-auto flex w-full max-w-page flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4 sm:px-6">
           <Link href="/home" className="rounded-sm">
             <Wordmark />

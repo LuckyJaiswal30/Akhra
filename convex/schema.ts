@@ -71,7 +71,7 @@ export const partnerKind = v.union(
   v.literal("innovation_hub"),
 );
 
-const EMBEDDING_DIMENSIONS = 768;
+export const EMBEDDING_DIMENSIONS = 768;
 
 export default defineSchema({
   /**
@@ -82,6 +82,7 @@ export default defineSchema({
    */
   users: defineTable({
     clerkId: v.string(),
+    tokenIdentifier: v.optional(v.string()),
     name: v.string(),
     email: v.string(),
     emailVerified: v.optional(v.boolean()),
@@ -101,6 +102,7 @@ export default defineSchema({
     deletedAt: v.optional(v.number()),
   })
     .index("by_clerk_id", ["clerkId"])
+    .index("by_token_identifier", ["tokenIdentifier"])
     .index("by_email", ["email"])
     .index("by_role", ["role"])
     .index("by_university", ["universityId"])
@@ -184,6 +186,16 @@ export default defineSchema({
     kind: v.union(v.literal("photo"), v.literal("video"), v.literal("document")),
     caption: v.optional(v.string()),
   }).index("by_problem", ["problemId"]),
+
+  uploadIntents: defineTable({
+    userId: v.id("users"),
+    storageId: v.optional(v.id("_storage")),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_storage", ["storageId"])
+    .index("by_expiry", ["expiresAt"]),
 
   clusters: defineTable({
     label: v.string(),
@@ -339,4 +351,12 @@ export default defineSchema({
   })
     .index("by_actor", ["actorId"])
     .index("by_entity", ["entity", "entityId"]),
+
+  webhookEvents: defineTable({
+    eventId: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_event_id", ["eventId"])
+    .index("by_expiry", ["expiresAt"]),
 });

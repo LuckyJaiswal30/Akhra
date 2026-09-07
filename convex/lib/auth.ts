@@ -11,10 +11,18 @@ export type Role = Doc<"users">["role"];
 export async function getCurrentUser(ctx: Ctx): Promise<Doc<"users"> | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
-  const user = await ctx.db
+  const byToken = await ctx.db
     .query("users")
-    .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+    .withIndex("by_token_identifier", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier),
+    )
     .unique();
+  const user =
+    byToken ??
+    (await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique());
   return user && user.status === "active" ? user : null;
 }
 

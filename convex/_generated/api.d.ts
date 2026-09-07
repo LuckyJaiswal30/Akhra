@@ -28,6 +28,7 @@ import type * as lib_identity from "../lib/identity.js";
 import type * as lib_priority from "../lib/priority.js";
 import type * as lib_profile from "../lib/profile.js";
 import type * as lib_rules from "../lib/rules.js";
+import type * as lib_upload from "../lib/upload.js";
 import type * as lib_webhook from "../lib/webhook.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
@@ -67,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   "lib/priority": typeof lib_priority;
   "lib/profile": typeof lib_profile;
   "lib/rules": typeof lib_rules;
+  "lib/upload": typeof lib_upload;
   "lib/webhook": typeof lib_webhook;
   migrations: typeof migrations;
   notifications: typeof notifications;

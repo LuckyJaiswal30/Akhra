@@ -1,11 +1,10 @@
 import { mutation, query } from "./_generated/server";
-import { getCurrentUser, requireUser } from "./lib/auth";
+import { requireUser } from "./lib/auth";
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
+    const user = await requireUser(ctx);
 
     return await ctx.db
       .query("notifications")

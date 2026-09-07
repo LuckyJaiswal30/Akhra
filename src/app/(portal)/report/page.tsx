@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
@@ -20,9 +21,7 @@ import { DISTRICTS } from "@/lib/jharkhand";
 import type { DistrictName } from "@convex/lib/districts";
 import { referenceFor } from "@/lib/reference";
 import { cn } from "@/lib/utils";
-
-const MAX_PHOTOS = 4;
-const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+import { MAX_PHOTO_BYTES, MAX_PHOTOS } from "@convex/lib/upload";
 
 const STEPS = ["photo", "category", "where", "describe", "scale", "review"] as const;
 type Step = (typeof STEPS)[number];
@@ -48,7 +47,8 @@ const SCALE: { value: number; en: string }[] = [
 ];
 
 export default function ReportPage() {
-  const generateUploadUrl = useMutation(api.problems.generateUploadUrl);
+  const { getToken } = useAuth();
+  const createUploadIntent = useMutation(api.problems.createUploadIntent);
   const submit = useMutation(api.problems.submit);
 
   const [step, setStep] = useState<Step>("photo");
@@ -196,11 +196,19 @@ export default function ReportPage() {
     try {
       const photoIds: Id<"_storage">[] = [];
       for (const file of files) {
-        const url = await generateUploadUrl({});
-        const response = await fetch(url, {
+        const { uploadId } = await createUploadIntent({});
+        const token = await getToken({ template: "convex" });
+        const siteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
+        if (!token || !siteUrl) {
+          throw new Error("Photo upload is not configured.");
+        }
+        const form = new FormData();
+        form.set("uploadId", uploadId);
+        form.set("file", file);
+        const response = await fetch(`${siteUrl.replace(/\/$/, "")}/upload-photo`, {
           method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
         });
         if (!response.ok) {
           throw new Error(
@@ -451,6 +459,7 @@ export default function ReportPage() {
               aria-describedby="landmark-hint"
               value={landmark}
               onChange={(e) => setLandmark(e.target.value)}
+              maxLength={120}
               className="h-12 text-base"
               placeholder="Near Angara High School"
             />
@@ -466,6 +475,7 @@ export default function ReportPage() {
             rows={7}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            maxLength={5000}
             className="text-base"
             aria-label="What is wrong?"
             placeholder="The handpump beside the school has been dry since Holi. We now walk to the next hamlet for drinking water."

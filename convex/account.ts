@@ -2,7 +2,9 @@ import { v } from "convex/values";
 import { internalMutation, mutation } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 import { MutationCtx } from "./_generated/server";
-import { getCurrentUser, recordAudit } from "./lib/auth";
+import { recordAudit, requireUser } from "./lib/auth";
+
+const WEBHOOK_EVENT_TTL = 24 * 60 * 60 * 1000;
 
 /**
  * Deleting an account has to leave the app in a state where that person no
@@ -44,6 +46,7 @@ async function tombstone(
     roleAssignedBy: undefined,
     roleAssignedAt: undefined,
     clerkId: `deleted:${user._id}`,
+    tokenIdentifier: undefined,
   });
 
   await recordAudit(
@@ -79,8 +82,7 @@ async function lastAdminGuard(ctx: MutationCtx, user: Doc<"users">) {
 export const deleteMyAccount = mutation({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("You need to be signed in to do that.");
+    const user = await requireUser(ctx);
     await lastAdminGuard(ctx, user);
     return await tombstone(ctx, user, "self");
   },
@@ -171,5 +173,40 @@ export const syncFromProvider = internalMutation({
 
     await ctx.db.patch(user._id, patch);
     return { synced: true as const };
+  },
+});
+
+export const claimWebhookEvent = internalMutation({
+  args: { eventId: v.string(), now: v.number() },
+  handler: async (ctx, args) => {
+    const expired = await ctx.db
+      .query("webhookEvents")
+      .withIndex("by_expiry", (q) => q.lt("expiresAt", args.now))
+      .take(100);
+    for (const event of expired) await ctx.db.delete(event._id);
+
+    const existing = await ctx.db
+      .query("webhookEvents")
+      .withIndex("by_event_id", (q) => q.eq("eventId", args.eventId))
+      .unique();
+    if (existing) return false;
+
+    await ctx.db.insert("webhookEvents", {
+      eventId: args.eventId,
+      createdAt: args.now,
+      expiresAt: args.now + WEBHOOK_EVENT_TTL,
+    });
+    return true;
+  },
+});
+
+export const releaseWebhookEvent = internalMutation({
+  args: { eventId: v.string() },
+  handler: async (ctx, args) => {
+    const event = await ctx.db
+      .query("webhookEvents")
+      .withIndex("by_event_id", (q) => q.eq("eventId", args.eventId))
+      .unique();
+    if (event) await ctx.db.delete(event._id);
   },
 });

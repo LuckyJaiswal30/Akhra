@@ -1,7 +1,7 @@
 # Akhra
 
 Every village in Jharkhand already has a place where people bring their
-problems. An *akhra* is the open ground at the centre of the village — where
+problems. An _akhra_ is the open ground at the centre of the village — where
 Oraon, Munda and Ho communities gather to talk things through and decide what to
 do. This is the digital one, and unlike a complaints portal it doesn't stop at
 "issue logged". It runs all the way to something actually being built.
@@ -54,20 +54,20 @@ merge anything above 0.86 cosine similarity within the same district or 25 km.
 
 **Routing that explains itself.** We build an expertise profile for each of 34
 university departments from what its faculty actually publish and teach, embed
-those too, and match problems against them. The officer sees *"BIT Mesra, Civil
+those too, and match problems against them. The officer sees _"BIT Mesra, Civil
 and Environmental Engineering — 24 faculty working on drinking water treatment
-and groundwater contamination"*, and can override it.
+and groundwater contamination"_, and can override it.
 
 ## Stack
 
-| | |
-|---|---|
-| Framework | Next.js 16, App Router |
-| UI | Tailwind v4, shadcn, hand-built charts |
-| Backend | Convex |
-| Auth | Clerk |
-| AI | Gemini, falling back to Groq, falling back to keywords |
-| Embeddings | `gemini-embedding-001`, 768 dimensions, L2 normalised |
+|            |                                                        |
+| ---------- | ------------------------------------------------------ |
+| Framework  | Next.js 16, App Router                                 |
+| UI         | Tailwind v4, shadcn, hand-built charts                 |
+| Backend    | Convex                                                 |
+| Auth       | Clerk                                                  |
+| AI         | Gemini, falling back to Groq, falling back to keywords |
+| Embeddings | `gemini-embedding-001`, 768 dimensions, L2 normalised  |
 
 ## On security
 
@@ -152,25 +152,25 @@ An account exists in three places, and one of them decides: `users.status`.
 
 ```
 Clerk signs you in
-  → users.ensureUser        idempotent, keyed on the Clerk id
+  → users.ensureUser        idempotent, keyed on the Clerk token identifier
   → invitation applied      matched on the verified email claim, never on input
-  → profile complete?       district + designation, or you land on /welcome
+  → profile complete?       district + designation, or a blocking profile form
   → role                    handed out by an administrator
   → the rest of the app
 ```
 
 Deleting an account tombstones the row: personal data scrubbed, role dropped
-to citizen, Clerk id neutralised, notifications and project memberships
+to citizen, identity identifiers neutralised, notifications and project memberships
 removed. The row itself survives so that audit entries and reports still
 resolve to something. Nothing that looks up a person — sign-in, the
 administration directory, invitations, the bootstrap admin check — sees a
 tombstone.
 
-Deletion arrives from two directions and both land on the same mutation:
-`account.deleteMyAccount` from `/account`, and the `user.deleted` webhook at
-`<convex site>/clerk-webhook` for deletions made anywhere else. If the two
+Deletion from Clerk arrives through the `user.deleted` webhook at
+`<convex site>/clerk-webhook`. The backend also exposes
+`account.deleteMyAccount` for a future account-settings surface. If the two
 ever drift, `account:purgeMissingClerkIds` reconciles against a list of live
-Clerk ids.
+Clerk user IDs.
 
 ## Dates
 
@@ -181,8 +181,8 @@ directly, so a server in UTC and a browser in IST draw the same page.
 Clerk renders the timestamps in its own security emails, in its own timezone,
 and its template language has no date helper — so that one cannot be fixed
 from here. `scripts/clerk-email-templates.mjs` rewrites those templates to
-drop the misleading stamp and link to `/account`, which lists every session
-in IST and can sign one out without leaving the app.
+drop the misleading stamp; account and session management remain in Clerk's
+own account portal.
 
 ## Tests
 
