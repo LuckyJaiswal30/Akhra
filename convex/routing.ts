@@ -10,6 +10,7 @@ import {
 } from "./_generated/server";
 import { embedText } from "./lib/gemini";
 import { getCurrentUser, notify, recordAudit, requireRole } from "./lib/auth";
+import { assertCompleteProfile } from "./lib/profile";
 
 const SUGGESTIONS = 3;
 
@@ -195,7 +196,8 @@ export const myUniversityChallenges = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
-    if (!user || !user.universityId) return [];
+    if (user?.role !== "faculty" && user?.role !== "student") return [];
+    if (!user.universityId) return [];
 
     const rows = await ctx.db
       .query("routings")
@@ -234,6 +236,7 @@ export const acceptChallenge = mutation({
   args: { routingId: v.id("routings") },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, "faculty");
+    assertCompleteProfile(user);
     const routing = await ctx.db.get(args.routingId);
     if (!routing) throw new Error("That challenge is no longer available.");
     if (routing.universityId !== user.universityId) {

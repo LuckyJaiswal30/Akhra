@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { pledgeKind } from "./schema";
 import { getCurrentUser, notify, recordAudit, requireRole, requireUser } from "./lib/auth";
+import { assertCompleteProfile } from "./lib/profile";
 
 export const list = query({
   args: {},
@@ -16,7 +17,7 @@ export const mine = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
-    if (!user?.partnerId) return null;
+    if (user?.role !== "industry" || !user.partnerId) return null;
     return await ctx.db.get(user.partnerId);
   },
 });
@@ -24,7 +25,7 @@ export const mine = query({
 export const setMyPartner = mutation({
   args: { partnerId: v.id("partners") },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx);
+    const user = await requireRole(ctx, "industry");
     const partner = await ctx.db.get(args.partnerId);
     if (!partner) throw new Error("That organisation does not exist.");
     await ctx.db.patch(user._id, { partnerId: args.partnerId });
@@ -89,6 +90,7 @@ export const pledge = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, "industry");
+    assertCompleteProfile(user);
     if (!user.partnerId) {
       throw new Error("Choose your organisation in the header first.");
     }
@@ -148,7 +150,7 @@ export const myPledges = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
-    if (!user?.partnerId) return [];
+    if (user?.role !== "industry" || !user.partnerId) return [];
 
     const rows = await ctx.db
       .query("pledges")

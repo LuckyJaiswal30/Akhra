@@ -3,12 +3,14 @@ import { internalAction, internalQuery } from "./_generated/server";
 import { classify } from "./lib/classify";
 import { embedText } from "./lib/gemini";
 import { priorityScore } from "./lib/priority";
+import { isDistrict } from "./lib/districts";
 
 type Check = { name: string; pass: boolean; detail: string };
 
 export const snapshot = internalQuery({
   args: {},
   handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
     const universities = await ctx.db.query("universities").collect();
     const departments = await ctx.db.query("departments").collect();
     const problems = await ctx.db.query("problems").collect();
@@ -56,6 +58,35 @@ export const snapshot = internalQuery({
         }),
       ),
       embeddedProblemIds: embeddings.map((e) => e.problemId),
+      officersWithoutDistrict: users.filter(
+        (u) => u.status === "active" && u.role === "officer" && !u.district,
+      ).length,
+      deletedHoldingRole: users.filter(
+        (u) => u.status === "deleted" && u.role !== "citizen",
+      ).length,
+      deletedKeepingIdentity: users.filter(
+        (u) =>
+          u.status === "deleted" &&
+          (u.email !== "" || u.clerkId.startsWith("user_")),
+      ).length,
+      activeWithInvalidDistrict: users.filter(
+        (u) => u.status === "active" && u.district && !isDistrict(u.district),
+      ).length,
+      duplicateActiveEmails: (() => {
+        const seen = new Map<string, number>();
+        for (const u of users) {
+          if (u.status !== "active" || !u.email) continue;
+          seen.set(u.email, (seen.get(u.email) ?? 0) + 1);
+        }
+        return [...seen.entries()].filter(([, count]) => count > 1).length;
+      })(),
+      orphanInvitations: (
+        await Promise.all(
+          (await ctx.db.query("invitations").collect()).map(async (row) =>
+            (await ctx.db.get(row.invitedBy)) ? null : row.email,
+          ),
+        )
+      ).filter(Boolean).length,
     };
   },
 });
@@ -158,14 +189,68 @@ export const runAll = internalAction({
         `${deptMatches.length} departments, top ${deptMatches[0]?._score.toFixed(3) ?? "n/a"}`);
     }
 
-    let refused = false;
-    try {
-      await ctx.runQuery(api.problems.queue, {});
-    } catch {
-      refused = true;
+    add("every officer has a district", s.officersWithoutDistrict === 0,
+      s.officersWithoutDistrict
+        ? `${s.officersWithoutDistrict} officers can see no queue at all`
+        : "every officer account is posted somewhere");
+
+    add("no invitation points at a deleted account", s.orphanInvitations === 0,
+      s.orphanInvitations ? `${s.orphanInvitations} orphaned` : "all resolvable");
+
+    add("deleted accounts hold no role", s.deletedHoldingRole === 0,
+      s.deletedHoldingRole
+        ? `SECURITY: ${s.deletedHoldingRole} deleted accounts still hold a role`
+        : "every deleted account is back to citizen");
+
+    add("deleted accounts keep no identity", s.deletedKeepingIdentity === 0,
+      s.deletedKeepingIdentity
+        ? `${s.deletedKeepingIdentity} still carry an email or a live clerk id`
+        : "email and clerk id scrubbed");
+
+    add("one live account per email address", s.duplicateActiveEmails === 0,
+      s.duplicateActiveEmails
+        ? `${s.duplicateActiveEmails} addresses have more than one live account`
+        : "no duplicates");
+
+    add("every district on file is a real one", s.activeWithInvalidDistrict === 0,
+      s.activeWithInvalidDistrict
+        ? `${s.activeWithInvalidDistrict} accounts sit outside the 24 districts`
+        : "all inside Jharkhand");
+
+    const guarded: [string, () => Promise<unknown>][] = [
+      ["problems.queue", () => ctx.runQuery(api.problems.queue, {})],
+      ["access.adminExists", () => ctx.runQuery(api.access.adminExists, {})],
+      ["access.directory", () => ctx.runQuery(api.access.directory, {})],
+      ["institutions.list", () => ctx.runQuery(api.institutions.list, {})],
+      ["account.deleteMyAccount", () => ctx.runMutation(api.account.deleteMyAccount, {})],
+      [
+        "users.completeProfile",
+        () =>
+          ctx.runMutation(api.users.completeProfile, {
+            district: "Ranchi",
+            designation: "Anonymous",
+          }),
+      ],
+      [
+        "users.ensureUser",
+        () => ctx.runMutation(api.users.ensureUser, { name: "x" }),
+      ],
+    ];
+
+    const answered: string[] = [];
+    for (const [name, call] of guarded) {
+      try {
+        await call();
+        answered.push(name);
+      } catch {
+        // refusing an anonymous caller is the expected outcome
+      }
     }
-    add("public queries refuse unauthenticated callers", refused,
-      refused ? "problems.queue rejected an anonymous call" : "SECURITY: queue answered without auth");
+
+    add("public functions refuse unauthenticated callers", answered.length === 0,
+      answered.length
+        ? `SECURITY: ${answered.join(", ")} answered without auth`
+        : `${guarded.length} functions rejected anonymous calls`);
 
     const passed = checks.filter((c) => c.pass).length;
     return { passed, failed: checks.length - passed, checks };

@@ -2,6 +2,7 @@ import { internalMutation } from "./_generated/server";
 
 const TABLES = [
   "auditLog",
+  "invitations",
   "notifications",
   "pledges",
   "milestones",

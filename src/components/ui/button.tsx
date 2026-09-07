@@ -6,17 +6,17 @@ type Size = "sm" | "md" | "lg";
 
 const VARIANT: Record<Variant, string> = {
   primary:
-    "bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm",
+    "bg-primary text-primary-foreground hover:bg-primary-hover",
   secondary:
     "border border-border bg-card text-foreground hover:bg-secondary hover:border-border-strong",
   ghost: "text-muted-foreground hover:bg-secondary hover:text-foreground",
-  danger: "bg-danger text-danger-foreground hover:bg-danger-hover shadow-sm",
+  danger: "bg-danger text-danger-foreground hover:bg-danger-hover",
   link: "text-primary underline-offset-4 hover:underline px-0",
 };
 
 const SIZE: Record<Size, string> = {
-  sm: "h-8 gap-1.5 px-3 text-[0.8125rem]",
-  md: "h-10 gap-2 px-4 text-sm",
+  sm: "h-9 gap-2 px-3 text-sm",
+  md: "h-11 gap-2 px-4 text-base",
   lg: "h-12 gap-2 px-6 text-base",
 };
 
@@ -41,7 +41,7 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-md font-medium",
+        "inline-flex shrink-0 items-center justify-center rounded-sm font-medium",
         "transition-[background-color,border-color,color,opacity] duration-150",
         "disabled:pointer-events-none disabled:opacity-55",
         VARIANT[variant],

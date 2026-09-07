@@ -14,9 +14,11 @@ import {
   EmptyState,
   Input,
   LoadingList,
+  Page,
   PageHeader,
   Select,
 } from "@/components/ui";
+import { formatCount } from "@/lib/datetime";
 import { DOMAIN_LABEL } from "@/lib/jharkhand";
 
 const PLEDGE_KINDS = [
@@ -57,23 +59,24 @@ function ProposalsView() {
       setOffering(null);
       setDetail("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "That did not work.");
+      setError(cause instanceof Error ? cause.message : "That did not go through.");
     }
     setBusy(null);
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <Page width="column">
       <PageHeader
-        eyebrow="Industry partner"
-        title="Open proposals"
-        description="Solution proposals from universities, each with the citizen problem it came from."
+        title="Projects looking for help"
+        description="Plans from university teams, each one showing the problem a real person reported."
       />
 
-      {!mine && (
+      {mine === undefined && <LoadingList rows={2} />}
+
+      {mine === null && (
         <EmptyState
-          title="Choose your organisation"
-          description="Pick it from the dropdown in the header before offering support."
+          title="Pick your organisation first"
+          description="Choose it from the dropdown at the top before you offer anything."
         />
       )}
 
@@ -81,118 +84,107 @@ function ProposalsView() {
 
       {mine && proposals === undefined && <LoadingList rows={2} />}
 
-      {proposals?.length === 0 && (
+      {mine && proposals?.length === 0 && (
         <EmptyState
-          title="No open proposals right now"
-          description="A university needs to submit a solution proposal before it appears here."
+          title="Nothing needs backing right now"
+          description="When a university team sends in a plan, it turns up here."
         />
       )}
 
       <div className="flex flex-col gap-4">
         {proposals?.map((p) => (
-          <Card key={p.projectId}><CardBody className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold">{p.title}</h2>
-                <p className="font-mono text-xs uppercase tracking-[0.1em] text-muted-foreground">
-                  {p.universityName} · {p.departmentName} · {p.district}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
-                    People affected
-                  </p>
-                  <p className="font-display text-2xl font-bold tabular-nums text-primary">
-                    {p.affected.toLocaleString("en-IN")}
+          <Card key={p.projectId}>
+            <CardBody className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-lg font-bold">{p.title}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {p.universityName} · {p.departmentName} · {p.district}
                   </p>
                 </div>
-                {p.domain && <Badge tone="primary">{DOMAIN_LABEL[p.domain]}</Badge>}
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="eyebrow">People affected</p>
+                    <p className="text-2xl font-bold tabular text-primary">
+                      {formatCount(p.affected)}
+                    </p>
+                  </div>
+                  {p.domain && <Badge tone="primary">{DOMAIN_LABEL[p.domain]}</Badge>}
+                </div>
               </div>
-            </div>
 
-            <p className="rounded-md border-l-[3px] border-primary bg-secondary px-3 py-2 text-sm">
-              <span className="font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
-                The problem this solves
-              </span>
-              <br />
-              {p.problemDescription}
-            </p>
+              <div className="rounded-md border-l-[3px] border-primary bg-secondary px-4 py-3">
+                <p className="eyebrow">The problem this solves</p>
+                <p className="mt-1 text-base">{p.problemDescription}</p>
+              </div>
 
-            {p.proposalSummary && (
-              <p className="max-w-[65ch] text-sm text-muted-foreground">
-                <strong className="font-semibold text-foreground">
-                  Proposed solution.{" "}
-                </strong>
-                {p.proposalSummary}
-              </p>
-            )}
+              {p.proposalSummary && (
+                <p className="text-base text-muted-foreground">
+                  <strong className="font-semibold text-foreground">
+                    Proposed solution.{" "}
+                  </strong>
+                  {p.proposalSummary}
+                </p>
+              )}
 
-            <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-border pt-3 font-mono text-xs">
-              {p.clusterSize > 1 && (
+              <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-border pt-3 text-sm">
+                {p.clusterSize > 1 && (
+                  <div className="flex gap-2">
+                    <dt className="text-muted-foreground">Reports merged</dt>
+                    <dd className="font-semibold tabular">{p.clusterSize}</dd>
+                  </div>
+                )}
                 <div className="flex gap-2">
-                  <dt className="uppercase tracking-[0.08em] text-muted-foreground">
-                    Reports merged
-                  </dt>
-                  <dd className="font-semibold tabular-nums">{p.clusterSize}</dd>
+                  <dt className="text-muted-foreground">Partners so far</dt>
+                  <dd className="font-semibold tabular">{p.pledgeCount}</dd>
+                </div>
+              </dl>
+
+              {offering === p.projectId ? (
+                <div className="flex flex-col gap-3 border-t border-border pt-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Select
+                      className="max-w-52"
+                      value={kind}
+                      onChange={(e) => setKind(e.target.value as PledgeKind)}
+                    >
+                      {PLEDGE_KINDS.map((k) => (
+                        <option key={k.value} value={k.value}>
+                          {k.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <Input
+                      autoFocus
+                      className="max-w-md"
+                      value={detail}
+                      onChange={(e) => setDetail(e.target.value)}
+                      placeholder="What exactly are you offering, and what do you need from them?"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      disabled={busy === p.projectId}
+                      onClick={() => submit(p.projectId)}
+                    >
+                      {busy === p.projectId ? "Sending…" : "Offer support"}
+                    </Button>
+                    <Button variant="ghost" onClick={() => setOffering(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-t border-border pt-4">
+                  <Button disabled={!mine} onClick={() => setOffering(p.projectId)}>
+                    Back this project
+                  </Button>
                 </div>
               )}
-              <div className="flex gap-2">
-                <dt className="uppercase tracking-[0.08em] text-muted-foreground">
-                  Partners so far
-                </dt>
-                <dd className="font-semibold tabular-nums">{p.pledgeCount}</dd>
-              </div>
-            </dl>
-
-            {offering === p.projectId ? (
-              <div className="flex flex-col gap-3 border-t border-border pt-4">
-                <div className="flex flex-wrap gap-2">
-                  <Select
-                    className="max-w-52"
-                    value={kind}
-                    onChange={(e) => setKind(e.target.value as PledgeKind)}
-                  >
-                    {PLEDGE_KINDS.map((k) => (
-                      <option key={k.value} value={k.value}>
-                        {k.label}
-                      </option>
-                    ))}
-                  </Select>
-                  <Input
-                    autoFocus
-                    className="max-w-md"
-                    value={detail}
-                    onChange={(e) => setDetail(e.target.value)}
-                    placeholder="What exactly are you offering?"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    disabled={busy === p.projectId}
-                    onClick={() => submit(p.projectId)}
-                  >
-                    {busy === p.projectId ? "Sending…" : "Offer support"}
-                  </Button>
-                  <Button variant="ghost" onClick={() => setOffering(null)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="border-t border-border pt-4">
-                <Button
-                  disabled={!mine}
-                  onClick={() => setOffering(p.projectId)}
-                >
-                  Back this project
-                </Button>
-              </div>
-            )}
             </CardBody>
           </Card>
         ))}
       </div>
-    </div>
+    </Page>
   );
 }

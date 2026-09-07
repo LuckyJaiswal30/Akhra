@@ -1,44 +1,71 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import {
+  Alert,
   Badge,
   Button,
   Card,
   CardBody,
   EmptyState,
   LoadingList,
+  Page,
   PageHeader,
 } from "@/components/ui";
+import { formatDateTime, machineDateTime } from "@/lib/datetime";
 
 export default function NotificationsPage() {
   const items = useQuery(api.notifications.list);
   const markAllRead = useMutation(api.notifications.markAllRead);
   const unread = items?.filter((i) => !i.read).length ?? 0;
 
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <Page width="column">
       <PageHeader
-        eyebrow="Updates"
-        title="Notifications"
-        description="Everything that has happened on the reports and projects you are part of."
+        title="Updates"
+        description="Everything that has happened on the reports and projects you are involved in. Times are shown in IST."
         actions={
           unread > 0 ? (
-            <Button variant="secondary" size="sm" onClick={() => markAllRead()}>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={busy}
+              onClick={async () => {
+                setError(null);
+                setBusy(true);
+                try {
+                  await markAllRead();
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : "Could not mark those read.",
+                  );
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
               Mark all {unread} read
             </Button>
           ) : undefined
         }
       />
 
+      {error && <Alert tone="danger">{error}</Alert>}
+
       {items === undefined && <LoadingList rows={3} />}
 
       {items?.length === 0 && (
         <EmptyState
-          title="Nothing yet"
-          description="You will hear from us when a report you made moves forward, or when a project you are on changes."
+          title="Nothing to tell you yet"
+          description="We will let you know the moment a report you sent in moves forward, or something changes on a project you are on."
         />
       )}
 
@@ -50,21 +77,19 @@ export default function NotificationsPage() {
                 <h2 className="font-semibold">{item.title}</h2>
                 <div className="flex items-center gap-3">
                   {!item.read && <Badge tone="primary">New</Badge>}
-                  <time className="font-mono text-xs text-muted-foreground">
-                    {new Date(item.createdAt).toLocaleString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  <time
+                    dateTime={machineDateTime(item.createdAt)}
+                    className="text-sm text-muted-foreground"
+                  >
+                    {formatDateTime(item.createdAt)}
                   </time>
                 </div>
               </div>
-              <p className="max-w-[65ch] text-sm text-muted-foreground">{item.body}</p>
+              <p className="text-base text-muted-foreground">{item.body}</p>
               {item.link && (
                 <Link
                   href={item.link}
-                  className="w-fit text-sm font-medium text-primary underline-offset-4 hover:underline"
+                  className="w-fit text-base font-medium text-primary underline-offset-4 hover:underline"
                 >
                   Open
                 </Link>
@@ -73,6 +98,6 @@ export default function NotificationsPage() {
           </Card>
         ))}
       </div>
-    </div>
+    </Page>
   );
 }

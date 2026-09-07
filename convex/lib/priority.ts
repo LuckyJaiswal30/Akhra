@@ -32,19 +32,6 @@ export function priorityScore(
   return Math.max(score, SEVERITY_FLOOR[Math.round(severity)] ?? 0);
 }
 
-export function priorityBreakdown(
-  severity: number,
-  affectedEstimate: number,
-  clusterSize: number,
-) {
-  return {
-    score: priorityScore(severity, affectedEstimate, clusterSize),
-    severity,
-    affectedEstimate,
-    clusterSize,
-  };
-}
-
 function clamp(value: number, min: number, max: number) {
   if (Number.isNaN(value)) return min;
   return Math.min(max, Math.max(min, value));

@@ -1,6 +1,22 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export default clerkMiddleware();
+const isPortalRoute = createRouteMatcher([
+  "/home(.*)",
+  "/report(.*)",
+  "/my-reports(.*)",
+  "/queue(.*)",
+  "/challenges(.*)",
+  "/projects(.*)",
+  "/proposals(.*)",
+  "/pledges(.*)",
+  "/notifications(.*)",
+  "/dashboard(.*)",
+  "/administration(.*)",
+]);
+
+export default clerkMiddleware(async (auth, request) => {
+  if (isPortalRoute(request)) await auth.protect();
+});
 
 export const config = {
   matcher: [

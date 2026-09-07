@@ -10,8 +10,10 @@ import {
   requireRole,
   requireUser,
 } from "./lib/auth";
+import { assertCompleteProfile } from "./lib/profile";
 import { priorityScore } from "./lib/priority";
 import { fuzzCoordinates } from "./lib/geo";
+import { isDistrict, isInJharkhand } from "./lib/districts";
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -35,9 +37,11 @@ export const submit = mutation({
     reporterKind,
     consentGiven: v.boolean(),
     photoIds: v.array(v.id("_storage")),
+    photoWaiver: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
+    assertCompleteProfile(user);
 
     if (!args.consentGiven) {
       throw new Error("We cannot accept a report without your consent.");
@@ -49,8 +53,31 @@ export const submit = mutation({
       throw new Error("Describe the problem in at least twenty characters.");
     }
 
-    const severity = Math.min(5, Math.max(1, Math.round(args.severity)));
-    const affectedEstimate = Math.max(0, Math.round(args.affectedEstimate));
+    // The district decides which officer this lands on, so it is checked here
+    // and not only in the browser.
+    if (!isDistrict(args.district)) {
+      throw new Error("Choose one of the 24 districts of Jharkhand.");
+    }
+    if (!isInJharkhand(args.lat, args.lng)) {
+      throw new Error("That location is outside Jharkhand.");
+    }
+
+    const waiver = args.photoWaiver?.trim();
+    if (args.photoIds.length === 0 && !waiver) {
+      throw new Error(
+        "Add a photo, or say why you cannot add one.",
+      );
+    }
+
+    if (!Number.isFinite(args.severity) || args.severity < 1 || args.severity > 5) {
+      throw new Error("Say how bad the problem is.");
+    }
+    if (!Number.isFinite(args.affectedEstimate) || args.affectedEstimate < 1) {
+      throw new Error("Say roughly how many people this affects.");
+    }
+
+    const severity = Math.round(args.severity);
+    const affectedEstimate = Math.round(args.affectedEstimate);
 
     const problemId = await ctx.db.insert("problems", {
       title: args.title.trim(),
@@ -67,6 +94,7 @@ export const submit = mutation({
       reporterId: user._id,
       reporterKind: args.reporterKind,
       consentGiven: true,
+      photoWaiver: args.photoIds.length === 0 ? waiver : undefined,
       createdAt: Date.now(),
     });
 
@@ -121,12 +149,17 @@ export const queue = query({
     status: v.optional(problemStatus),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, "officer");
+    const officer = await requireRole(ctx, "officer");
+
+    const posting = officer.district;
+    if (!posting) return [];
 
     const status = args.status ?? "submitted";
     const rows = await ctx.db
       .query("problems")
-      .withIndex("by_status_and_priority", (q) => q.eq("status", status))
+      .withIndex("by_district_status_and_priority", (q) =>
+        q.eq("district", posting).eq("status", status),
+      )
       .order("desc")
       .take(100);
 
@@ -175,13 +208,27 @@ export const queue = query({
 export const queueCounts = query({
   args: {},
   handler: async (ctx) => {
-    await requireRole(ctx, "officer");
-    const statuses = ["submitted", "routed", "accepted", "rejected"] as const;
+    const officer = await requireRole(ctx, "officer");
+    const posting = officer.district;
+    const statuses = [
+      "submitted",
+      "validated",
+      "routed",
+      "accepted",
+      "rejected",
+    ] as const;
+
     const counts: Record<string, number> = {};
     for (const status of statuses) {
+      if (!posting) {
+        counts[status] = 0;
+        continue;
+      }
       const rows = await ctx.db
         .query("problems")
-        .withIndex("by_status", (q) => q.eq("status", status))
+        .withIndex("by_district_status_and_priority", (q) =>
+          q.eq("district", posting).eq("status", status),
+        )
         .collect();
       counts[status] = rows.length;
     }
@@ -219,8 +266,10 @@ export const validateProblem = mutation({
   args: { problemId: v.id("problems") },
   handler: async (ctx, args) => {
     const officer = await requireRole(ctx, "officer");
+    assertCompleteProfile(officer);
     const problem = await ctx.db.get(args.problemId);
     if (!problem) throw new Error("That report no longer exists.");
+    assertOwnDistrict(problem.district, officer.district);
 
     await ctx.db.patch(args.problemId, {
       status: "validated",
@@ -251,12 +300,42 @@ export const validateProblem = mutation({
   },
 });
 
+export const retryRouting = mutation({
+  args: { problemId: v.id("problems") },
+  handler: async (ctx, args) => {
+    const officer = await requireRole(ctx, "officer");
+    assertCompleteProfile(officer);
+    const problem = await ctx.db.get(args.problemId);
+    if (!problem) throw new Error("That report no longer exists.");
+    assertOwnDistrict(problem.district, officer.district);
+
+    if (problem.status !== "validated") {
+      throw new Error("This report has already been sent on.");
+    }
+
+    await ctx.scheduler.runAfter(0, internal.routing.routeProblem, {
+      problemId: args.problemId,
+    });
+
+    await recordAudit(
+      ctx,
+      officer._id,
+      "retry_routing",
+      "problems",
+      args.problemId,
+      problem.title,
+    );
+  },
+});
+
 export const rejectProblem = mutation({
   args: { problemId: v.id("problems"), reason: v.string() },
   handler: async (ctx, args) => {
     const officer = await requireRole(ctx, "officer");
+    assertCompleteProfile(officer);
     const problem = await ctx.db.get(args.problemId);
     if (!problem) throw new Error("That report no longer exists.");
+    assertOwnDistrict(problem.district, officer.district);
 
     if (args.reason.trim().length < 5) {
       throw new Error("Give a reason so the person who reported it knows why.");
@@ -287,6 +366,18 @@ export const rejectProblem = mutation({
     );
   },
 });
+
+function assertOwnDistrict(district: string, posting: string | undefined) {
+  if (!posting) {
+    throw new Error(
+      "Your account has no district on it, so you cannot rule on reports. " +
+        "Ask an administrator to set one.",
+    );
+  }
+  if (district !== posting) {
+    throw new Error("That report is in another district.");
+  }
+}
 
 async function mediaUrls(ctx: QueryCtx, problemId: Id<"problems">) {
   const media = await ctx.db

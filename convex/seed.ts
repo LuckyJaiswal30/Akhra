@@ -161,15 +161,18 @@ export const problems = internalMutation({
   handler: async (ctx) => {
     const existing = await ctx.db.query("problems").take(1);
     const reporter =
-      (await ctx.db
-        .query("users")
-        .withIndex("by_role", (q) => q.eq("role", "citizen"))
-        .first()) ??
+      (
+        await ctx.db
+          .query("users")
+          .withIndex("by_role", (q) => q.eq("role", "citizen"))
+          .collect()
+      ).find((row) => row.status === "active") ??
       (await ctx.db.get(
         await ctx.db.insert("users", {
           clerkId: "seed-reporter",
           name: "Seeded reports",
           email: "seed@akhra.local",
+          status: "active",
           role: "citizen",
           trustScore: 50,
           createdAt: Date.now(),

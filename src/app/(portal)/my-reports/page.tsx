@@ -12,31 +12,26 @@ import {
   CardBody,
   EmptyState,
   LoadingList,
+  Page,
   PageHeader,
 } from "@/components/ui";
+import { formatDayMonthYear, machineDateTime } from "@/lib/datetime";
 import {
   DOMAIN_LABEL,
   SEVERITY_LABEL,
   STATUS_LABEL,
   STATUS_TONE,
 } from "@/lib/jharkhand";
-
-const TONE = {
-  neutral: "neutral",
-  go: "success",
-  warn: "warning",
-  stop: "danger",
-} as const;
+import { referenceFor } from "@/lib/reference";
 
 export default function MyReportsPage() {
   const reports = useQuery(api.problems.listMine);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <Page width="column">
       <PageHeader
-        eyebrow="Citizen"
         title="My reports"
-        description="Everything you have reported, and exactly where each one has reached."
+        description="Everything you have sent in, and where each one has got to."
         actions={
           <Link href="/report">
             <Button size="sm">Report a problem</Button>
@@ -48,8 +43,8 @@ export default function MyReportsPage() {
 
       {reports?.length === 0 && (
         <EmptyState
-          title="You have not reported anything yet"
-          description="When you report a problem it appears here, and you will be told each time it moves forward."
+          title="Nothing here yet"
+          description="Report something and it will show up here. We will tell you every time it moves forward."
           action={
             <Link href="/report">
               <Button>Report a problem</Button>
@@ -64,25 +59,26 @@ export default function MyReportsPage() {
             <CardBody className="flex flex-col gap-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <h2 className="text-lg font-bold leading-snug">
+                  <h2 className="text-lg font-semibold leading-snug">
                     {report.title}
                   </h2>
-                  <p className="eyebrow">
-                    {report.district}
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold tabular">
+                      {referenceFor(report._id, report.createdAt)}
+                    </span>{" "}
+                    · {report.district}
                     {report.block ? ` · ${report.block}` : ""} ·{" "}
-                    {new Date(report.createdAt).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    <time dateTime={machineDateTime(report.createdAt)}>
+                      {formatDayMonthYear(report.createdAt)}
+                    </time>
                   </p>
                 </div>
-                <Badge tone={TONE[STATUS_TONE[report.status] ?? "neutral"]}>
+                <Badge tone={STATUS_TONE[report.status] ?? "neutral"}>
                   {STATUS_LABEL[report.status] ?? report.status}
                 </Badge>
               </div>
 
-              <p className="max-w-[65ch] text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 {report.description}
               </p>
 
@@ -91,7 +87,7 @@ export default function MyReportsPage() {
                   {report.photoUrls.map((url) => (
                     <li
                       key={url}
-                      className="relative size-20 overflow-hidden rounded-lg border border-border"
+                      className="relative size-20 overflow-hidden rounded-sm border border-border"
                     >
                       <Image src={url} alt="" fill unoptimized className="object-cover" />
                     </li>
@@ -100,35 +96,32 @@ export default function MyReportsPage() {
               )}
 
               {report.clusterSize > 1 && (
-                <p className="rounded-lg border border-accent-foreground/15 bg-accent px-4 py-3 text-sm text-accent-foreground">
-                  <strong className="font-semibold">You are not alone.</strong>{" "}
+                <p className="rounded-md border border-accent-foreground/15 bg-accent px-4 py-3 text-base text-accent-foreground">
+                  <strong className="font-semibold">
+                    You are not the only one.
+                  </strong>{" "}
                   {report.clusterSize - 1} other{" "}
-                  {report.clusterSize === 2 ? "person has" : "people have"} reported
-                  the same problem. They have been counted together.
+                  {report.clusterSize === 2 ? "person has" : "people have"}{" "}
+                  reported this same problem. It is being counted as one thing,
+                  which makes it harder to ignore.
                 </p>
               )}
 
-              <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-border pt-3 font-mono text-xs">
+              <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-border pt-3 text-sm">
                 <div className="flex gap-2">
-                  <dt className="uppercase tracking-[0.08em] text-muted-foreground">
-                    Priority
-                  </dt>
-                  <dd className="font-semibold tabular-nums">
+                  <dt className="text-muted-foreground">Priority</dt>
+                  <dd className="font-semibold tabular">
                     {report.priority.toFixed(1)}
                   </dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="uppercase tracking-[0.08em] text-muted-foreground">
-                    Sorted as
-                  </dt>
+                  <dt className="text-muted-foreground">Sorted as</dt>
                   <dd className="font-semibold">
-                    {report.domain ? DOMAIN_LABEL[report.domain] : "Being sorted"}
+                    {report.domain ? DOMAIN_LABEL[report.domain] : "Still sorting"}
                   </dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="uppercase tracking-[0.08em] text-muted-foreground">
-                    Severity
-                  </dt>
+                  <dt className="text-muted-foreground">Severity</dt>
                   <dd className="font-semibold">
                     {SEVERITY_LABEL[report.severity]}
                   </dd>
@@ -136,7 +129,7 @@ export default function MyReportsPage() {
               </dl>
 
               {report.rejectionReason && (
-                <Alert tone="danger" title="Not taken forward">
+                <Alert tone="danger" title="Why this was closed">
                   {report.rejectionReason}
                 </Alert>
               )}
@@ -144,6 +137,6 @@ export default function MyReportsPage() {
           </Card>
         ))}
       </div>
-    </div>
+    </Page>
   );
 }

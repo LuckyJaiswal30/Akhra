@@ -1,10 +1,12 @@
+import { DISTRICT_NAMES, type DistrictName } from "@convex/lib/districts";
+
 export type District = {
-  name: string;
+  name: DistrictName;
   lat: number;
   lng: number;
 };
 
-export const DISTRICTS: District[] = [
+const COORDINATES: District[] = [
   { name: "Bokaro", lat: 23.6693, lng: 86.1511 },
   { name: "Chatra", lat: 24.2064, lng: 84.871 },
   { name: "Deoghar", lat: 24.4823, lng: 86.6963 },
@@ -31,15 +33,11 @@ export const DISTRICTS: District[] = [
   { name: "West Singhbhum", lat: 22.5667, lng: 85.8167 },
 ];
 
-export const LANGUAGES = [
-  { code: "hi", label: "Hindi" },
-  { code: "en", label: "English" },
-  { code: "sat", label: "Santhali" },
-  { code: "hoc", label: "Ho" },
-  { code: "kru", label: "Kurukh" },
-  { code: "nag", label: "Nagpuri" },
-  { code: "kht", label: "Khortha" },
-] as const;
+export const DISTRICTS: District[] = DISTRICT_NAMES.map((name) => {
+  const found = COORDINATES.find((row) => row.name === name);
+  if (!found) throw new Error(`No coordinates for ${name}`);
+  return found;
+});
 
 export const DOMAINS = [
   { value: "education", label: "Education" },
@@ -75,27 +73,30 @@ export const SEVERITY_LABEL: Record<number, string> = {
 };
 
 export const STATUS_LABEL: Record<string, string> = {
-  submitted: "Waiting for review",
-  validated: "Validated",
-  rejected: "Not taken forward",
+  submitted: "Waiting to be checked",
+  validated: "Confirmed by an officer",
+  rejected: "Closed, no action needed",
   routed: "Sent to a university",
-  accepted: "University accepted it",
-  in_progress: "Work in progress",
-  solution_proposed: "Solution proposed",
-  industry_backed: "Industry partner joined",
-  deployed: "Deployed",
+  accepted: "A team has taken it on",
+  in_progress: "Being worked on",
+  solution_proposed: "A fix has been proposed",
+  industry_backed: "A company is backing it",
+  deployed: "Fixed",
   closed: "Closed",
 };
 
-export const STATUS_TONE: Record<string, "neutral" | "go" | "warn" | "stop"> = {
-  submitted: "neutral",
-  validated: "go",
-  rejected: "stop",
-  routed: "go",
-  accepted: "go",
-  in_progress: "go",
-  solution_proposed: "go",
-  industry_backed: "go",
-  deployed: "go",
+export const STATUS_TONE: Record<
+  string,
+  "neutral" | "success" | "warning" | "danger"
+> = {
+  submitted: "warning",
+  validated: "success",
+  rejected: "danger",
+  routed: "success",
+  accepted: "success",
+  in_progress: "success",
+  solution_proposed: "success",
+  industry_backed: "success",
+  deployed: "success",
   closed: "neutral",
 };

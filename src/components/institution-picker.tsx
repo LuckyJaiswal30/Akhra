@@ -1,37 +1,53 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 
 export function InstitutionPicker() {
-  const universities = useQuery(api.institutions.list);
+  const options = useQuery(api.institutions.list);
   const mine = useQuery(api.institutions.myUniversity);
   const setMine = useMutation(api.institutions.setMyUniversity);
+  const [problem, setProblem] = useState<string | null>(null);
 
-  if (!universities || universities.length === 0) return null;
+  if (!options || options.length === 0) return null;
 
   return (
-    <label className="flex items-center gap-2 text-xs">
-      <span className="font-mono uppercase tracking-[0.1em] text-muted-foreground">
-        Institution
-      </span>
-      <select
-        value={mine?._id ?? ""}
-        onChange={(event) =>
-          setMine({ universityId: event.target.value as Id<"universities"> })
-        }
-        className="max-w-48 rounded-md border border-input bg-card px-2 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      >
-        <option value="" disabled>
-          Choose one
-        </option>
-        {universities.map((u) => (
-          <option key={u._id} value={u._id}>
-            {u.shortName}
+    <div className="flex flex-col">
+      <label className="flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">Institution</span>
+        <select
+          value={mine?._id ?? ""}
+          onChange={async (event) => {
+            setProblem(null);
+            try {
+              await setMine({
+                universityId: event.target.value as Id<"universities">,
+              });
+            } catch (cause) {
+              setProblem(
+                cause instanceof Error ? cause.message : "Could not save that.",
+              );
+            }
+          }}
+          className="h-9 max-w-48 rounded-sm border border-input bg-card px-2 text-sm"
+        >
+          <option value="" disabled>
+            Choose one
           </option>
-        ))}
-      </select>
-    </label>
+          {options.map((option) => (
+            <option key={option._id} value={option._id}>
+              {option.shortName}
+            </option>
+          ))}
+        </select>
+      </label>
+      {problem && (
+        <p role="alert" className="mt-1 text-sm font-medium text-danger">
+          {problem}
+        </p>
+      )}
+    </div>
   );
 }

@@ -7,12 +7,16 @@ import { useQuery } from "convex/react";
 import { UserButton } from "@clerk/nextjs";
 import { api } from "@convex/_generated/api";
 import { NAV, ROLE_LABEL, type Role } from "@/lib/roles";
-import { RoleSwitcher } from "@/components/role-switcher";
-import { DEMO_MODE } from "@/lib/flags";
 import { InstitutionPicker } from "@/components/institution-picker";
 import { PartnerPicker } from "@/components/partner-picker";
+import { SkipLink, Wordmark } from "@/components/site-chrome";
+import { LoadingList, Page } from "@/components/ui";
+import {
+  AkhraProfileIcon,
+  AkhraProfilePage,
+} from "@/components/akhra-profile";
+import { ProfileRequired } from "@/components/profile-required";
 import { cn } from "@/lib/utils";
-import { Wordmark } from "@/components/mark";
 
 export function PortalShell({ children }: { children: ReactNode }) {
   const me = useQuery(api.users.current);
@@ -21,78 +25,115 @@ export function PortalShell({ children }: { children: ReactNode }) {
 
   const role = me?.role as Role | undefined;
   const items = role ? NAV.filter((item) => item.roles.includes(role)) : [];
+  const incomplete = Boolean(me && !me.profileComplete);
 
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex flex-1 flex-col">
+      <SkipLink />
+
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3">
-          <Link href="/home" className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
+        <div className="mx-auto flex w-full max-w-page flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4 sm:px-6">
+          <Link href="/home" className="rounded-sm">
             <Wordmark />
           </Link>
 
-          <nav className="flex flex-wrap items-center gap-1">
-            {items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-sm transition-colors",
-                  pathname === item.href
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="ml-auto flex flex-wrap items-center gap-x-5 gap-y-2 max-sm:w-full max-sm:justify-end">
+            {(role === "faculty" || role === "student") && <InstitutionPicker />}
+            {role === "industry" && <PartnerPicker />}
 
-          <div className="ml-auto flex items-center gap-4">
             <Link
               href="/notifications"
-              className="rounded-full px-2 py-0.5 font-mono text-[0.7rem] transition-colors"
-              style={
-                typeof unread === "number" && unread > 0
-                  ? undefined
-                  : { color: "var(--muted-foreground)" }
-              }
+              className="flex min-h-11 items-center gap-2 text-base text-muted-foreground transition-colors hover:text-foreground"
             >
-              {typeof unread === "number" && unread > 0 ? (
-                <span className="rounded-full bg-primary px-2 py-0.5 text-primary-foreground">
-                  {unread} new
+              Updates
+              {typeof unread === "number" && unread > 0 && (
+                <span className="rounded-sm bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground tabular">
+                  {unread}
+                  <span className="sr-only"> unread</span>
                 </span>
-              ) : (
-                "Notifications"
               )}
             </Link>
-            {(role === "faculty" || role === "student") && (
-              <InstitutionPicker />
-            )}
-            {role === "industry" && <PartnerPicker />}
-            {DEMO_MODE && role && <RoleSwitcher current={role} />}
-            <UserButton />
+
+            <div className="flex items-center gap-3 border-l border-border pl-5">
+              <span className="hidden text-right leading-tight sm:block">
+                <span className="block text-sm font-medium text-foreground">
+                  {me?.name ?? "…"}
+                </span>
+                <span className="block text-sm text-muted-foreground">
+                  {role ? ROLE_LABEL[role] : "…"}
+                  {me?.district ? ` · ${me.district}` : ""}
+                </span>
+              </span>
+              <UserButton>
+                <UserButton.UserProfilePage label="account" />
+                <UserButton.UserProfilePage
+                  label="District & designation"
+                  url="district"
+                  labelIcon={<AkhraProfileIcon />}
+                >
+                  <AkhraProfilePage />
+                </UserButton.UserProfilePage>
+                <UserButton.UserProfilePage label="security" />
+              </UserButton>
+            </div>
           </div>
         </div>
+
+        {items.length > 0 && (
+          <nav aria-label="Sections" className="border-t border-border">
+            <div className="mx-auto w-full max-w-page px-4 sm:px-6">
+              <div className="-mx-3 flex flex-wrap gap-x-1">
+              {items.map((item) => {
+                const active = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "-mb-px flex min-h-11 shrink-0 items-center border-b-2 px-3 text-base whitespace-nowrap transition-colors",
+                      active
+                        ? "border-primary font-semibold text-foreground"
+                        : "border-transparent text-muted-foreground hover:border-border-strong hover:text-foreground",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+              </div>
+            </div>
+          </nav>
+        )}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-page flex-1 px-4 py-10 sm:px-6 lg:py-12"
+      >
         {me === undefined ? (
-          <p className="font-mono text-sm text-muted-foreground">Loading…</p>
+          <Page width="column" aria-busy="true" aria-live="polite">
+            <span className="sr-only">Loading</span>
+            <LoadingList rows={2} />
+          </Page>
         ) : me === null ? (
-          <p className="text-sm text-muted-foreground">
-            Setting up your account. Refresh in a moment if this does not clear.
-          </p>
+          <Page width="column">
+            <p className="text-base text-muted-foreground" role="status">
+              Setting up your account&hellip;
+            </p>
+            <LoadingList rows={1} />
+          </Page>
+        ) : incomplete ? (
+          <Page width="column" aria-hidden="true">
+            <LoadingList rows={2} />
+          </Page>
         ) : (
           children
         )}
       </main>
 
-      <footer className="border-t border-border px-6 py-4">
-        <p className="mx-auto w-full max-w-6xl font-mono text-[0.7rem] uppercase tracking-[0.1em] text-muted-foreground">
-          Akhra · SIH problem statement 43 · signed in as{" "}
-          {role ? ROLE_LABEL[role] : "…"}
-        </p>
-      </footer>
+      <ProfileRequired />
     </div>
   );
 }

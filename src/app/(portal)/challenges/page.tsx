@@ -15,9 +15,11 @@ import {
   Field,
   Input,
   LoadingList,
+  Page,
   PageHeader,
 } from "@/components/ui";
 import { RoleGate } from "@/components/role-gate";
+import { formatCount } from "@/lib/datetime";
 import { DOMAIN_LABEL } from "@/lib/jharkhand";
 
 export default function ChallengesPage() {
@@ -47,25 +49,28 @@ function ChallengesView() {
       setDeclining(null);
       setReason("");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "That did not work.");
+      setError(
+        cause instanceof Error ? cause.message : "That did not go through.",
+      );
     }
     setBusy(null);
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <Page width="column">
       <PageHeader
-        eyebrow="University"
-        title="Assigned challenges"
-        description="Validated problems routed to your institution, with the reason each one came to you."
+        title="Problems sent to you"
+        description="Real problems an officer has confirmed and sent to your institution, with why each one landed with you."
       />
 
       {error && <Alert tone="danger">{error}</Alert>}
 
-      {!mine && (
+      {mine === undefined && <LoadingList rows={2} />}
+
+      {mine === null && (
         <EmptyState
-          title="Choose your institution"
-          description="Pick it from the dropdown in the header and anything routed to it will appear here."
+          title="Pick your institution first"
+          description="Choose it from the dropdown at the top, and anything sent to it will show up here."
         />
       )}
 
@@ -73,8 +78,8 @@ function ChallengesView() {
 
       {mine && challenges?.length === 0 && (
         <EmptyState
-          title={`Nothing routed to ${mine.shortName} yet`}
-          description="Validate a report as a government officer and matching institutions are suggested within a few seconds."
+          title={`Nothing for ${mine.shortName} yet`}
+          description="Nothing has been sent your way yet. Once an officer confirms a report that matches what you do, it will appear here."
         />
       )}
 
@@ -83,22 +88,24 @@ function ChallengesView() {
           <Card key={c.routingId}>
             <CardBody className="flex flex-col gap-4">
               <div className="flex items-start gap-4">
-                <div className="flex w-16 shrink-0 flex-col items-center rounded-lg bg-accent py-2">
-                  <span className="font-display text-2xl font-extrabold leading-none tabular-nums text-accent-foreground">
+                <div className="flex w-16 shrink-0 flex-col items-center rounded-md bg-accent py-2">
+                  <span className="text-2xl font-bold leading-none tabular text-accent-foreground">
                     {Math.round(c.matchScore * 100)}
                   </span>
-                  <span className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.1em] text-accent-foreground/70">
+                  <span className="mt-1 text-xs text-accent-foreground/70">
                     Match
                   </span>
                 </div>
 
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <h2 className="text-lg font-bold leading-snug">{c.title}</h2>
                   <p className="eyebrow">
                     {c.district} · priority {c.priority.toFixed(1)}
                   </p>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {c.domain && <Badge tone="primary">{DOMAIN_LABEL[c.domain]}</Badge>}
+                    {c.domain && (
+                      <Badge tone="primary">{DOMAIN_LABEL[c.domain]}</Badge>
+                    )}
                     {c.clusterSize > 1 && (
                       <Badge tone="neutral">{c.clusterSize} reports merged</Badge>
                     )}
@@ -106,28 +113,22 @@ function ChallengesView() {
                 </div>
               </div>
 
-              <div className="rounded-lg bg-secondary px-4 py-3">
+              <div className="rounded-md bg-secondary px-4 py-3">
                 <p className="eyebrow">Why your department</p>
-                <p className="mt-1 text-sm">{c.reason}</p>
+                <p className="mt-1 text-base">{c.reason}</p>
               </div>
 
-              <p className="max-w-[68ch] text-sm text-muted-foreground">
-                {c.description}
-              </p>
+              <p className="text-base text-muted-foreground">{c.description}</p>
 
-              <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-border pt-3 font-mono text-xs">
+              <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-border pt-3 text-sm">
                 <div className="flex gap-2">
-                  <dt className="uppercase tracking-[0.08em] text-muted-foreground">
-                    Suggested department
-                  </dt>
+                  <dt className="text-muted-foreground">Suggested department</dt>
                   <dd className="font-semibold">{c.departmentName}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="uppercase tracking-[0.08em] text-muted-foreground">
-                    People affected
-                  </dt>
-                  <dd className="font-semibold tabular-nums">
-                    {c.affected.toLocaleString("en-IN")}
+                  <dt className="text-muted-foreground">People affected</dt>
+                  <dd className="font-semibold tabular">
+                    {formatCount(c.affected)}
                   </dd>
                 </div>
               </dl>
@@ -172,7 +173,10 @@ function ChallengesView() {
                 >
                   Accept and form a team
                 </Button>
-                <Button variant="secondary" onClick={() => setDeclining(c.routingId)}>
+                <Button
+                  variant="secondary"
+                  onClick={() => setDeclining(c.routingId)}
+                >
                   Decline
                 </Button>
               </CardFooter>
@@ -180,6 +184,6 @@ function ChallengesView() {
           </Card>
         ))}
       </div>
-    </div>
+    </Page>
   );
 }

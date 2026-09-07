@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export const role = v.union(
+  v.literal("admin"),
   v.literal("citizen"),
   v.literal("officer"),
   v.literal("faculty"),
@@ -73,23 +74,63 @@ export const partnerKind = v.union(
 const EMBEDDING_DIMENSIONS = 768;
 
 export default defineSchema({
+  /**
+   * A row survives account deletion so that audit entries and reports still
+   * resolve to something, but a deleted row carries no personal data, holds
+   * no role, and is invisible to every lookup. `status` is the only thing
+   * that decides whether this person exists as far as the app is concerned.
+   */
   users: defineTable({
     clerkId: v.string(),
     name: v.string(),
     email: v.string(),
+    emailVerified: v.optional(v.boolean()),
+    status: v.union(v.literal("active"), v.literal("deleted")),
     role,
     phone: v.optional(v.string()),
     district: v.optional(v.string()),
     universityId: v.optional(v.id("universities")),
     departmentId: v.optional(v.id("departments")),
     partnerId: v.optional(v.id("partners")),
+    designation: v.optional(v.string()),
+    profileCompletedAt: v.optional(v.number()),
+    roleAssignedBy: v.optional(v.id("users")),
+    roleAssignedAt: v.optional(v.number()),
     trustScore: v.number(),
     createdAt: v.number(),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_clerk_id", ["clerkId"])
+    .index("by_email", ["email"])
     .index("by_role", ["role"])
     .index("by_university", ["universityId"])
     .index("by_partner", ["partnerId"]),
+
+  /**
+   * An administrator provisions elevated access by inviting an email
+   * address. Nobody can raise their own role: the invitation is applied
+   * when that person next signs in.
+   */
+  invitations: defineTable({
+    email: v.string(),
+    role,
+    universityId: v.optional(v.id("universities")),
+    partnerId: v.optional(v.id("partners")),
+    district: v.optional(v.string()),
+    designation: v.optional(v.string()),
+    note: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("revoked"),
+    ),
+    invitedBy: v.id("users"),
+    createdAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+    acceptedBy: v.optional(v.id("users")),
+  })
+    .index("by_email", ["email"])
+    .index("by_status", ["status"]),
 
   problems: defineTable({
     title: v.string(),
@@ -109,6 +150,7 @@ export default defineSchema({
     reporterId: v.id("users"),
     reporterKind,
     consentGiven: v.boolean(),
+    photoWaiver: v.optional(v.string()),
     sourceNote: v.optional(v.string()),
     sourceUrl: v.optional(v.string()),
     sourceStatus: v.optional(
@@ -127,6 +169,7 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_status_and_priority", ["status", "priority"])
     .index("by_district", ["district"])
+    .index("by_district_status_and_priority", ["district", "status", "priority"])
     .index("by_domain", ["domain"])
     .index("by_cluster", ["clusterId"])
     .index("by_reporter", ["reporterId"])

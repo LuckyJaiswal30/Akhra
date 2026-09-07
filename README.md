@@ -77,8 +77,14 @@ against local administration. So:
 - **There is no public database API.** Clients can only call server functions we
   wrote, and every one of them opens with `requireUser` or `requireRole`. A
   leaked key exposes nothing because there's nothing to call into.
-- **Exact coordinates are officer-only.** Universities, industry and the public
-  see the district and a coordinate fuzzed to roughly 500 metres.
+- **Roles are matched against the identity provider, never the browser.** An
+  administrator invites an email address; the invitation is applied only when
+  the `email` claim in the Clerk JWT matches it. Nothing a client sends can
+  raise its own access.
+- **Exact coordinates are officer-only, and only in their own district.**
+  Universities, industry and the public see the district and a coordinate
+  fuzzed to roughly 500 metres. An officer sees the queue for the district
+  they are posted in and nowhere else.
 - **Officer decisions are audit logged** in the same mutation that makes the
   change, not as an afterthought.
 - **Only problem text and district reach a model prompt.** No names, no contact
@@ -114,10 +120,20 @@ they're read by functions running on Convex's servers:
 
 ```bash
 npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<your-app>.clerk.accounts.dev
+npx convex env set BOOTSTRAP_ADMIN_EMAIL you@example.com
 npx convex env set GOOGLE_GENERATIVE_AI_API_KEY <key>
 npx convex env set GROQ_API_KEY <key>      # optional second provider
-npx convex env set DEMO_MODE true          # enables the role switcher
 ```
+
+The Clerk JWT template named `convex` has to include an email claim:
+
+```json
+{ "aud": "convex", "email": "{{user.primary_email_address}}" }
+```
+
+That claim is what the server matches invitations against. Without it nobody
+can be given a role, and the account named in `BOOTSTRAP_ADMIN_EMAIL` cannot
+claim the first administrator.
 
 Then seed and check:
 
@@ -130,12 +146,51 @@ npx convex run seed:partners
 npx convex run selftest:runAll
 ```
 
+## Accounts
+
+An account exists in three places, and one of them decides: `users.status`.
+
+```
+Clerk signs you in
+  → users.ensureUser        idempotent, keyed on the Clerk id
+  → invitation applied      matched on the verified email claim, never on input
+  → profile complete?       district + designation, or you land on /welcome
+  → role                    handed out by an administrator
+  → the rest of the app
+```
+
+Deleting an account tombstones the row: personal data scrubbed, role dropped
+to citizen, Clerk id neutralised, notifications and project memberships
+removed. The row itself survives so that audit entries and reports still
+resolve to something. Nothing that looks up a person — sign-in, the
+administration directory, invitations, the bootstrap admin check — sees a
+tombstone.
+
+Deletion arrives from two directions and both land on the same mutation:
+`account.deleteMyAccount` from `/account`, and the `user.deleted` webhook at
+`<convex site>/clerk-webhook` for deletions made anywhere else. If the two
+ever drift, `account:purgeMissingClerkIds` reconciles against a list of live
+Clerk ids.
+
+## Dates
+
+Everything is stored as an epoch millisecond and formatted for display in
+`Asia/Kolkata` through `src/lib/datetime.ts`. Nothing calls `toLocaleString`
+directly, so a server in UTC and a browser in IST draw the same page.
+
+Clerk renders the timestamps in its own security emails, in its own timezone,
+and its template language has no date helper — so that one cannot be fixed
+from here. `scripts/clerk-email-templates.mjs` rewrites those templates to
+drop the misleading stamp and link to `/account`, which lists every session
+in IST and can sign one out without leaving the app.
+
 ## Tests
 
-`selftest:runAll` runs eighteen assertions against the live deployment — seed
+`selftest:runAll` runs twenty assertions against the live deployment — seed
 integrity, cluster consistency, whether stored priority scores still match the
-formula, embedding dimensionality and normalisation, vector search quality, and
-that public queries actually refuse unauthenticated callers.
+formula, embedding dimensionality and normalisation, vector search quality,
+whether every officer is actually posted to a district, and that the public
+functions refuse unauthenticated callers.
 
 It's caught things the UI hid. At one point routing was silently returning
 nothing because department embeddings had been wiped; the app looked fine.

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser, notify, recordAudit, requireRole } from "./lib/auth";
+import { assertCompleteProfile } from "./lib/profile";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -8,7 +9,8 @@ export const mine = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
-    if (!user?.universityId) return [];
+    if (user?.role !== "faculty" && user?.role !== "student") return [];
+    if (!user.universityId) return [];
 
     const rows = await ctx.db
       .query("projects")
@@ -81,6 +83,7 @@ export const submitProposal = mutation({
   args: { projectId: v.id("projects"), summary: v.string() },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, "faculty", "student");
+    assertCompleteProfile(user);
     const project = await ctx.db.get(args.projectId);
     if (!project) throw new Error("That project no longer exists.");
     if (project.universityId !== user.universityId) {
@@ -130,6 +133,9 @@ export const addMilestone = mutation({
     if (project.universityId !== user.universityId) {
       throw new Error("That project belongs to another institution.");
     }
+    if (args.title.trim().length < 5) {
+      throw new Error("Give the milestone a title of at least five characters.");
+    }
 
     const existing = await ctx.db
       .query("milestones")
@@ -152,6 +158,12 @@ export const advanceMilestone = mutation({
     const user = await requireRole(ctx, "faculty", "student");
     const milestone = await ctx.db.get(args.milestoneId);
     if (!milestone) throw new Error("That milestone no longer exists.");
+
+    const owner = await ctx.db.get(milestone.projectId);
+    if (!owner) throw new Error("That project no longer exists.");
+    if (owner.universityId !== user.universityId) {
+      throw new Error("That project belongs to another institution.");
+    }
 
     const next =
       milestone.status === "pending"

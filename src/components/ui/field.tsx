@@ -4,7 +4,7 @@ import { ComponentProps, ReactNode, useId } from "react";
 import { cn } from "@/lib/utils";
 
 const control =
-  "w-full rounded-md border bg-card px-3 text-sm text-foreground transition-colors " +
+  "w-full rounded-sm border border-input bg-card px-3 text-base text-foreground transition-colors " +
   "placeholder:text-muted-foreground/70 " +
   "disabled:cursor-not-allowed disabled:opacity-55 " +
   "aria-[invalid=true]:border-danger aria-[invalid=true]:bg-danger-surface/40";
@@ -32,8 +32,8 @@ export function Field({
   const describedBy = [errorId, hintId].filter(Boolean).join(" ") || undefined;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-foreground">
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="text-base font-medium text-foreground">
         {label}
         {required && (
           <span className="ml-1 text-danger" aria-hidden="true">
@@ -49,12 +49,12 @@ export function Field({
       })}
 
       {error && (
-        <p id={errorId} className="text-xs font-medium text-danger">
+        <p id={errorId} role="alert" className="text-sm font-medium text-danger">
           {error}
         </p>
       )}
       {hint && !error && (
-        <p id={hintId} className="text-xs text-muted-foreground">
+        <p id={hintId} className="text-sm text-muted-foreground">
           {hint}
         </p>
       )}
@@ -63,17 +63,17 @@ export function Field({
 }
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
-  return <input {...props} className={cn(control, "h-10", className)} />;
+  return <input {...props} className={cn(control, "h-11", className)} />;
 }
 
 export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
   return (
-    <textarea {...props} className={cn(control, "min-h-24 py-2.5", className)} />
+    <textarea {...props} className={cn(control, "min-h-28 py-2", className)} />
   );
 }
 
 export function Select({ className, ...props }: ComponentProps<"select">) {
-  return <select {...props} className={cn(control, "h-10", className)} />;
+  return <select {...props} className={cn(control, "h-11", className)} />;
 }
 
 export function Checkbox({
@@ -89,11 +89,11 @@ export function Checkbox({
         id={id}
         type="checkbox"
         className={cn(
-          "mt-0.5 size-4.5 shrink-0 rounded border-input accent-[var(--primary)]",
+          "mt-1 size-5 shrink-0 rounded-sm border-input accent-[var(--primary)]",
           className,
         )}
       />
-      <label htmlFor={id} className="text-sm leading-relaxed text-foreground">
+      <label htmlFor={id} className="text-base leading-relaxed text-foreground">
         {label}
       </label>
     </div>

@@ -1,6 +1,9 @@
 export { Button, Spinner } from "./button";
 export { Field, Input, Textarea, Select, Checkbox } from "./field";
 export {
+  Page,
+  Split,
+  Aside,
   Card,
   CardBody,
   CardFooter,
@@ -11,7 +14,9 @@ export {
   CardSkeleton,
   LoadingList,
   Tabs,
+  TabPanel,
   PageHeader,
 } from "./surface";
-export { BarList, Funnel, Stat, Panel } from "./chart";
+export type { PageWidth } from "./surface";
+export { BarList, Funnel, Panel } from "./chart";
 export type { BarRow } from "./chart";
