@@ -1,141 +1,145 @@
 # Akhra
 
-Every village in Jharkhand already has a place where people bring their
-problems. An _akhra_ is the open ground at the centre of the village — where
-Oraon, Munda and Ho communities gather to talk things through and decide what to
-do. This is the digital one, and unlike a complaints portal it doesn't stop at
-"issue logged". It runs all the way to something actually being built.
+Every village in Jharkhand has an _akhra_—an open space where people gather to discuss local issues and decide on solutions. **Akhra** brings that idea online by connecting citizens, government, universities, and industry to transform community problems into real-world projects.
 
-Made for Smart India Hackathon problem statement 43, Government of Jharkhand.
+Built for **Smart India Hackathon 2026 – Problem Statement 43 (Government of Jharkhand).**
 
-## The problem we're trying to solve
+---
 
-Three groups in Jharkhand never meet.
+## The Problem
 
-Citizens report thousands of local problems a year — a handpump giving muddy
-water, a school running on one teacher, wells drying a month early. Most of it
-goes nowhere.
+Three important stakeholders in Jharkhand rarely work together.
 
-Universities need real project topics. Students invent fake ones instead, build
-them for a viva, and throw them away.
+Citizens report thousands of local issues every year—unsafe drinking water, under-resourced schools, damaged roads, human-wildlife conflict, and many more. While these problems are documented, many never progress beyond being complaints.
 
-Industry holds CSR budgets, labs and manufacturing capacity, with no pipeline of
-validated problems worth funding.
+Universities constantly look for meaningful project ideas, yet students often build solutions around artificial or hypothetical problems.
 
-Akhra is the pipeline between them.
+Industry has CSR funding, technical expertise, and manufacturing capability, but lacks a structured pipeline of validated community problems worth supporting.
 
-## How it works
+**Akhra bridges these disconnected ecosystems** by creating a workflow where verified public issues become student-led projects supported by government and industry.
 
-A citizen reports a problem with a photograph and a location, in whichever
-language they're comfortable in. From there:
+---
 
-1. It gets sorted into one of ten domains, with severity read from the harm
-   described rather than how upset the writer sounds.
-2. It gets merged with everyone else reporting the same thing. Six people
-   describing one broken handpump becomes one problem affecting 900 people, not
-   six rows in a queue.
-3. A government officer validates it. Every decision goes to an audit log.
-4. It's routed to the university department that actually works on this, with
-   the reasoning shown on screen — not just a number.
-5. The university forms a student and faculty team and proposes a solution.
-6. An industry partner backs it with mentoring, funding or prototyping.
-7. Milestones are tracked until something is deployed.
-8. The person who reported it is told what happened.
+## Features
 
-That last step is the one that matters. It's the difference between a grievance
-system and this.
+- Multilingual citizen issue reporting
+- Photo and location-based submissions
+- AI-powered duplicate detection
+- Automatic issue categorisation and prioritisation
+- Government verification workflow
+- Explainable university department routing
+- Student project lifecycle management
+- Industry and CSR collaboration
+- Progress tracking and citizen notifications
+- Complete audit trail for administrative actions
 
-## The two bits that were hard
+---
 
-**Finding duplicates.** Two people describing the same contaminated handpump
-share almost no words — one says "muddy water", the other says "the borewell
-smells". Keyword search finds nothing. We embed both and compare meaning, and
-merge anything above 0.86 cosine similarity within the same district or 25 km.
+## How It Works
 
-**Routing that explains itself.** We build an expertise profile for each of 34
-university departments from what its faculty actually publish and teach, embed
-those too, and match problems against them. The officer sees _"BIT Mesra, Civil
-and Environmental Engineering — 24 faculty working on drinking water treatment
-and groundwater contamination"_, and can override it.
+1. A citizen reports a local problem with a photograph, location, and description in their preferred language.
+2. AI categorises the issue and estimates its severity based on the reported impact.
+3. Similar reports are grouped into a single community problem using semantic similarity.
+4. Government officers review and validate the submission.
+5. The problem is routed to the most suitable university department through explainable AI recommendations.
+6. Students and faculty propose a practical solution.
+7. Industry partners contribute funding, mentoring, or prototyping support.
+8. Progress is tracked until deployment, and citizens receive updates throughout the process.
 
-## Stack
+---
 
-|            |                                                        |
-| ---------- | ------------------------------------------------------ |
-| Framework  | Next.js 16, App Router                                 |
-| UI         | Tailwind v4, shadcn, hand-built charts                 |
-| Backend    | Convex                                                 |
-| Auth       | Clerk                                                  |
-| AI         | Gemini, falling back to Groq, falling back to keywords |
-| Embeddings | `gemini-embedding-001`, 768 dimensions, L2 normalised  |
+## Technical Highlights
 
-## On security
+### Semantic Duplicate Detection
 
-This holds photographs of people's homes, GPS coordinates, and complaints
-against local administration. So:
+Community members often describe the same issue using completely different wording. Traditional keyword matching fails in these situations.
 
-- **There is no public database API.** Clients can only call server functions we
-  wrote, and every one of them opens with `requireUser` or `requireRole`. A
-  leaked key exposes nothing because there's nothing to call into.
-- **Roles are matched against the identity provider, never the browser.** An
-  administrator invites an email address; the invitation is applied only when
-  the `email` claim in the Clerk JWT matches it. Nothing a client sends can
-  raise its own access.
-- **Exact coordinates are officer-only, and only in their own district.**
-  Universities, industry and the public see the district and a coordinate
-  fuzzed to roughly 500 metres. An officer sees the queue for the district
-  they are posted in and nowhere else.
-- **Officer decisions are audit logged** in the same mutation that makes the
-  change, not as an afterthought.
-- **Only problem text and district reach a model prompt.** No names, no contact
-  details, no photographs.
-- Photos are served through short-lived signed URLs. Never a public bucket.
+Akhra uses semantic embeddings to compare the meaning of reports rather than their exact words, allowing duplicate complaints to be merged into a single community issue with a clearer estimate of its overall impact.
 
-## About the data
+---
 
-`convex/data/problems.ts` holds 150 problems across all 24 Jharkhand districts.
+### Explainable University Routing
 
-Be clear about what this is. The **problems are real and documented** — fluoride
-contamination in Garhwa's Majhiaon block, the Jharia underground coal fire,
-7,600-odd schools running on a single teacher, elephant conflict in Saranda.
-Every row carries a source note and a URL, and a status recording whether we
-checked that source against the claim. We verified all 61 unique sources; four
-turned out to be wrong and were corrected.
+Every university department is represented through an expertise profile built from its academic domains and faculty research.
 
-The **wording of each report is written as a citizen would describe it**,
-because no dataset of real citizen complaints is published anywhere. We're not
-going to pretend otherwise.
+Incoming problems are matched against these profiles using vector similarity, allowing the system to recommend the most relevant department while also explaining why that recommendation was made. Government officers can review or override the recommendation whenever required.
 
-## Running it
+---
+
+## Technology Stack
+
+| Category       | Technology                 |
+| -------------- | -------------------------- |
+| Framework      | Next.js 16 (App Router)    |
+| UI             | Tailwind CSS v4, shadcn/ui |
+| Backend        | Convex                     |
+| Authentication | Clerk                      |
+| AI             | Gemini with Groq fallback  |
+| Embeddings     | `gemini-embedding-001`     |
+
+---
+
+## Security & Privacy
+
+Akhra is designed to handle sensitive public reports responsibly.
+
+- Role-based access control enforced through Clerk and Convex
+- Administrative actions recorded through immutable audit logs
+- Exact coordinates visible only to authorised government officers
+- Universities and industry partners receive privacy-preserving location data
+- AI models receive only the information required for classification and routing
+- Photographs are served through short-lived signed URLs
+
+---
+
+## Demo Dataset
+
+The project includes a curated dataset covering all **24 districts of Jharkhand** to demonstrate the complete workflow.
+
+The dataset contains representative issues such as drinking water contamination, mining hazards, wildlife conflict, education, healthcare, sanitation, and infrastructure challenges, allowing the platform to simulate realistic reporting, verification, routing, and project management scenarios.
+
+---
+
+## Getting Started
+
+Install dependencies.
 
 ```bash
 pnpm install
-cp .env.example .env.local     # add your Clerk keys
-npx convex dev                 # leave running in its own terminal
+cp .env.example .env.local
+```
+
+Start the Convex development server.
+
+```bash
+npx convex dev
+```
+
+Start the Next.js application.
+
+```bash
 pnpm dev
 ```
 
-Some values live on the Convex deployment rather than in `.env.local`, because
-they're read by functions running on Convex's servers:
+Configure the required Convex environment variables.
 
 ```bash
 npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<your-app>.clerk.accounts.dev
 npx convex env set BOOTSTRAP_ADMIN_EMAIL you@example.com
 npx convex env set GOOGLE_GENERATIVE_AI_API_KEY <key>
-npx convex env set GROQ_API_KEY <key>      # optional second provider
+npx convex env set GROQ_API_KEY <key>   # Optional
 ```
 
-The Clerk JWT template named `convex` has to include an email claim:
+Configure the Clerk JWT template.
 
 ```json
-{ "aud": "convex", "email": "{{user.primary_email_address}}" }
+{
+  "aud": "convex",
+  "email": "{{user.primary_email_address}}"
+}
 ```
 
-That claim is what the server matches invitations against. Without it nobody
-can be given a role, and the account named in `BOOTSTRAP_ADMIN_EMAIL` cannot
-claim the first administrator.
-
-Then seed and check:
+Seed the demo data.
 
 ```bash
 npx convex run seed:institutions
@@ -143,59 +147,35 @@ npx convex run seed:embedDepartments
 npx convex run seed:problems
 npx convex run seed:embedProblems
 npx convex run seed:partners
+```
+
+Run the self-tests.
+
+```bash
 npx convex run selftest:runAll
 ```
 
-## Accounts
+---
 
-An account exists in three places, and one of them decides: `users.status`.
+## Testing
 
-```
-Clerk signs you in
-  → users.ensureUser        idempotent, keyed on the Clerk token identifier
-  → invitation applied      matched on the verified email claim, never on input
-  → profile complete?       district + designation, or a blocking profile form
-  → role                    handed out by an administrator
-  → the rest of the app
-```
+The project includes automated self-tests that validate:
 
-Deleting an account tombstones the row: personal data scrubbed, role dropped
-to citizen, identity identifiers neutralised, notifications and project memberships
-removed. The row itself survives so that audit entries and reports still
-resolve to something. Nothing that looks up a person — sign-in, the
-administration directory, invitations, the bootstrap admin check — sees a
-tombstone.
+- Dataset integrity
+- Embedding generation
+- Duplicate detection
+- Department routing
+- Authentication and authorisation
+- District assignments
+- Vector search consistency
 
-Deletion from Clerk arrives through the `user.deleted` webhook at
-`<convex site>/clerk-webhook`. The backend also exposes
-`account.deleteMyAccount` for a future account-settings surface. If the two
-ever drift, `account:purgeMissingClerkIds` reconciles against a list of live
-Clerk user IDs.
-
-## Dates
-
-Everything is stored as an epoch millisecond and formatted for display in
-`Asia/Kolkata` through `src/lib/datetime.ts`. Nothing calls `toLocaleString`
-directly, so a server in UTC and a browser in IST draw the same page.
-
-Clerk renders the timestamps in its own security emails, in its own timezone,
-and its template language has no date helper — so that one cannot be fixed
-from here. `scripts/clerk-email-templates.mjs` rewrites those templates to
-drop the misleading stamp; account and session management remain in Clerk's
-own account portal.
-
-## Tests
-
-`selftest:runAll` runs twenty assertions against the live deployment — seed
-integrity, cluster consistency, whether stored priority scores still match the
-formula, embedding dimensionality and normalisation, vector search quality,
-whether every officer is actually posted to a district, and that the public
-functions refuse unauthenticated callers.
-
-It's caught things the UI hid. At one point routing was silently returning
-nothing because department embeddings had been wiped; the app looked fine.
+---
 
 ## Team
 
-Lucky Jaiswal · Chetan Pathak · Shashank Mishra · Kavya Srivastava · Anshika ·
-Kavya Tripathi
+- Lucky Jaiswal
+- Chetan Pathak
+- Shashank Mishra
+- Kavya Srivastava
+- Anshika Mishra
+- Kavya Tripathi
