@@ -1,0 +1,3 @@
+-- Institution roles without an organisation predate invite-only access; they become citizens.
+UPDATE "users" SET "role" = 'citizen' WHERE "role" IN ('university_admin', 'faculty', 'industry_admin', 'industry_partner') AND "organization_id" IS NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_org_role_needs_org" CHECK ("users"."role" not in ('university_admin', 'faculty', 'industry_admin', 'industry_partner') or "users"."organization_id" is not null);

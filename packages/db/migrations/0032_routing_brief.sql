@@ -1,0 +1,1 @@
+ALTER TABLE "problem_routings" ADD COLUMN "brief" text;

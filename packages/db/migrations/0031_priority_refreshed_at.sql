@@ -1,0 +1,1 @@
+ALTER TABLE "problems" ADD COLUMN "priority_refreshed_at" timestamp with time zone;
