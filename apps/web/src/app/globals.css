@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+
+/* Light theme only, by design. Palette and contrast figures: docs/DESIGN.md; `pnpm --filter @akhra/web contrast` guards them. */
+@theme {
+  --font-sans: var(--font-plex-sans), var(--font-plex-deva), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-paper: #f7f9f8;
+  --color-surface: #ffffff;
+  --color-mint: #f4f9f6;
+  --color-well: #eef3f0;
+  --color-ink: #17211c;
+  --color-subtle: #56635c;
+  --color-line: #e2e8e4;
+  --color-field: #86918b;
+  --color-sal: #1f6b45;
+  --color-sal-deep: #15502f;
+  --color-sal-wash: #eaf4ee;
+  --color-on-sal: #ffffff;
+  --color-danger: #b42318;
+  --color-danger-wash: #fdecea;
+  --color-on-danger: #ffffff;
+  --color-warning: #8a5a00;
+  --color-warning-wash: #fff4dd;
+  --color-sky: #2f6fb0;
+  --color-sky-wash: #eef4fb;
+  --color-amber: #b45f14;
+  --color-amber-wash: #fff4e8;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  --shadow-card: 0 1px 2px rgb(16 40 28 / 0.04), 0 6px 24px rgb(16 40 28 / 0.06);
+  --shadow-raised: 0 2px 4px rgb(16 40 28 / 0.05), 0 18px 44px rgb(16 40 28 / 0.1);
+
+  --default-transition-duration: 150ms;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Chart tokens: the validated categorical order (blue, orange, aqua, yellow), checked against the white surface. */
+  --viz-surface: #ffffff;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --viz-neutral: #c3c8cf;
+  /* Sequential blue, light to dark, for magnitude (heatmaps). --series-1 is step 450 of the same ramp. */
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #6da7ec;
+  --seq-4: #3987e5;
+  --seq-5: #1c5cab;
+  --viz-grid: #e3e8e5;
+  --viz-axis: #c3c9c5;
+  --viz-muted: #5f6b64;
+  --viz-text-secondary: #56635c;
+  --viz-hover: rgb(23 33 28 / 0.04);
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Devanagari's taller matras collide at Latin line heights. */
+  :lang(hi) body {
+    line-height: 1.7;
+  }
+
+  /* pretty, not balance: balance halves a line that nearly fits, leaving a gap at the end of every
+     row. pretty fills lines normally and only avoids stranding a single word on the last one. */
+  h1,
+  h2,
+  h3,
+  p,
+  li,
+  dd,
+  blockquote {
+    text-wrap: pretty;
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  ::selection {
+    background: var(--color-sal-wash);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-sal);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    background: var(--color-sal);
+    color: var(--color-on-sal);
+  }
+
+  .skip-link:focus {
+    left: 0;
+  }
+}
+
+/* Dialogs rise in rather than snapping open. The reduced-motion rule above already cancels this. */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+dialog[open] {
+  animation: dialog-in 160ms ease-out;
+}
+
+dialog[open]::backdrop {
+  animation: backdrop-in 160ms ease-out;
+}
