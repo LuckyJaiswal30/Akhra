@@ -1,0 +1,168 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgresql://akhra:akhra@localhost:5432/akhra
+  INVITE_SIGNING_SECRET: ci-placeholder-invite-signing-secret-not-used
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+jobs:
+  verify:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+
+    # Row-level security is only meaningfully testable against a real Postgres.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: akhra
+          POSTGRES_PASSWORD: akhra
+          POSTGRES_DB: akhra
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Unit and RLS tests
+        run: pnpm test
+
+      - name: Production-safety checks
+        run: pnpm check:no-hardcoded-urls
+
+      - name: Verify migrations are committed
+        run: |
+          pnpm db:generate
+          if [ -n "$(git status --porcelain packages/db/migrations)" ]; then
+            echo "::error::Schema changed but migrations were not regenerated. Run 'pnpm db:generate' and commit the result."
+            git --no-pager diff --stat packages/db/migrations
+            exit 1
+          fi
+
+  build:
+    name: Build (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # A production build resolves config differently from a dev build. Running both
+      # means a prod-breaking change fails here rather than on deploy day.
+      matrix:
+        include:
+          - mode: development
+            node_env: development
+          - mode: production
+            node_env: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          NODE_ENV: ${{ matrix.node_env }}
+
+  browser:
+    name: Browser smoke
+    runs-on: ubuntu-latest
+    # The app cannot boot without Clerk, so this runs only where those secrets exist — never on a
+    # fork's pull request. The chain itself is covered by `pnpm test` in the job above.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: akhra
+          POSTGRES_PASSWORD: akhra
+          POSTGRES_DB: akhra
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Skip without Clerk keys
+        id: keys
+        run: echo "present=${{ secrets.CLERK_PUBLISHABLE_KEY != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Apply migrations
+        if: steps.keys.outputs.present == 'true'
+        run: pnpm db:migrate
+
+      - name: Install the browser
+        if: steps.keys.outputs.present == 'true'
+        run: pnpm --filter @akhra/web test:browser:install
+
+      - name: Public pages, both languages, phone and desktop
+        if: steps.keys.outputs.present == 'true'
+        run: pnpm test:browser
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
