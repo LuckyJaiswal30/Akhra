@@ -1,0 +1,35 @@
+node_modules/
+.pnpm-store/
+
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+.env
+.env.local
+.env.*.local
+!.env.example
+
+.uploads/
+
+.DS_Store
+*.log
+npm-debug.log*
+coverage/
+.vercel
+.turbo
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Clerk keyless-mode development keys
+.clerk/
+
+# Rendered email previews (pnpm email:preview)
+.email-previews/
+
+# Playwright (pnpm test:browser)
+apps/web/test-results/
+apps/web/playwright-report/

@@ -1,0 +1,45 @@
+{
+  "name": "akhra",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Akhra — civic innovation platform connecting citizens, universities, industry and government in Jharkhand",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev": "pnpm --filter @akhra/web dev",
+    "build": "pnpm --filter @akhra/web build",
+    "start": "pnpm --filter @akhra/web start",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:browser": "pnpm --filter @akhra/web test:browser",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @akhra/db generate",
+    "db:migrate": "pnpm --filter @akhra/db migrate",
+    "db:studio": "pnpm --filter @akhra/db studio",
+    "db:seed": "pnpm --filter @akhra/db seed",
+    "db:fingerprints": "pnpm --filter @akhra/db backfill-fingerprints",
+    "check:no-hardcoded-urls": "node scripts/check-no-hardcoded-urls.mjs",
+    "ci:local": "pnpm lint && pnpm typecheck && pnpm test && pnpm check:no-hardcoded-urls && pnpm build",
+    "admin:bootstrap": "pnpm --filter @akhra/db run bootstrap-super-admin",
+    "email:preview": "pnpm --filter @akhra/web exec tsx scripts/preview-emails.tsx",
+    "email:clerk": "pnpm --filter @akhra/web exec tsx scripts/clerk-email-templates.tsx",
+    "cron:local": "curl -fsS -X POST -H \"authorization: Bearer $CRON_SECRET\" \"${NEXT_PUBLIC_APP_URL:-http://localhost:3000}/api/cron/maintenance\"",
+    "clerk:demo-users": "pnpm --filter @akhra/db clerk-demo-users"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^22.19.0",
+    "eslint": "^9.39.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.4"
+  }
+}
