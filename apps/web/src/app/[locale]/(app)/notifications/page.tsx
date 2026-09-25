@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { listNotifications, markAllReadAction } from '@/modules/notifications';
 import { Button } from '@/components/ui';
 import { requireActor } from '@/server/session';
+import { INDIA_TIME_ZONE } from '@/lib/utils';
 
 export async function generateMetadata({
   params,
@@ -29,6 +30,7 @@ export default async function NotificationsPage({
   const timeFormat = new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    timeZone: INDIA_TIME_ZONE,
   });
 
   return (

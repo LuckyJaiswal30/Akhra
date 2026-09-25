@@ -5,9 +5,13 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
+export const INDIA_TIME_ZONE = 'Asia/Kolkata';
+
 export function formatDate(value: Date | string, locale = 'en-IN'): string {
   const date = typeof value === 'string' ? new Date(value) : value;
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: INDIA_TIME_ZONE }).format(
+    date,
+  );
 }
 
 export function formatNumber(value: number, locale = 'en-IN'): string {

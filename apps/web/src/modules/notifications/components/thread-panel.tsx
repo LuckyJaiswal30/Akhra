@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import { ActionFeedback, Button, Select, Textarea, useActionForm } from '@/components/ui';
-import { label, type Labels } from '@/lib/utils';
+import { label, type Labels, INDIA_TIME_ZONE } from '@/lib/utils';
 import { postMessageAction } from '../actions';
 import { INITIAL_THREAD_STATE } from '../state';
 import type { ThreadAccess, ThreadMessage } from '../thread';
@@ -27,6 +27,7 @@ export function ThreadPanel({
   const timeFormat = new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    timeZone: INDIA_TIME_ZONE,
   });
 
   return (

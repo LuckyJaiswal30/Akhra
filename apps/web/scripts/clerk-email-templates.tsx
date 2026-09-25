@@ -146,7 +146,6 @@ const TEMPLATES: ClerkTemplate[] = [
       browser_name: 'Chrome',
       operating_system: 'Android',
       location: 'Ranchi, IN',
-      session_created_at: '16 September 2026, 10:42',
       revoke_session_url: 'https://akhra.example/revoke',
     },
     element: (
@@ -154,8 +153,8 @@ const TEMPLATES: ClerkTemplate[] = [
         <EmailCard lang="en" showLogo={false} preview="New sign-in to your Akhra account">
           <Heading>New sign-in to your account</Heading>
           <Paragraph>
-            {v('browser_name')} on {v('operating_system')}, {v('location')}, at{' '}
-            {v('session_created_at')}.
+            Someone just signed in to your Akhra account using {v('browser_name')} on{' '}
+            {v('operating_system')}, near {v('location')}.
           </Paragraph>
           <Paragraph small>
             If this wasn’t you, reset your password on Akhra — that signs you out of all devices.
