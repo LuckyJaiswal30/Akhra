@@ -46,6 +46,25 @@ export async function consumeRateLimit(
     return { allowed: true, remaining: limit, resetAt };
   }
 }
+export async function refundRateLimit(bucketKey: string, windowMs: number): Promise<void> {
+  const windowStart = windowStartFor(windowMs);
+  try {
+    await withoutRls(getDb(), (tx) =>
+      tx
+        .update(rateLimits)
+        .set({ hits: sql`greatest(${rateLimits.hits} - 1, 0)` })
+        .where(
+          sql`${rateLimits.bucketKey} = ${bucketKey} and ${rateLimits.windowStart} = ${windowStart}`,
+        ),
+    );
+  } catch (error) {
+    logger.error(
+      { err: error instanceof Error ? error.message : String(error), bucketKey },
+      'rate limit refund failed',
+    );
+  }
+}
+
 export function rateLimitedError(resetAt: Date, what = 'attempts'): AppError {
   const retryAfterSeconds = Math.max(1, Math.ceil((resetAt.getTime() - Date.now()) / 1000));
   const minutes = Math.ceil(retryAfterSeconds / 60);

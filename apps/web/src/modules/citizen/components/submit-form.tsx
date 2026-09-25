@@ -95,7 +95,7 @@ export function SubmitForm({
           input instanceof HTMLTextAreaElement ||
           input instanceof HTMLSelectElement
         ) {
-          input.value = value;
+          if (!input.value) input.value = value;
         }
       }
     }

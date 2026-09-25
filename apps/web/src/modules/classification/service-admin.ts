@@ -130,7 +130,7 @@ export async function validateProblem(
   });
 
   await transitionProblem(actor, problemId, 'validated', {
-    note: input.note ?? 'Verified as a genuine, actionable challenge.',
+    note: input.note,
   });
 }
 

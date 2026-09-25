@@ -11,16 +11,22 @@ export function ReporterDecision({
   refCode,
   actionTakenNote,
   needsPhone,
+  reopenOnly = false,
+  canReopen = true,
   labels,
 }: {
   refCode: string;
   actionTakenNote: string | null;
   needsPhone: boolean;
+  reopenOnly?: boolean;
+  canReopen?: boolean;
   labels: Record<string, string>;
 }) {
   const [state, action, isPending] = useActionState(reporterDecisionAction, INITIAL);
   const form = useActionForm(action, state);
-  const [decision, setDecision] = useState<'confirm' | 'reopen' | null>(null);
+  const [decision, setDecision] = useState<'confirm' | 'reopen' | null>(
+    reopenOnly ? 'reopen' : null,
+  );
 
   if (state?.ok) {
     return (
@@ -69,25 +75,29 @@ export function ReporterDecision({
         )}
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            type="submit"
-            disabled={isPending}
-            onClick={() => setDecision('confirm')}
-            className="sm:flex-1"
-          >
-            <CircleCheck aria-hidden className="h-4 w-4" />
-            {isPending && decision === 'confirm' ? labels.saving : labels.confirmFixed}
-          </Button>
-          <Button
-            type={decision === 'reopen' ? 'submit' : 'button'}
-            variant="secondary"
-            disabled={isPending}
-            onClick={() => setDecision('reopen')}
-            className="sm:flex-1"
-          >
-            <RotateCcw aria-hidden className="h-4 w-4" />
-            {isPending && decision === 'reopen' ? labels.saving : labels.notFixed}
-          </Button>
+          {!reopenOnly && (
+            <Button
+              type="submit"
+              disabled={isPending}
+              onClick={() => setDecision('confirm')}
+              className="sm:flex-1"
+            >
+              <CircleCheck aria-hidden className="h-4 w-4" />
+              {isPending && decision === 'confirm' ? labels.saving : labels.confirmFixed}
+            </Button>
+          )}
+          {canReopen && (
+            <Button
+              type={decision === 'reopen' ? 'submit' : 'button'}
+              variant="secondary"
+              disabled={isPending}
+              onClick={() => setDecision('reopen')}
+              className="sm:flex-1"
+            >
+              <RotateCcw aria-hidden className="h-4 w-4" />
+              {isPending && decision === 'reopen' ? labels.saving : labels.notFixed}
+            </Button>
+          )}
         </div>
       </form>
     </div>

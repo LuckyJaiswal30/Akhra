@@ -7,6 +7,7 @@ import {
   type Domain,
   type ProblemStatus,
   DISTRICT_BY_CODE,
+  reopenClosesAt,
 } from '@akhra/shared';
 import {
   hasSupported,
@@ -57,6 +58,12 @@ export default async function TrackPage({
   const problem = ref ? await trackByRefCode(ref) : null;
   const actor = await getActor();
   const isOwnReport = Boolean(actor.userId && problem?.submitterId === actor.userId);
+  const canReopen =
+    problem?.resolutionTrack === 'department' &&
+    problem.reopenCount === 0 &&
+    problem.actionTakenAt !== null &&
+    reopenClosesAt(problem.actionTakenAt) > new Date();
+  const canReopenClosed = problem?.status === 'closed' && canReopen;
   const thread = problem ? await listThread(actor, problem.id) : [];
   const threadAccess = problem
     ? await getThreadAccess(actor, problem.id)
@@ -182,15 +189,28 @@ export default async function TrackPage({
             )}
           </header>
 
-          {problem.status === 'action_taken' && (
+          {(problem.status === 'action_taken' || canReopenClosed) && (
             <section className="border-line border-b py-8">
               <ReporterDecision
                 refCode={problem.refCode}
                 actionTakenNote={problem.actionTakenNote}
                 needsPhone={!isOwnReport}
+                reopenOnly={problem.status === 'closed'}
+                canReopen={canReopen}
                 labels={{
-                  decisionTitle: t('decisionTitle'),
-                  decisionHint: t('decisionHint'),
+                  decisionTitle:
+                    problem.status === 'closed' ? t('reopenTitle') : t('decisionTitle'),
+                  decisionHint:
+                    problem.status === 'closed'
+                      ? t('reopenHint', {
+                          date: formatDate(
+                            reopenClosesAt(problem.actionTakenAt!),
+                            isHindi ? 'hi-IN' : 'en-IN',
+                          ),
+                        })
+                      : canReopen
+                        ? t('decisionHint')
+                        : t('decisionHintFinal'),
                   confirmFixed: t('confirmFixed'),
                   notFixed: t('notFixed'),
                   reopenReason: t('reopenReason'),

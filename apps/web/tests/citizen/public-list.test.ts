@@ -87,4 +87,33 @@ describe('the public tracker', () => {
     const blocked = await attempt('2345');
     expect(blocked && !blocked.ok && blocked.error.code).toBe('RATE_LIMITED');
   });
+
+  it('never counts the real reporter answering against that limit', async () => {
+    const id = await createReport({ status: 'action_taken' });
+    const refCode = await refOf(id);
+    await withoutRls(getDb(), (tx) =>
+      tx
+        .update(problems)
+        .set({ resolutionTrack: 'department', actionTakenAt: new Date() })
+        .where(eq(problems.id, id)),
+    );
+    actAs(null);
+    const attempt = (digits: string, decision: string, note?: string) =>
+      reporterDecisionAction(
+        null,
+        formData({ refCode, phoneLast4: digits, decision, ...(note ? { note } : {}) }),
+      );
+
+    for (const digits of ['0001', '0002', '0003', '0004']) {
+      expect((await attempt(digits, 'confirm'))?.ok).toBe(false);
+    }
+    expect((await attempt('2345', 'reopen', 'Still broken after the rain'))?.ok).toBe(true);
+    await withoutRls(getDb(), (tx) =>
+      tx.update(problems).set({ status: 'action_taken' }).where(eq(problems.id, id)),
+    );
+    expect((await attempt('2345', 'confirm'))?.ok).toBe(true);
+    expect((await attempt('0009', 'confirm'))?.ok).toBe(false);
+    const blocked = await attempt('0010', 'confirm');
+    expect(blocked && !blocked.ok && blocked.error.code).toBe('RATE_LIMITED');
+  });
 });

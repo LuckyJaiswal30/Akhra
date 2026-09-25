@@ -16,7 +16,7 @@ import {
   REOPEN_WINDOW_DAYS,
   type ProblemStatus,
 } from '@akhra/shared';
-import { notifyUsers } from '@/modules/notifications';
+import { notifyReporter, notifyUsers } from '@/modules/notifications';
 import { logger } from '@/server/logger';
 import { ForbiddenError, assertCanAct, query, type Actor } from '@/server/session';
 import { transitionWithin } from './service-admin';
@@ -96,6 +96,7 @@ export async function assignToDepartment(
       .where(eq(problems.id, problemId));
   });
 
+  await notifyReporter(problemId, 'assigned', department.name);
   const staff = await departmentOfficers(organizationId);
   const [problem] = await withoutRls(getDb(), (tx) =>
     tx
@@ -154,6 +155,7 @@ export async function recordActionTaken(
       })
       .where(eq(problems.id, problemId));
   });
+  await notifyReporter(problemId, 'action_taken', note);
   logger.info({ problemId, actorId: actor.userId }, 'action taken recorded');
 }
 
@@ -219,7 +221,7 @@ export async function confirmResolved(problem: ReporterProblem, note?: string): 
       toStatus: 'closed',
       actorId: problem.submitterId,
       actorLabel: 'The person who reported it',
-      note: note ?? 'Confirmed as resolved by the reporter.',
+      note: note ?? null,
       isPublic: true,
     });
   });

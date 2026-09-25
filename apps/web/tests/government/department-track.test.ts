@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { getDb, problems, withoutRls } from '@akhra/db';
+import { getDb, notifications, problems, withoutRls } from '@akhra/db';
 import { FIX_DAYS, REOPEN_WINDOW_DAYS } from '@akhra/shared';
 import {
   assignToDepartment,
@@ -99,6 +99,27 @@ describe('a report that needs a department to fix it', () => {
     officer = await createUser({ role: 'gov_admin', jurisdictionCode: 'RAN' });
     departmentStaff = await createUser({ role: 'dept_officer', organizationId: departmentId });
     citizen = await createUser({ role: 'citizen' });
+  });
+
+  it('tells the reporter when it reaches the department and when the work is done', async () => {
+    const report = await reportFrom({ submitterId: citizen.id });
+    actAs(officer);
+    await assignToDepartment(await getActor(), report.id, departmentId);
+    actAs(departmentStaff);
+    await recordActionTaken(await getActor(), report.id, 'Washer replaced and water tested.');
+
+    const received = await withoutRls(getDb(), (tx) =>
+      tx
+        .select({ type: notifications.type, body: notifications.body })
+        .from(notifications)
+        .where(eq(notifications.userId, citizen.id)),
+    );
+    expect(received.map((n) => n.type)).toEqual(
+      expect.arrayContaining(['problem_assigned', 'problem_action_taken']),
+    );
+    expect(received.find((n) => n.type === 'problem_action_taken')?.body).toContain(
+      'Washer replaced and water tested.',
+    );
   });
 
   it('goes to the chosen department with a 21-day clock', async () => {

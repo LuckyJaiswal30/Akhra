@@ -276,6 +276,7 @@
     "privacyLink": "How Akhra uses your information"
   },
   "track": {
+    "byReporter": "The person who reported it",
     "title": "Track a report",
     "subtitle": "Enter the reference code you received when you submitted.",
     "refCode": "Reference code",
@@ -293,6 +294,9 @@
     "progressLabel": "Progress",
     "decisionTitle": "The department says this is done",
     "decisionHint": "Tell us whether it is actually fixed. You can reopen this report once, within 30 days.",
+    "decisionHintFinal": "Tell us whether it is actually fixed. This report has already been reopened once, so it cannot be reopened again.",
+    "reopenTitle": "Is the problem back?",
+    "reopenHint": "If it is not fixed after all, you can reopen this report once, until {date}.",
     "confirmFixed": "Yes, it is fixed",
     "notFixed": "No, it is not fixed",
     "reopenReason": "What is still wrong?",

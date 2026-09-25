@@ -8,6 +8,8 @@ import {
 import { Alert } from '@/components/ui';
 import { formatDate } from '@/lib/utils';
 
+const REPORTER_LABEL = 'The person who reported it';
+
 export interface TimelineEvent {
   id: string;
   toStatus: string;
@@ -105,7 +107,11 @@ export function StatusTimeline({
                 )}
                 <p className="text-subtle mt-1 text-sm">
                   {formatDate(event.createdAt, isHindi ? 'hi-IN' : 'en-IN')}
-                  {event.actorLabel && <span className="block">{event.actorLabel}</span>}
+                  {event.actorLabel && (
+                    <span className="block">
+                      {event.actorLabel === REPORTER_LABEL ? t('byReporter') : event.actorLabel}
+                    </span>
+                  )}
                 </p>
               </div>
             </li>

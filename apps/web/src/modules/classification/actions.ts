@@ -13,7 +13,7 @@ import {
   type ActionState,
 } from '@akhra/shared';
 import { formId, parseInput, runAction } from '@/server/api';
-import { consumeRateLimit, rateLimitedError } from '@/server/rate-limit';
+import { consumeRateLimit, rateLimitedError, refundRateLimit } from '@/server/rate-limit';
 import { getActor, requireRole } from '@/server/session';
 import {
   assignToDepartment,
@@ -167,11 +167,8 @@ export async function reporterDecisionAction(
     });
 
     // Four digits are 10,000 guesses; a handful per report per hour makes guessing hopeless.
-    const attempts = await consumeRateLimit(
-      `reporter-decision:${input.refCode}`,
-      5,
-      60 * 60 * 1000,
-    );
+    const bucket = `reporter-decision:${input.refCode}`;
+    const attempts = await consumeRateLimit(bucket, 5, 60 * 60 * 1000);
     if (!attempts.allowed) throw rateLimitedError(attempts.resetAt, 'attempts on this report');
 
     const actor = await getActor();
@@ -185,6 +182,7 @@ export async function reporterDecisionAction(
         'We could not match that report. Check the reference code and mobile number.',
       );
     }
+    await refundRateLimit(bucket, 60 * 60 * 1000);
 
     // The department that did the work never signs it off, even on a report one of its staff filed.
     if (

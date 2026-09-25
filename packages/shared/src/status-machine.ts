@@ -109,7 +109,7 @@ export const STATUS_DEFINITIONS: Record<ProblemStatus, StatusDefinition> = {
     labelEn: 'Closed',
     labelHi: 'बंद',
     trackerStep: 8,
-    description: 'Work is complete and outcomes recorded.',
+    description: 'The work is complete and the report is closed.',
   },
   rejected: {
     id: 'rejected',
