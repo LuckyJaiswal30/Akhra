@@ -11,9 +11,9 @@ interface PageCheck {
 const PAGES: PageCheck[] = [
   { path: '/', heading: { en: 'Report a local problem.', hi: 'अपने इलाके की समस्या दर्ज करें।' } },
   { path: '/how-it-works', heading: { en: 'How Akhra works', hi: 'अखरा कैसे काम करता है' } },
-  { path: '/problems', heading: { en: 'Browse challenges', hi: 'चुनौतियाँ देखें' } },
-  { path: '/success-stories', heading: { en: 'Success Stories', hi: 'सफलता की कहानियाँ' } },
-  { path: '/impact', heading: { en: 'Our Impact', hi: 'हमारा प्रभाव' } },
+  { path: '/problems', heading: { en: 'Browse reports', hi: 'रिपोर्टें देखें' } },
+  { path: '/success-stories', heading: { en: 'Success stories', hi: 'सफलता की कहानियाँ' } },
+  { path: '/impact', heading: { en: 'Impact so far', hi: 'अब तक का असर' } },
   { path: '/resources', heading: { en: 'Resources', hi: 'संसाधन' } },
   { path: '/track', heading: { en: 'Track a report', hi: 'रिपोर्ट की स्थिति' } },
   { path: '/submit', heading: { en: 'Report a problem', hi: 'समस्या दर्ज करें' } },

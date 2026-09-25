@@ -182,6 +182,8 @@ export default async function TrackPage({
                     support: t('support'),
                     withdraw: t('supportWithdraw'),
                     count: trackMessages.supportCount!,
+                    countOne: trackMessages.supportCountOne!,
+                    countNone: trackMessages.supportCountNone!,
                     signInToSupport: t('signInToSupport'),
                   }}
                 />

@@ -18,11 +18,23 @@ export function SupportButton({
   initial: SupportState;
   signedIn: boolean;
   returnPath: string;
-  labels: { support: string; withdraw: string; count: string; signInToSupport: string };
+  labels: {
+    support: string;
+    withdraw: string;
+    count: string;
+    countOne: string;
+    countNone: string;
+    signInToSupport: string;
+  };
 }) {
   const [state, action, isPending] = useActionState(toggleSupportAction, null);
   const current = state?.ok && state.data ? state.data : initial;
-  const count = labels.count.replace('{count}', String(current.supportCount));
+  const count =
+    current.supportCount === 0
+      ? labels.countNone
+      : current.supportCount === 1
+        ? labels.countOne
+        : labels.count.replace('{count}', String(current.supportCount));
 
   if (!signedIn) {
     return (
