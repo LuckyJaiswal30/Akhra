@@ -67,8 +67,7 @@ export async function postMessage(
   input: { body: string; visibility: 'public' | 'internal' },
 ): Promise<void> {
   const access = await getThreadAccess(actor, problemId);
-  if (!access.canPost)
-    throw new ForbiddenError('Only people working on this challenge can post here');
+  if (!access.canPost) throw new ForbiddenError('Only people working on this report can post here');
   if (input.visibility === 'internal' && !access.canPostInternal) {
     throw new ForbiddenError('Internal notes are limited to the owning institution');
   }

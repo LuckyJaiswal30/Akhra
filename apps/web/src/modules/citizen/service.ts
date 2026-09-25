@@ -182,11 +182,17 @@ export async function submitProblem(
   await expirePublicFigures();
 
   if (payload.submitterEmail) {
+    const hindi = locale === 'hi';
     notifyEmail(payload.submitterEmail, {
       type: 'submission_received',
-      title: `We received your report ${created.refCode}`,
-      body: `Thank you. "${payload.title}" has been received and will be reviewed by the state. Keep this reference code to follow its progress: ${created.refCode}.`,
+      title: hindi
+        ? `आपकी रिपोर्ट ${created.refCode} मिल गई है`
+        : `We received your report ${created.refCode}`,
+      body: hindi
+        ? `धन्यवाद। "${payload.title}" हमें मिल गई है और आपके ज़िला अधिकारी इसे देखेंगे। प्रगति देखने के लिए यह संदर्भ कोड संभालकर रखें: ${created.refCode}।`
+        : `Thank you. "${payload.title}" has been received and your district officer will look at it. Keep this reference code to follow its progress: ${created.refCode}.`,
       linkUrl: `/track?ref=${created.refCode}`,
+      locale: hindi ? 'hi' : 'en',
     });
   }
 

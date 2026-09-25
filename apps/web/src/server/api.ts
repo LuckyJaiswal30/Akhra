@@ -2,7 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { unstable_rethrow } from 'next/navigation';
 import type { ZodType } from 'zod';
-import { AppError, validationError, type ActionResult, type ErrorEnvelope } from '@akhra/shared';
+import {
+  AppError,
+  validationError,
+  type ActionResult,
+  type ApiError,
+  type ErrorEnvelope,
+} from '@akhra/shared';
+import { getLocale } from 'next-intl/server';
+import { toHindi } from './hindi';
 import { logger } from './logger';
 
 type RouteContext<P> = { params: Promise<P> };
@@ -25,15 +33,46 @@ function toAppError(error: unknown, context: Record<string, unknown> = {}): AppE
   );
 }
 
+function inLocale(error: ApiError, locale: string): ApiError {
+  if (locale !== 'hi') return error;
+  const fields = error.details?.fields;
+  return {
+    ...error,
+    message: toHindi(error.message),
+    ...(fields && {
+      details: {
+        ...error.details,
+        fields: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, toHindi(v)])),
+      },
+    }),
+  };
+}
+
+async function actionLocale(): Promise<string> {
+  try {
+    return await getLocale();
+  } catch {
+    return 'en';
+  }
+}
+
+function cookieLocale(request: Request): string {
+  return /(?:^|;\s*)NEXT_LOCALE=hi(?:;|$)/.test(request.headers.get('cookie') ?? '') ? 'hi' : 'en';
+}
+
 function errorResponse(
   error: unknown,
   context: Record<string, unknown> = {},
+  locale = 'en',
 ): NextResponse<ErrorEnvelope> {
   const appError = toAppError(error, context);
   const headers: Record<string, string> = {};
   if (appError.details?.retryAfterSeconds)
     headers['retry-after'] = String(appError.details.retryAfterSeconds);
-  return NextResponse.json({ error: appError.toJSON() }, { status: appError.status, headers });
+  return NextResponse.json(
+    { error: inLocale(appError.toJSON(), locale) },
+    { status: appError.status, headers },
+  );
 }
 
 export function apiRoute<P = Record<string, string>>(handler: RouteHandler<P>): RouteHandler<P> {
@@ -41,7 +80,11 @@ export function apiRoute<P = Record<string, string>>(handler: RouteHandler<P>): 
     try {
       return await handler(request, context);
     } catch (error) {
-      return errorResponse(error, { method: request.method, path: new URL(request.url).pathname });
+      return errorResponse(
+        error,
+        { method: request.method, path: new URL(request.url).pathname },
+        cookieLocale(request),
+      );
     }
   };
 }
@@ -94,9 +137,17 @@ export async function runAction<T = undefined>(
 ): Promise<ActionResult<T>> {
   try {
     const outcome = (await fn()) ?? {};
-    return { ok: true, data: outcome.data as T, message: outcome.message };
+    const hindi = outcome.message && (await actionLocale()) === 'hi';
+    return {
+      ok: true,
+      data: outcome.data as T,
+      message: hindi ? toHindi(outcome.message!) : outcome.message,
+    };
   } catch (error) {
     unstable_rethrow(error);
-    return { ok: false, error: toAppError(error, { action: context }).toJSON() };
+    return {
+      ok: false,
+      error: inLocale(toAppError(error, { action: context }).toJSON(), await actionLocale()),
+    };
   }
 }
