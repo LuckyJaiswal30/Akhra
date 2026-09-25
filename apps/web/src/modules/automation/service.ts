@@ -11,6 +11,7 @@ import {
 } from '@akhra/db';
 import { DISTRICT_BY_CODE, FIX_DAYS } from '@akhra/shared';
 import { computeDashboard, snapshotKey, writeSnapshot } from '@/modules/analytics';
+import { eraseExpiredContacts } from '@/modules/citizen';
 import {
   autoCloseSettledReports,
   PRIORITY_BATCH,
@@ -51,6 +52,7 @@ export interface MaintenanceReport {
   milestoneReminders: number;
   priorities: number;
   rateLimitsPruned: number;
+  contactsErased: number;
   snapshots: number;
   /** Jobs that filled their batch and still have work waiting for the next run. */
   pending: string[];
@@ -394,6 +396,7 @@ export async function runMaintenance(now = new Date()): Promise<MaintenanceRepor
       pruneRateLimits(now),
       Number.MAX_SAFE_INTEGER,
     ),
+    contactsErased: await settle('contact erasure', eraseExpiredContacts(now)),
     snapshots: await settle(
       'dashboard snapshots',
       refreshDashboardSnapshots(),

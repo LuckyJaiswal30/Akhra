@@ -88,13 +88,23 @@ export const trackProblemSchema = z.object({
   refCode: refCodeSchema,
 });
 
+/** A search form sends every field, blank or not; one blank or bad field must not void the others. */
+const lenient = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === '' ? undefined : value), schema.optional()).catch(undefined);
+
 export const problemFilterSchema = z.object({
-  domain: domainSchema.optional(),
-  districtCode: districtCodeSchema.optional(),
-  status: problemStatusSchema.optional(),
-  q: z.string().trim().max(200).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  domain: lenient(domainSchema),
+  districtCode: lenient(districtCodeSchema),
+  status: lenient(problemStatusSchema),
+  q: lenient(
+    z
+      .string()
+      .trim()
+      .max(200)
+      .transform((value) => value || undefined),
+  ),
+  page: z.coerce.number().int().min(1).max(10_000).catch(1),
+  pageSize: z.coerce.number().int().min(1).max(100).catch(20),
 });
 export type ProblemFilter = z.output<typeof problemFilterSchema>;
 

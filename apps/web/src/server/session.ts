@@ -1,9 +1,11 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { cache } from 'react';
 import { ANONYMOUS, getDb, withUserContext, type Transaction } from '@akhra/db';
 import { AppError, type Role } from '@akhra/shared';
 import { accountForClerkUser } from './identity';
+import { signInEnabled } from './sign-in-mode';
 
 export interface Actor {
   userId: string | null;
@@ -36,6 +38,11 @@ export class ForbiddenError extends AppError {
 }
 
 export const getActor = cache(async (): Promise<Actor> => {
+  if (!signInEnabled) {
+    // Who is asking is a per-request question even when the answer is always "nobody".
+    await connection();
+    return ANONYMOUS_ACTOR;
+  }
   const { userId } = await auth();
   if (!userId) return ANONYMOUS_ACTOR;
 

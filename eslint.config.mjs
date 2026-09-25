@@ -10,14 +10,14 @@ import tseslint from 'typescript-eslint';
 const MODULE_INTERNALS = {
   group: ['@/modules/*/*'],
   message:
-    'Import a module through its public API (@/modules/<name>), not its internals. See src/modules/README.md.',
+    'Import a module through its public API (@/modules/<name>), not its internals. See CONTRIBUTING.md.',
 };
 
 const UNGUARDED_DB = {
   name: '@akhra/db',
   importNames: ['withoutRls'],
   message:
-    'withoutRls turns row-level security off, so the access check becomes yours to write. Call a module function that owns that check instead — see src/modules/README.md.',
+    'withoutRls turns row-level security off, so the access check becomes yours to write. Call a module function that owns that check instead — see CONTRIBUTING.md.',
 };
 
 export default tseslint.config(

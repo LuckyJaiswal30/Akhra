@@ -1,6 +1,7 @@
 export { submitProblemAction } from './actions';
 export { hasSupported, supportProblem, withdrawSupport } from './support';
 export { submitProblem, recordAttachment } from './service';
+export { eraseExpiredContacts } from './retention';
 export {
   listProblems,
   trackByRefCode,

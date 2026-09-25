@@ -33,13 +33,7 @@ const RESULT_TONE = {
   inconclusive: 'bg-well text-subtle',
 } as const;
 
-/**
- * What the institution is doing about a report, on the page the person who filed it actually reads.
- *
- * The tracker used to end at "routed to an institution", which tells a citizen that their problem
- * was passed on and nothing else. Everything below already existed — it was just locked behind a
- * sign-in that no reporter has.
- */
+/** What the institution is doing about a report, shown on the public tracker its reporter reads. */
 export async function SolutionPanel({
   solution,
   locale,

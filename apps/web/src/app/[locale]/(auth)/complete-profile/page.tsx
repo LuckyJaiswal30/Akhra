@@ -12,6 +12,7 @@ import {
   safeReturnPath,
 } from '@/modules/auth';
 import { getActor } from '@/server/session';
+import { signInEnabled } from '@/server/sign-in-mode';
 
 const NEW_ACCOUNT_MS = 24 * 60 * 60 * 1000;
 
@@ -39,7 +40,7 @@ export default async function CompleteProfilePage({
 
   const actor = await getActor();
   if (!actor.userId) {
-    if ((await auth()).userId) {
+    if (signInEnabled && (await auth()).userId) {
       return (
         <AuthShell locale={locale}>
           <UnusableSession labels={labels} signInPath={`${prefix}/sign-in`} />

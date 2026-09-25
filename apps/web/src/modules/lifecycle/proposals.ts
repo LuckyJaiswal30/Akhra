@@ -74,7 +74,8 @@ export async function listProposalsForReview(actor: Actor): Promise<ProposalForR
           actor.jurisdiction ? eq(problems.districtCode, actor.jurisdiction) : undefined,
         ),
       )
-      .orderBy(proposals.createdAt),
+      .orderBy(proposals.createdAt)
+      .limit(100),
   );
 }
 

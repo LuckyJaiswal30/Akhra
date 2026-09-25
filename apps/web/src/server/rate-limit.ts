@@ -56,7 +56,14 @@ export function rateLimitedError(resetAt: Date, what = 'attempts'): AppError {
   );
 }
 
+/**
+ * The platform's own proxy sets x-real-ip. The first x-forwarded-for entry is whatever the client
+ * sent, so it is the last resort; the last entry was appended by the nearest proxy.
+ */
 export function clientIdentifier(headers: Headers): string {
-  const forwarded = headers.get('x-forwarded-for');
-  return forwarded?.split(',')[0]?.trim() || headers.get('x-real-ip') || 'unknown';
+  const forwarded = headers
+    .get('x-forwarded-for')
+    ?.split(',')
+    .map((part) => part.trim());
+  return headers.get('x-real-ip') || forwarded?.at(-1) || 'unknown';
 }

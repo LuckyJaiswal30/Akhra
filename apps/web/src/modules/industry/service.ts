@@ -81,7 +81,8 @@ export async function listDiscoverableProjects(
           filter.districtCode ? eq(problems.districtCode, filter.districtCode) : undefined,
         ),
       )
-      .orderBy(desc(projects.startedAt)),
+      .orderBy(desc(projects.startedAt))
+      .limit(100),
   );
 }
 

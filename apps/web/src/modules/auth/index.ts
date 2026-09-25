@@ -18,6 +18,7 @@ export { ForgotPasswordCard } from './components/forgot-password-card';
 export { SsoCallback } from './components/sso-callback';
 export { InvitePanel } from './components/invite-panel';
 export { UnusableSession } from './components/unusable-session';
+export { SignInUnavailable } from './components/sign-in-unavailable';
 export { CompleteProfileCard } from './components/complete-profile-card';
 export { SecureAccountCard, type SecureAccountState } from './components/secure-account-card';
 export { safeReturnPath } from './components/clerk-errors';

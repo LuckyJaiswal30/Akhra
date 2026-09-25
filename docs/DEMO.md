@@ -1,63 +1,67 @@
-# Judge demo — the full loop in under four minutes
+# Five-minute demo
 
-Demo accounts sign in through Clerk with the password **`akhra2026`**. Create them once per Clerk
-development instance with `pnpm clerk:demo-users` (after `pnpm db:seed`). They are Clerk test
-addresses: if Clerk asks for a code, type **`424242`**. The super admin is not seeded: reserve it
-once with `pnpm admin:bootstrap --email <you> --name "<your name>"`, then create your account with
-that email on the _Create Account_ tab (see the README). Load the app once before presenting: Neon
-scales to zero after five idle minutes and the first request pays the wake-up.
+**Before you present**
 
-To restore the demo state at any time: `pnpm db:seed` (the super admin and the Clerk links are kept).
+- Run `pnpm db:seed` to reset the demo state.
+- With Clerk keys set, run `pnpm clerk:demo-users` once per Clerk development instance.
+- Load each page once so the first request is not slow.
+- Every account's password is **`akhra2026`**. If Clerk asks for a code, type **`424242`**.
 
----
+| Account                                  | Role                                   |
+| ---------------------------------------- | -------------------------------------- |
+| `citizen+clerk_test@example.com`         | Citizen                                |
+| `district.ranchi+clerk_test@example.com` | District officer, Ranchi               |
+| `gov+clerk_test@example.com`             | State desk (all districts)             |
+| `university+clerk_test@example.com`      | University admin, BAU Ranchi           |
+| `industry.agri+clerk_test@example.com`   | Industry partner, Krishi Setu Agritech |
 
-0. **Access is closed.** Open `/sign-up`: the form creates a citizen and nothing else, and says
-   that university, industry and government accounts come by invitation. A real address receives
-   Clerk's 6-digit code; a `+clerk_test` address takes `424242`.
-   Sign in as the super admin and open _Administration_. Onboard an institution with its MOU
-   number and one official contact email: Clerk emails the invitation. Open it, set a name and a
-   password, then **Accept invitation**. The new university admin can now invite colleagues from
-   _Team_, but only into their own university and never above their own role. Signed in as the
-   wrong person, the invitation page says so and offers to sign out.
-
-1. **A citizen reports a problem — no account, on a phone, in Hindi.**
-   Open `/submit`, switch the language to हिंदी, and describe a problem ("our handpump water has
-   turned yellow…"). Pick **Ranchi** as the district, drop a pin, add a photo, submit. The
-   receipt names the category and which tier of the AI chain classified it (Gemini, Groq, or the offline keyword model). Copy the
-   reference code.
-
-2. **The citizen tracks it.** Paste the code into `/track`. The page shows _Stage 1 of 8:
-   Submitted_, and fills in on its own as every other stakeholder acts.
-
-3. **The district validates, the state routes.** Sign in as
-   **`district.ranchi+clerk_test@example.com`** (District Officer, Ranchi). The queue holds only
-   Ranchi's reports, each with its photo, detected category and any likely duplicates. Validate it
-   (or, for a routine issue, _Resolve locally_ with a note the citizen sees). Reports from other
-   districts are not there, and cannot be acted on. Then sign in as
-   **`gov+clerk_test@example.com`** (state-wide) and open _Ready to route_: institutions are ranked
-   with their reasoning shown ("Domain strength 5/5, 81 km away, match 81%"). Route it.
-
-4. **A university takes it on.** Sign in as **`university+clerk_test@example.com`** (BAU Ranchi).
-   The bell shows the new referral. Open the seeded pest-advisory project **AKH-2026-000003** to
-   show the workspace: team, versioned proposal, milestones, documents that only the team can
-   download. Advance the stage to _Pilot_ and record an outcome ("214 farmers enrolled").
-
-5. **Industry commits.** Still as BAU, open _Industry offers_: Krishi Setu Agritech has offered
-   ₹5,00,000, mentorship and deployment. **Accept** it. (To show the partner's side, sign in as
-   `industry.agri+clerk_test@example.com` and open _Discover projects_: only university-vetted
-   work is listed, never raw reports.)
-
-6. **The loop closes for the citizen.** Open `/track?ref=AKH-2026-000003`. The public timeline
-   now reads _Pilot underway_ and _"Krishi Setu Agritech has joined as an industry partner"_, with
-   the team's public update in the conversation, and none of its internal notes.
-
-7. **The state sees the whole picture.** Back as `gov+clerk_test@example.com`, open _Dashboard_:
-   reports by month, by category and by district, how far reports get, funding committed,
-   outcomes. Filter to one category and every figure re-scopes. Finish on **"Who classified each
-   report"**: it shows which reports the AI tiers answered and which fell back to the keyword
-   model. Classification never goes down, key or no key.
+All figures come from seed data, and the site says so.
 
 ---
 
-**If something goes wrong on stage:** every flow from step 1 on also works from seeded data
-alone. The queue, referrals, offers, projects and dashboard are all populated before step 1.
+**0:00 Landing page (30 s).** Open `/`. Say it in one line: _"A citizen reports it once; a
+department fixes it, or a university team backed by industry solves it; the citizen closes it."_
+Point to the two actions (report, track by reference code), the sample-data label on the figures
+and the five steps. Switch to हिन्दी in the header.
+
+**0:30 A citizen reports, with no account (60 s).**
+
+- Open `/submit` on a phone-width window. Describe a problem in Hindi, or press _बोलकर लिखें_ and
+  speak it (Chrome).
+- Choose **Ranchi**, drop a pin and add a photo.
+- Turn the network off in DevTools: the offline notice appears, and the draft survives a reload.
+  Turn it back on and submit.
+- The receipt shows the reference code, the AI's category and any likely duplicates. Which tier
+  classified it (Gemini, Groq or offline) is recorded for the officer and the dashboard.
+
+**1:30 Public tracker (15 s).** Paste the code into `/track`: the timeline, with no sign-in.
+
+**1:45 The district decides (60 s).**
+
+- Sign in as the Ranchi officer. The queue holds Ranchi's reports only, sorted by priority, each
+  with its photo, category and duplicate candidates.
+- Validate the new report. For a routine fix, _Send to department_ starts the 21-day clock.
+- For a systemic problem, sign in as the state desk, open _Ready to route_ and show the ranked
+  universities with their reasons ("domain strength, disciplines, faculty, distance"). Route it.
+
+**2:45 The university and industry (60 s).**
+
+- Sign in as BAU and open project **AKH-2026-000003** (pest advisory): team, versioned proposal,
+  milestones, field tests, documents.
+- Advance the stage and record an outcome.
+- Open _Industry offers_ and accept Krishi Setu's offer. Optionally show the partner's
+  _Discover projects_ view, which lists only vetted projects.
+
+**3:45 The loop closes (30 s).** Open `/track?ref=AKH-2026-000003`. The public timeline shows the
+stage, the industry partner and the team's public update, with no internal notes.
+
+**4:15 The state's view (45 s).**
+
+- As the state desk, open _Dashboard_: reports by month, domain and district, the funnel, patents,
+  startups, people reached, partnerships by kind.
+- Filter by one domain and every figure re-scopes.
+- End on _Who classified each report_: the AI tiers versus the offline fallback. Classification
+  never goes down.
+
+**If something fails on stage:** every screen from step 1:45 onwards is already populated by the
+seed data. Without Clerk keys, steps 0:00 to 1:45 still work in full.

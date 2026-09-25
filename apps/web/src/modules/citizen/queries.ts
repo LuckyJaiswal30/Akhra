@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, ne, or } from 'drizzle-orm';
 import {
   districts,
   getDb,
@@ -30,7 +30,6 @@ export interface ProblemSummary {
 export interface TrackedProblem extends ProblemSummary {
   description: string;
   blockName: string | null;
-  submitterName: string;
   timeline: {
     id: string;
     toStatus: string;
@@ -46,6 +45,8 @@ export interface TrackedProblem extends ProblemSummary {
   reopenCount: number;
   resolutionTrack: 'department' | 'research' | null;
   submitterId: string | null;
+  /** The report this one was merged into, whose progress its reporter now follows. */
+  mergedInto: { refCode: string; title: string; status: string } | null;
 }
 
 const summaryColumns = {
@@ -60,6 +61,11 @@ const summaryColumns = {
   createdAt: problems.createdAt,
 };
 
+/** An ILIKE pattern that matches the text literally: % and _ typed by a visitor are not wildcards. */
+function containing(text: string): string {
+  return `%${text.replace(/[\\%_]/g, '\\$&')}%`;
+}
+
 export async function listProblems(
   actor: Actor,
   filter: ProblemFilter,
@@ -67,9 +73,13 @@ export async function listProblems(
   const conditions = [
     filter.domain ? eq(problems.domain, filter.domain) : undefined,
     filter.districtCode ? eq(problems.districtCode, filter.districtCode) : undefined,
-    filter.status ? eq(problems.status, filter.status) : undefined,
+    // A merged duplicate is one case with its original; listing both would show it twice.
+    filter.status ? eq(problems.status, filter.status) : ne(problems.status, 'duplicate'),
     filter.q
-      ? or(ilike(problems.title, `%${filter.q}%`), ilike(problems.description, `%${filter.q}%`))
+      ? or(
+          ilike(problems.title, containing(filter.q)),
+          ilike(problems.description, containing(filter.q)),
+        )
       : undefined,
   ].filter(Boolean);
 
@@ -106,11 +116,12 @@ export async function trackByRefCode(refCode: string): Promise<TrackedProblem | 
         reopenCount: problems.reopenCount,
         resolutionTrack: problems.resolutionTrack,
         submitterId: problems.submitterId,
+        duplicateOfId: problems.duplicateOfId,
       })
       .from(problems)
       .innerJoin(districts, eq(problems.districtCode, districts.code))
       .leftJoin(organizations, eq(problems.assignedOrgId, organizations.id))
-      .where(eq(problems.refCode, refCode.toUpperCase()))
+      .where(eq(problems.refCode, refCode.trim().toUpperCase()))
       .limit(1);
 
     if (!problem) return null;
@@ -133,7 +144,26 @@ export async function trackByRefCode(refCode: string): Promise<TrackedProblem | 
       .innerJoin(organizations, eq(problemRoutings.organizationId, organizations.id))
       .where(eq(problemRoutings.problemId, problem.id));
 
-    return { ...problem, timeline, routedTo } as TrackedProblem;
+    const { duplicateOfId, submitterName, ...tracked } = problem;
+    // The public timeline names officers and teams, never the citizen who reported the problem.
+    const publicTimeline = timeline.map((event) =>
+      event.actorLabel === submitterName ? { ...event, actorLabel: null } : event,
+    );
+    const [mergedInto] =
+      problem.status === 'duplicate' && duplicateOfId
+        ? await tx
+            .select({ refCode: problems.refCode, title: problems.title, status: problems.status })
+            .from(problems)
+            .where(eq(problems.id, duplicateOfId))
+            .limit(1)
+        : [];
+
+    return {
+      ...tracked,
+      timeline: publicTimeline,
+      routedTo,
+      mergedInto: mergedInto ?? null,
+    } as TrackedProblem;
   });
 }
 

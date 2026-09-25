@@ -3,7 +3,8 @@
 import { createProblemSchema, type ActionState } from '@akhra/shared';
 import { formId, parseInput, runAction } from '@/server/api';
 import { serverEnv } from '@/server/env';
-import { consumeRateLimit, rateLimitedError } from '@/server/rate-limit';
+import { headers } from 'next/headers';
+import { clientIdentifier, consumeRateLimit, rateLimitedError } from '@/server/rate-limit';
 import { getActor } from '@/server/session';
 import { submitProblem, type SubmissionResult } from './service';
 import { supportProblem, withdrawSupport, type SupportState } from './support';
@@ -52,6 +53,17 @@ export async function submitProblemAction(
       ONE_HOUR,
     );
     if (!limit.allowed) throw rateLimitedError(limit.resetAt, 'reports this hour');
+    const address = clientIdentifier(await headers());
+    if (!actor.userId && address !== 'unknown') {
+      // The phone number is typed by the sender, so a spammer would change it; the network address
+      // is not. Set higher, because a village or a CSC often shares one address.
+      const network = await consumeRateLimit(
+        `submit-ip:${address}`,
+        serverEnv.RATE_LIMIT_SUBMISSIONS_PER_HOUR * 4,
+        ONE_HOUR,
+      );
+      if (!network.allowed) throw rateLimitedError(network.resetAt, 'reports this hour');
+    }
 
     return { data: await submitProblem(actor, input), message: 'Your report has been received.' };
   });

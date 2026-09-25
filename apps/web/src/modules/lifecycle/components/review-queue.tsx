@@ -4,16 +4,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { Alert } from '@/components/ui';
 
 /**
- * A decision on a proposal takes it off this page, and with it the line that said the decision was
- * recorded — an officer pressed Approve and the screen went empty. React unmounts that row in the
- * same commit that delivers the action's result, so an effect inside the row cannot be relied on
- * to run at all.
- *
- * The queue watches instead: a form tells it which proposal is being decided, and it confirms once
- * that proposal has left the list. A refusal leaves the row in place, where its own message shows.
- *
- * The rows are still rendered on the server and pass through this boundary as children, so nothing
- * about the proposals reaches the browser that was not already going there.
+ * A decided proposal leaves the list, and React unmounts its row in the same commit as the action's
+ * result, so the row cannot confirm the decision itself. The queue confirms once the proposal is gone;
+ * a refusal leaves the row in place with its own message.
  */
 const Deciding = createContext<(proposalId: string) => void>(() => {});
 

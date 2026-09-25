@@ -6,6 +6,7 @@ import { AuthShell } from '@/components/auth-shell';
 import { routing } from '@/i18n/routing';
 import { AuthCard, UnusableSession, getAuthPolicy, safeReturnPath } from '@/modules/auth';
 import { getActor } from '@/server/session';
+import { signInEnabled } from '@/server/sign-in-mode';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -26,7 +27,7 @@ export async function authPage(
   if (actor.userId) redirect(afterAuth as Route);
 
   const labels = (await getMessages()).auth as Record<string, string>;
-  if ((await auth()).userId) {
+  if (signInEnabled && (await auth()).userId) {
     return (
       <AuthShell locale={locale}>
         <UnusableSession labels={labels} signInPath={`${prefix}/sign-in`} />

@@ -189,11 +189,7 @@ export interface Lifecycle {
   canManage: boolean;
   /** Take part in the work: record progress on it. A student on the team may, and does. */
   canContribute: boolean;
-  /**
-   * Share a file. This one is not gated on approval: a team assembling a proposal has a survey, a
-   * drawing or a quotation to put in front of the officer reviewing it, and the service has always
-   * allowed that. The screen used to hide the form anyway, under a banner promising the opposite.
-   */
+  /** Share a file. Not gated on approval: a team drafting a proposal needs to attach surveys and quotes. */
   canAddDocument: boolean;
   canApprove: boolean;
   milestones: MilestoneRecord[];

@@ -1,12 +1,4 @@
-import {
-  Building2,
-  ChartColumnIncreasing,
-  CircleCheckBig,
-  GraduationCap,
-  Landmark,
-  Lightbulb,
-  Users,
-} from 'lucide-react';
+import { ChartColumnIncreasing, CircleCheckBig, Landmark, Lightbulb, Users } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import type { PlatformStats } from '@/modules/analytics';
@@ -42,7 +34,15 @@ export function PageIntro({
   );
 }
 
-export async function StatsBand({ stats, locale }: { stats: PlatformStats; locale: string }) {
+export async function StatsBand({
+  stats,
+  locale,
+  note,
+}: {
+  stats: PlatformStats;
+  locale: string;
+  note?: string;
+}) {
   const t = await getTranslations('landing');
   const items = [
     { Icon: Users, value: stats.totalProblems, label: t('statChallenges') },
@@ -54,60 +54,24 @@ export async function StatsBand({ stats, locale }: { stats: PlatformStats; local
 
   return (
     <section aria-label={t('statsLabel')} className="border-line bg-mint border-y">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 gap-y-5 px-4 py-6 sm:grid-cols-3 sm:gap-y-6 sm:px-6 sm:py-7 lg:px-8 xl:grid-cols-5">
-        <dl className="contents">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-7 lg:px-8">
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 sm:gap-y-6 xl:grid-cols-5">
           {items.map(({ Icon, value, label }) => (
-            <div
+            <li
               key={label}
               className="xl:border-line flex items-center gap-3.5 xl:border-r xl:px-5 xl:first:pl-0"
             >
               <Icon aria-hidden className="text-sal h-6 w-6 shrink-0 sm:h-7 sm:w-7" />
-              <div className="flex flex-col-reverse">
-                <dt className="text-subtle text-sm">{label}</dt>
-                <dd className="text-ink text-xl font-bold tabular-nums sm:text-2xl">
+              <p className="flex flex-col">
+                <span className="text-ink text-xl font-bold tabular-nums sm:text-2xl">
                   {formatCount(value, locale)}
-                </dd>
-              </div>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Who stands behind Akhra. It is a statement, not navigation: every one of these four already has
- * its place in the platform — a citizen reports, everyone else signs in and lands on their own desk.
- */
-export async function PartnerStrip() {
-  const t = await getTranslations('landing');
-  const partners = [
-    { Icon: Landmark, label: t('partnerGov') },
-    { Icon: GraduationCap, label: t('partnerUniversities') },
-    { Icon: Building2, label: t('partnerIndustry') },
-    { Icon: Users, label: t('partnerCommunities') },
-  ] as const;
-
-  return (
-    <section aria-labelledby="partners-heading" className="border-line bg-surface border-t">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:px-8">
-        <h2
-          id="partners-heading"
-          className="text-subtle lg:border-line shrink-0 text-sm lg:border-r lg:pr-8"
-        >
-          {t('partnersLabel')}
-        </h2>
-        <ul className="flex flex-1 flex-wrap items-center gap-x-8 gap-y-4">
-          {partners.map(({ Icon, label }) => (
-            <li key={label} className="text-ink flex items-center gap-3 text-sm font-medium">
-              <span className="border-line text-sal grid h-12 w-12 shrink-0 place-items-center rounded-full border">
-                <Icon aria-hidden className="h-6 w-6" />
-              </span>
-              {label}
+                </span>
+                <span className="text-subtle text-sm">{label}</span>
+              </p>
             </li>
           ))}
         </ul>
+        {note && <p className="text-warning mt-4 text-sm font-medium">{note}</p>}
       </div>
     </section>
   );

@@ -10,7 +10,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@akhra/shared', '@akhra/db', '@akhra/classifier'],
-  serverExternalPackages: ['pg', 'pino'],
+  serverExternalPackages: ['pg', 'pino', 'react-email'],
   typedRoutes: true,
   images: { remotePatterns: [{ protocol: 'https', hostname: 'img.clerk.com' }] },
   async headers() {

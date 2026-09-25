@@ -30,7 +30,7 @@ const SEARCH_PATHS = ['apps', 'packages', 'docs', '.github'];
 let failed = false;
 
 for (const check of CHECKS) {
-  let output = '';
+  let output;
   try {
     output = execSync(
       `grep -rInE ${JSON.stringify(check.pattern)} ${SEARCH_PATHS.join(' ')} ` +

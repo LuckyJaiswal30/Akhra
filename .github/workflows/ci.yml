@@ -36,15 +36,13 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -63,6 +61,9 @@ jobs:
 
       - name: Production-safety checks
         run: pnpm check:no-hardcoded-urls
+
+      - name: Colour contrast (WCAG AA)
+        run: pnpm --filter @akhra/web contrast
 
       - name: Verify migrations are committed
         run: |
@@ -87,15 +88,13 @@ jobs:
           - mode: production
             node_env: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -108,13 +107,9 @@ jobs:
   browser:
     name: Browser smoke
     runs-on: ubuntu-latest
-    # The app cannot boot without Clerk, so this runs only where those secrets exist — never on a
-    # fork's pull request. The chain itself is covered by `pnpm test` in the job above.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Public pages need no Clerk keys, so this runs everywhere, forks included.
     env:
       NEXT_PUBLIC_APP_URL: http://localhost:3100
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
     services:
       postgres:
@@ -131,36 +126,27 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Skip without Clerk keys
-        id: keys
-        run: echo "present=${{ secrets.CLERK_PUBLISHABLE_KEY != '' }}" >> "$GITHUB_OUTPUT"
-
       - name: Apply migrations
-        if: steps.keys.outputs.present == 'true'
         run: pnpm db:migrate
 
       - name: Install the browser
-        if: steps.keys.outputs.present == 'true'
         run: pnpm --filter @akhra/web test:browser:install
 
       - name: Public pages, both languages, phone and desktop
-        if: steps.keys.outputs.present == 'true'
         run: pnpm test:browser
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report

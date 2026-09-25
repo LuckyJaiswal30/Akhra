@@ -57,12 +57,11 @@ const serverSchema = z.object({
 
   LOG_LEVEL: z.enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
-  ALLOW_SEED: z.coerce.boolean().default(false),
+  ALLOW_SEED: z.stringbool().default(false),
 });
 
 const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url('NEXT_PUBLIC_APP_URL must be a full URL, e.g. http://localhost:3000'),
-  NEXT_PUBLIC_DEFAULT_LOCALE: z.enum(['en', 'hi']).default('en'),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
 });
 
@@ -98,7 +97,7 @@ export function getServerEnv(source: NodeJS.ProcessEnv = process.env): ServerEnv
   const parsed = serverSchema.safeParse(source);
   if (!parsed.success) {
     throw new Error(
-      `Invalid server environment configuration:\n${formatIssues(parsed.error)}\n\nEvery variable is listed in the README's "Environment setup" table.`,
+      `Invalid server environment configuration:\n${formatIssues(parsed.error)}\n\nEvery variable is listed in the README's "Environment variables" table.`,
     );
   }
 

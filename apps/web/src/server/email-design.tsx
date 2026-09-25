@@ -1,15 +1,5 @@
 import React, { type ReactNode } from 'react';
-import {
-  Body,
-  Container,
-  Head,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Section,
-  Text,
-} from '@react-email/components';
+import { Body, Container, Head, Html, Img, Link, Preview, Section, Text } from 'react-email';
 
 const palette = {
   paper: '#f4f7f5',

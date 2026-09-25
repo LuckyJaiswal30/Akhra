@@ -1,17 +1,20 @@
 import { cn } from '@/lib/utils';
 
-function AkhraMark({ className }: { className?: string }) {
+const FIGURES = [0, 72, 144, 216, 288];
+
+/** Five people seated around common ground: the akhra where a village meets to decide. */
+export function AkhraMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 40 40" aria-hidden className={cn('h-9 w-9 shrink-0', className)}>
-      <path d="M19.5 36C7.5 30.5 4.8 16.8 12.6 5.5c8.6 7.4 11.2 19.2 6.9 30.5Z" fill="#1F6B45" />
-      <path d="M20.5 36c10.8-4.6 16-14.4 14.4-26.8-10.9 3.2-16.5 13.6-14.4 26.8Z" fill="#5AA476" />
-      <path
-        d="M19.6 35.2c.2-9 2.4-16.4 8.2-22.6M13 10.5c3.6 6.4 5.4 14 5.6 23.2"
-        stroke="#EAF4EE"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        fill="none"
-      />
+    <svg viewBox="0 0 48 48" aria-hidden className={cn('h-9 w-9 shrink-0', className)}>
+      <g className="fill-sal">
+        {FIGURES.map((angle) => (
+          <g key={angle} transform={`rotate(${angle} 24 24)`}>
+            <circle cx="24" cy="6.3" r="4.3" />
+            <path d="M18.4 18.2a5.6 6.6 0 0 1 11.2 0z" />
+          </g>
+        ))}
+      </g>
+      <circle cx="24" cy="24" r="4.6" className="fill-amber" />
     </svg>
   );
 }

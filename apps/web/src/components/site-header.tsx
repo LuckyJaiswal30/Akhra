@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server';
-import type { Role } from '@akhra/shared';
 import { AkhraLogo } from '@/components/brand/akhra-logo';
 import { Link } from '@/i18n/navigation';
 import { getActor } from '@/server/session';
@@ -7,47 +6,23 @@ import { LocaleSwitcher } from './locale-switcher';
 import { MobileMenu } from './mobile-menu';
 import { NavLinks, type NavItem } from './nav-links';
 import { UserMenu } from './user-menu';
-
-/**
- * The front door of each role's own work. Signed out, the header sells the platform; signed in, the
- * first thing in it should be the desk the person actually sits at — an officer should never have to
- * learn a URL or go back to the home page to reach their queue.
- */
-const WORKSPACE: Record<Role, { href: NavItem['href']; key: string }> = {
-  citizen: { href: '/dashboard', key: 'myReports' },
-  student: { href: '/university/projects', key: 'myProjects' },
-  faculty: { href: '/university', key: 'institution' },
-  university_admin: { href: '/university', key: 'institution' },
-  industry_partner: { href: '/industry', key: 'industry' },
-  industry_admin: { href: '/industry', key: 'industry' },
-  dept_officer: { href: '/department', key: 'department' },
-  gov_admin: { href: '/government', key: 'stateDashboard' },
-  super_admin: { href: '/admin', key: 'administration' },
-};
+import { DASHBOARD_HREF } from './workspace';
 
 export async function SiteHeader({ locale }: { locale: string }) {
   const [t, actor] = await Promise.all([getTranslations(), getActor()]);
   const role = actor.userId && actor.role !== 'anonymous' ? actor.role : null;
 
   const publicItems: NavItem[] = [
+    { href: '/track', label: t('nav.track') },
     { href: '/how-it-works', label: t('nav.howItWorks') },
     { href: '/success-stories', label: t('nav.stories') },
     { href: '/impact', label: t('nav.impact') },
     { href: '/resources', label: t('nav.resources') },
   ];
 
-  // Signed in, the two pages written for newcomers give way to the person's own work. The full
-  // public list is still one tap away in the mobile menu.
-  const workspace: NavItem | null = role
-    ? { href: WORKSPACE[role].href, label: t(`nav.${WORKSPACE[role].key}`), primary: true }
-    : null;
-  const items: NavItem[] = workspace
-    ? [
-        workspace,
-        ...(role === 'citizen' ? [{ href: '/submit' as const, label: t('nav.submit') }] : []),
-        { href: '/impact', label: t('nav.impact') },
-        { href: '/resources', label: t('nav.resources') },
-      ]
+  // Signed in, the same menu plus a way back to the person's own desk.
+  const items: NavItem[] = role
+    ? [{ href: DASHBOARD_HREF[role], label: t('nav.dashboard'), primary: true }, ...publicItems]
     : publicItems;
 
   return (
@@ -69,7 +44,7 @@ export async function SiteHeader({ locale }: { locale: string }) {
             <LocaleSwitcher label={t('nav.language')} />
           </span>
           <MobileMenu
-            items={workspace ? [workspace, ...publicItems] : publicItems}
+            items={items}
             labels={{ open: t('nav.openMenu'), close: t('nav.closeMenu'), menu: t('nav.main') }}
           >
             <LocaleSwitcher label={t('nav.language')} />

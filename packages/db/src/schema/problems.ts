@@ -109,6 +109,7 @@ export const problems = pgTable(
     transferredAt: timestamp('transferred_at', { withTimezone: true }),
     transferredById: uuid('transferred_by_id').references(() => users.id, { onDelete: 'set null' }),
     transferCount: integer('transfer_count').notNull().default(0),
+    contactErasedAt: timestamp('contact_erased_at', { withTimezone: true }),
 
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

@@ -1,13 +1,17 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import createIntlMiddleware from 'next-intl/middleware';
+import type { NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
+import { signInEnabled } from './server/sign-in-mode';
 
 const handleLocale = createIntlMiddleware(routing);
 
-export default clerkMiddleware((_auth, request) => {
+function route(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api')) return;
   return handleLocale(request);
-});
+}
+
+export default signInEnabled ? clerkMiddleware((_auth, request) => route(request)) : route;
 
 export const config = {
   matcher: [

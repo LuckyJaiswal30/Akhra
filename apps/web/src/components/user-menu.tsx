@@ -11,9 +11,7 @@ export async function UserMenu({ locale }: { locale: string }) {
   const actor = await getActor();
   const t = await getTranslations('nav');
 
-  // Everyone signs in at the same door, so it is never folded into a menu: Akhra decides where a
-  // person lands from the role on their account, and a portal that hides its one entrance below a
-  // 1280px laptop is a portal most visitors never get into.
+  // Sign-in stays visible at every width: it is the only entrance to every portal.
   if (!actor.userId || actor.role === 'anonymous') {
     return (
       <Link

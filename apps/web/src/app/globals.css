@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Light theme only, by design. Palette and contrast figures: docs/DESIGN.md; `pnpm --filter @akhra/web contrast` guards them. */
+/* Light theme only, by design. `pnpm --filter @akhra/web contrast` checks every text/background pair against WCAG AA. */
 @theme {
   --font-sans: var(--font-plex-sans), var(--font-plex-deva), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;

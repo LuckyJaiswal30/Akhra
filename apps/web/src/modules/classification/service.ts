@@ -253,7 +253,7 @@ export async function findDuplicates(input: {
 
   let degraded = exact === null;
 
-  let candidates: Candidate[] = [];
+  let candidates: Candidate[];
   try {
     candidates = await trigramCandidates(input.districtCode, needle, input.excludeId);
   } catch (error: unknown) {

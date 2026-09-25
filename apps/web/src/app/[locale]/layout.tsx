@@ -4,8 +4,9 @@ import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Sans_Devanagari } from 'next/fon
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { routing } from '@/i18n/routing';
+import { signInEnabled } from '@/server/sign-in-mode';
 
 const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -63,7 +64,7 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body className="flex min-h-dvh flex-col">
-        <ClerkProvider
+        <OptionalClerkProvider
           signInUrl={`${prefix}/sign-in`}
           signUpUrl={`${prefix}/sign-up`}
           afterSignOutUrl={`${prefix}/`}
@@ -83,8 +84,12 @@ export default async function LocaleLayout({
               {children}
             </main>
           </NextIntlClientProvider>
-        </ClerkProvider>
+        </OptionalClerkProvider>
       </body>
     </html>
   );
+}
+
+function OptionalClerkProvider(props: ComponentProps<typeof ClerkProvider>) {
+  return signInEnabled ? <ClerkProvider {...props} /> : props.children;
 }

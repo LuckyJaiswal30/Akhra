@@ -9,7 +9,7 @@ export type SiteHref =
   | '/success-stories'
   | '/impact'
   | '/resources'
-  | '/submit'
+  | '/track'
   | '/dashboard'
   | '/admin'
   | '/government'

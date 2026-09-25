@@ -11,7 +11,8 @@ import { query, type Actor } from '@/server/session';
 import {
   districtOfficerIds,
   escalationRecipientIds,
-  findReporter,
+  findReporters,
+  type Reporter,
   organizationMemberIds,
 } from './recipients';
 
@@ -210,25 +211,36 @@ export async function notifyEscalation(
   }
 }
 
+async function sendToReporters(
+  problemId: string,
+  build: (reporter: Reporter) => NotificationInput,
+) {
+  for (const reporter of await findReporters(problemId)) {
+    const input = build(reporter);
+    if (reporter.userId) await notifyUsers([reporter.userId], { ...input, email: !reporter.email });
+    if (reporter.email) notifyEmail(reporter.email, input);
+  }
+}
+
+function mergedPrefix(reporter: Reporter): string {
+  return reporter.mergedInto
+    ? `Your report ${reporter.refCode} was merged into ${reporter.mergedInto}, which covers the same problem. `
+    : '';
+}
+
 export async function notifyReporter(
   problemId: string,
   status: ProblemStatus,
   note?: string,
 ): Promise<void> {
   try {
-    const reporter = await findReporter(problemId);
-    if (!reporter) return;
-
     const label = STATUS_DEFINITIONS[status].labelEn;
-    const input: NotificationInput = {
+    await sendToReporters(problemId, (reporter) => ({
       type: `problem_${status}`,
       title: `Update on your report ${reporter.refCode}`,
-      body: `"${reporter.title}" is now: ${label}.${note ? `\n\n${note}` : ''}`,
+      body: `${mergedPrefix(reporter)}"${reporter.title}" is now: ${label}.${note ? `\n\n${note}` : ''}`,
       linkUrl: `/track?ref=${reporter.refCode}`,
-    };
-
-    if (reporter.userId) await notifyUsers([reporter.userId], { ...input, email: !reporter.email });
-    if (reporter.email) notifyEmail(reporter.email, input);
+    }));
   } catch (error) {
     logger.error(
       { err: error instanceof Error ? error.message : String(error), problemId },
@@ -242,12 +254,11 @@ export async function notifyReporterUpdate(
   input: Omit<NotificationInput, 'linkUrl'>,
 ): Promise<void> {
   try {
-    const reporter = await findReporter(problemId);
-    if (!reporter) return;
-    const withLink: NotificationInput = { ...input, linkUrl: `/track?ref=${reporter.refCode}` };
-    if (reporter.userId)
-      await notifyUsers([reporter.userId], { ...withLink, email: !reporter.email });
-    if (reporter.email) notifyEmail(reporter.email, withLink);
+    await sendToReporters(problemId, (reporter) => ({
+      ...input,
+      body: `${mergedPrefix(reporter)}${input.body ?? ''}`.trim() || undefined,
+      linkUrl: `/track?ref=${reporter.refCode}`,
+    }));
   } catch (error) {
     logger.error(
       { err: error instanceof Error ? error.message : String(error), problemId },

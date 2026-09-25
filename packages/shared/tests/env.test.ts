@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ENV_KEYS, nearMissWarnings } from '../src/env';
+import { ENV_KEYS, getServerEnv, nearMissWarnings, resetServerEnvCache } from '../src/env';
 
 describe('environment near-miss detection', () => {
   it('flags a variable whose name differs from a known one only by letter case', () => {
@@ -31,16 +31,38 @@ describe('environment near-miss detection', () => {
  */
 const TOOLING_KEYS = ['TEST_DATABASE_URL', 'E2E_BASE_URL'];
 
-describe('.env.example', () => {
-  it('lists exactly the variables the project reads, so it never drifts from the code', () => {
-    const text = readFileSync(
-      fileURLToPath(new URL('../../../.env.example', import.meta.url)),
-      'utf8',
-    );
-    const listed = [...text.matchAll(/^([A-Z][A-Z0-9_]*)=/gm)].map((match) => match[1]).sort();
+const EXPECTED_KEYS = [...ENV_KEYS.filter((key) => key !== 'NODE_ENV'), ...TOOLING_KEYS].sort();
 
-    expect(listed).toEqual(
-      [...ENV_KEYS.filter((key) => key !== 'NODE_ENV'), ...TOOLING_KEYS].sort(),
-    );
+const readRepoFile = (name: string) =>
+  readFileSync(fileURLToPath(new URL(`../../../${name}`, import.meta.url)), 'utf8');
+
+describe('documented variables', () => {
+  it('.env.example lists exactly the variables the project reads', () => {
+    const listed = [...readRepoFile('.env.example').matchAll(/^([A-Z][A-Z0-9_]*)=/gm)]
+      .map((match) => match[1])
+      .sort();
+
+    expect(listed).toEqual(EXPECTED_KEYS);
+  });
+
+  it('the README table lists exactly the variables the project reads', () => {
+    const listed = [...readRepoFile('README.md').matchAll(/^\| `([A-Z][A-Z0-9_]*)` +\|/gm)]
+      .map((match) => match[1])
+      .sort();
+
+    expect(listed).toEqual(EXPECTED_KEYS);
+  });
+});
+
+describe('ALLOW_SEED', () => {
+  const base = { DATABASE_URL: 'postgres://x', INVITE_SIGNING_SECRET: 'x'.repeat(32) };
+
+  it.each([
+    ['false', false],
+    ['true', true],
+  ])('reads "%s" as %s', (value, expected) => {
+    resetServerEnvCache();
+    expect(getServerEnv({ ...base, ALLOW_SEED: value }).ALLOW_SEED).toBe(expected);
+    resetServerEnvCache();
   });
 });

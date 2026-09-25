@@ -74,11 +74,17 @@ export interface Reporter {
   title: string;
   userId: string | null;
   email: string | null;
+  /** Set when this person's report was merged into the one the update is about. */
+  mergedInto: string | null;
 }
 
-export async function findReporter(problemId: string): Promise<Reporter | null> {
-  const [row] = await withoutRls(getDb(), (tx) =>
-    tx
+/**
+ * Everyone who reported this problem: its own reporter, and the reporters whose reports an officer
+ * merged into it as duplicates. Each keeps their own reference code.
+ */
+export async function findReporters(problemId: string): Promise<Reporter[]> {
+  return withoutRls(getDb(), async (tx) => {
+    const [original] = await tx
       .select({
         refCode: problems.refCode,
         title: problems.title,
@@ -87,9 +93,24 @@ export async function findReporter(problemId: string): Promise<Reporter | null> 
       })
       .from(problems)
       .where(eq(problems.id, problemId))
-      .limit(1),
-  );
-  return row ?? null;
+      .limit(1);
+    if (!original) return [];
+
+    const merged = await tx
+      .select({
+        refCode: problems.refCode,
+        title: problems.title,
+        userId: problems.submitterId,
+        email: problems.submitterEmail,
+      })
+      .from(problems)
+      .where(and(eq(problems.duplicateOfId, problemId), eq(problems.status, 'duplicate')));
+
+    return [
+      { ...original, mergedInto: null },
+      ...merged.map((row) => ({ ...row, mergedInto: original.refCode })),
+    ];
+  });
 }
 
 export interface ProblemParticipants {

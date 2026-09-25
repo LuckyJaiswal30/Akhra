@@ -96,7 +96,7 @@ export async function transitionWithin(
   );
 }
 
-export async function transitionProblem(
+async function transitionProblem(
   actor: Actor,
   problemId: string,
   toStatus: ProblemStatus,
@@ -149,11 +149,24 @@ export async function markAsDuplicate(
   duplicateOfId: string,
   note?: string,
 ): Promise<void> {
-  const mergeNote = note ?? 'Merged into an existing report covering the same issue.';
+  const [original] = await withoutRls(getDb(), (tx) =>
+    tx
+      .select({ refCode: problems.refCode })
+      .from(problems)
+      .where(eq(problems.id, duplicateOfId))
+      .limit(1),
+  );
+  const mergeNote =
+    note ??
+    `Merged into ${original?.refCode ?? 'an existing report'}, which covers the same problem. Its updates will reach you here.`;
   await query(actor, async (tx) => {
     await tx.update(problems).set({ duplicateOfId }).where(eq(problems.id, problemId));
     await transitionWithin(tx, actor, problemId, 'duplicate', { note: mergeNote });
   });
+  // Reports already merged into this one follow it to the new original, so no reporter is left behind.
+  await withoutRls(getDb(), (tx) =>
+    tx.update(problems).set({ duplicateOfId }).where(eq(problems.duplicateOfId, problemId)),
+  );
   // The original now stands for one more person's report, which raises its priority.
   await withoutRls(getDb(), (tx) => refreshPriority(tx, duplicateOfId));
   await notifyReporter(problemId, 'duplicate', mergeNote);

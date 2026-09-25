@@ -22,10 +22,13 @@ import {
   useActionForm,
 } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
+import { useOnlineStatus } from '@/lib/use-online-status';
 import { submitProblemAction, type SubmitState } from '../actions';
 import type { SubmissionResult } from '../service';
+import { clearDraft, draftFromForm, loadDraft, parseLocation, saveDraft } from '../draft';
 import type { ReporterProfile } from '../queries';
 import { AttachmentPicker, type AttachmentPickerLabels } from './attachment-picker';
+import { VoiceInput } from './voice-input';
 
 const DistrictMap = dynamic(() => import('./district-map').then((m) => m.DistrictMap), {
   ssr: false,
@@ -74,6 +77,59 @@ export function SubmitForm({
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
   const isHindi = locale === 'hi';
+  const online = useOnlineStatus();
+  const [hasDraft, setHasDraft] = useState(false);
+
+  useEffect(() => {
+    const draft = loadDraft();
+    const element = form.ref.current;
+    if (!draft || !element) return;
+    for (const [name, value] of Object.entries(draft)) {
+      if (name === 'districtCode') setDistrictCode(value);
+      else if (name === 'location') setLocation(parseLocation(value));
+      else {
+        const input = element.elements.namedItem(name);
+        if (input instanceof HTMLInputElement && input.type === 'checkbox') input.checked = true;
+        else if (
+          input instanceof HTMLInputElement ||
+          input instanceof HTMLTextAreaElement ||
+          input instanceof HTMLSelectElement
+        ) {
+          input.value = value;
+        }
+      }
+    }
+    setHasDraft(true);
+  }, [form.ref]);
+
+  useEffect(() => {
+    if (form.ref.current && location) saveDraft(draftFromForm(form.ref.current));
+  }, [form.ref, location, districtCode]);
+
+  useEffect(() => {
+    if (state?.ok) clearDraft();
+  }, [state]);
+
+  function rememberDraft() {
+    if (!form.ref.current) return;
+    saveDraft(draftFromForm(form.ref.current));
+    setHasDraft(true);
+  }
+
+  function discardDraft() {
+    clearDraft();
+    form.ref.current?.reset();
+    setDistrictCode(profile?.districtCode ?? '');
+    setLocation(null);
+    setHasDraft(false);
+  }
+
+  function appendToDescription(text: string) {
+    const field = form.ref.current?.elements.namedItem('description');
+    if (!(field instanceof HTMLTextAreaElement)) return;
+    field.value = field.value ? `${field.value} ${text}` : text;
+    rememberDraft();
+  }
 
   useEffect(() => {
     const fields = state && !state.ok ? Object.keys(state.error.details?.fields ?? {}) : [];
@@ -90,7 +146,7 @@ export function SubmitForm({
   const stepIndex = STEPS.indexOf(step);
 
   return (
-    <form {...form} className="space-y-6" noValidate>
+    <form {...form} onInput={rememberDraft} className="space-y-6" noValidate>
       <div>
         <p className="text-ink font-medium" aria-live="polite">
           {labels[`stepOf_${step}`]}
@@ -108,6 +164,15 @@ export function SubmitForm({
         </ol>
       </div>
 
+      {!online && <Alert tone="warning">{labels.offline}</Alert>}
+      {hasDraft && (
+        <p className="text-subtle flex flex-wrap items-center gap-x-3 text-sm" aria-live="polite">
+          {labels.draftSaved}
+          <button type="button" onClick={discardDraft} className="text-sal font-medium underline">
+            {labels.draftDiscard}
+          </button>
+        </p>
+      )}
       {state && !state.ok && <Alert tone="error">{state.error.message}</Alert>}
 
       <div className={step === 'problem' ? 'space-y-5' : 'hidden'}>
@@ -129,6 +194,11 @@ export function SubmitForm({
           required
         >
           <Textarea id="description" name="description" rows={7} maxLength={5000} required />
+          <VoiceInput
+            locale={locale}
+            onText={appendToDescription}
+            labels={{ start: labels.voiceStart!, stop: labels.voiceStop!, hint: labels.voiceHint! }}
+          />
         </Field>
 
         <Field
@@ -335,6 +405,13 @@ export function SubmitForm({
           </Field>
         </div>
 
+        <p className="text-subtle text-sm">
+          {labels.contactNotice}{' '}
+          <Link href="/privacy" className="text-sal font-medium underline">
+            {labels.privacyLink}
+          </Link>
+        </p>
+
         <div className="border-field bg-surface rounded-md border p-4">
           <label className="flex items-start gap-3 text-sm">
             <input
@@ -365,7 +442,7 @@ export function SubmitForm({
         </Button>
 
         {step === 'contact' ? (
-          <Button key="submit" type="submit" size="lg" disabled={isPending}>
+          <Button key="submit" type="submit" size="lg" disabled={isPending || !online}>
             {isPending ? labels.submitting : labels.submit}
           </Button>
         ) : (

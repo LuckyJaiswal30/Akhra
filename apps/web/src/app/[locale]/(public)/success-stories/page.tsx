@@ -1,8 +1,8 @@
-import { ArrowRight, Building2, Handshake, MapPin } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DOMAIN_DEFINITIONS, JHARKHAND_DISTRICTS, isDomain } from '@akhra/shared';
 import { PageIntro } from '@/components/marketing';
-import { Card, buttonVariants } from '@/components/ui';
+import { serverEnv } from '@/server/env';
 import { Link } from '@/i18n/navigation';
 import { formatNumber } from '@/lib/utils';
 import { listSuccessStories } from '@/modules/analytics';
@@ -21,6 +21,7 @@ export default async function SuccessStoriesPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('stories');
+  const tLanding = await getTranslations('landing');
   const outcomeLabel = await getTranslations('lifecycle');
   const stories = await listSuccessStories();
   const isHindi = locale === 'hi';
@@ -28,95 +29,73 @@ export default async function SuccessStoriesPage({
 
   return (
     <>
-      <PageIntro title={t('title')} intro={t('intro')} />
+      <PageIntro title={t('title')} intro={t('intro')}>
+        {serverEnv.ALLOW_SEED && (
+          <p className="text-warning mt-4 text-sm font-medium">{tLanding('sampleData')}</p>
+        )}
+      </PageIntro>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         {stories.length === 0 ? (
-          <Card className="text-subtle p-8 text-center">{t('empty')}</Card>
+          <p className="border-line text-subtle border-y py-10 text-center">{t('empty')}</p>
         ) : (
-          <ul className="grid gap-6 lg:grid-cols-2">
+          <ul className="divide-line border-line divide-y border-y">
             {stories.map((story) => {
               const district = JHARKHAND_DISTRICTS.find((d) => d.code === story.districtCode);
               const domain =
                 story.domain && isDomain(story.domain) ? DOMAIN_DEFINITIONS[story.domain] : null;
+              const meta = [
+                t(`status_${story.status}`),
+                domain ? (isHindi ? domain.labelHi : domain.labelEn) : null,
+                district ? (isHindi ? district.nameHi : district.nameEn) : null,
+              ].filter(Boolean);
               return (
-                <li key={story.id}>
-                  <Card className="flex h-full flex-col p-6">
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
-                      <span className="bg-sal text-on-sal rounded-full px-3 py-1">
-                        {t(`status_${story.status}`)}
-                      </span>
-                      {domain && (
-                        <span className="bg-sal-wash text-sal-deep rounded-full px-3 py-1">
-                          {isHindi ? domain.labelHi : domain.labelEn}
-                        </span>
-                      )}
-                      {district && (
-                        <span className="bg-well text-ink inline-flex items-center gap-1 rounded-full px-3 py-1">
-                          <MapPin aria-hidden className="h-3.5 w-3.5" />
-                          {isHindi ? district.nameHi : district.nameEn}
-                        </span>
-                      )}
-                    </div>
-                    <h2 className="text-ink mt-4 text-xl font-bold">{story.title}</h2>
+                <li
+                  key={story.id}
+                  className="grid gap-x-12 gap-y-4 py-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]"
+                >
+                  <div>
+                    <p className="text-subtle text-sm">{meta.join(' · ')}</p>
+                    <h2 className="text-ink mt-1 text-xl font-bold">{story.title}</h2>
                     <p className="text-subtle mt-2">{story.summary}</p>
-
-                    <dl className="mt-4 space-y-2 text-sm">
-                      <div className="flex items-start gap-2">
-                        <Building2 aria-hidden className="text-sal mt-0.5 h-4 w-4 shrink-0" />
-                        <dt className="sr-only">{t('ledBy')}</dt>
-                        <dd className="text-ink">
-                          {t('ledByValue', { org: story.organizationName })}
-                        </dd>
-                      </div>
-                      {story.partners.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <Handshake aria-hidden className="text-sal mt-0.5 h-4 w-4 shrink-0" />
-                          <dt className="sr-only">{t('partners')}</dt>
-                          <dd className="text-ink">
-                            {t('partnersValue', { partners: story.partners.join(', ') })}
-                          </dd>
-                        </div>
-                      )}
-                    </dl>
-
-                    {story.outcomes.length > 0 && (
-                      <div className="bg-mint mt-5 mb-6 rounded-xl p-4">
-                        <h3 className="text-ink text-sm font-semibold">{t('outcomes')}</h3>
-                        <ul className="mt-2 space-y-2">
-                          {story.outcomes.map((outcome) => (
-                            <li key={outcome.id} className="text-sm">
-                              <span className="text-sal-deep font-medium">
-                                {outcomeLabel(`outcomeType_${outcome.type}`)}:{' '}
-                              </span>
-                              <span className="text-ink">{outcome.title}</span>
-                              {outcome.metricName && outcome.metricValue !== null && (
-                                <span className="text-subtle mt-0.5 block">
-                                  <span className="text-ink text-lg font-bold tabular-nums">
-                                    {formatNumber(outcome.metricValue, numberLocale)}
-                                  </span>{' '}
-                                  {outcome.metricName}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
+                    <p className="text-ink mt-3 text-sm">
+                      {t('ledByValue', { org: story.organizationName })}
+                      {story.partners.length > 0 &&
+                        ` · ${t('partnersValue', { partners: story.partners.join(', ') })}`}
+                    </p>
                     <Link
                       href={{ pathname: '/track', query: { ref: story.refCode } }}
-                      className={buttonVariants({
-                        variant: 'secondary',
-                        // Pushed to the foot of the card, so the buttons in a row line up however
-                        // much each story has to say above them.
-                        className: 'mt-auto self-start',
-                      })}
+                      className="text-sal mt-3 inline-flex items-center gap-1.5 text-sm font-medium underline"
                     >
                       {t('timeline')}
                       <ArrowRight aria-hidden className="h-4 w-4" />
                     </Link>
-                  </Card>
+                  </div>
+                  {story.outcomes.length > 0 && (
+                    <div>
+                      <h3 className="text-ink text-sm font-semibold">{t('outcomes')}</h3>
+                      <ul className="divide-line mt-2 divide-y">
+                        {story.outcomes.map((outcome) => (
+                          <li key={outcome.id} className="py-2 text-sm">
+                            {outcome.metricName && outcome.metricValue !== null && (
+                              <span className="text-ink mr-1.5 text-lg font-bold tabular-nums">
+                                {formatNumber(outcome.metricValue, numberLocale)}
+                              </span>
+                            )}
+                            {outcome.metricName && outcome.metricValue !== null && (
+                              <span className="text-subtle">{outcome.metricName}</span>
+                            )}
+                            <span className="text-ink block">
+                              <span className="text-sal-deep font-medium">
+                                {outcomeLabel(`outcomeType_${outcome.type}`)}:
+                              </span>{' '}
+                              {outcome.title}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </li>
               );
             })}

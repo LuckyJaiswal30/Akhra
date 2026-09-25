@@ -493,7 +493,8 @@ export async function listOrganizationProjects(
       .from(projects)
       .innerJoin(problems, eq(projects.problemId, problems.id))
       .where(and(eq(projects.organizationId, organizationId), onlyOwnWork(actor, tx)))
-      .orderBy(desc(projects.createdAt)),
+      .orderBy(desc(projects.createdAt))
+      .limit(100),
   );
 }
 

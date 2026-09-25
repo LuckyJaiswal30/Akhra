@@ -11,12 +11,14 @@ import {
   autoCloseSettledReports,
 } from '@/modules/classification';
 import { escalateOverdueReports, remindInterimUpdates } from '@/modules/automation';
+import { reporterDecisionAction } from '@/modules/classification/actions';
 import { getActor } from '@/server/session';
 import {
   actAs,
   cleanupTestData,
   createOrg,
   createUser,
+  formData,
   resetClerkFake,
   type TestUser,
 } from '../helpers';
@@ -170,6 +172,19 @@ describe('the reporter has the last word', () => {
     actAs(null);
     return report;
   }
+
+  it('does not let the department that did the work close a report its own staff filed', async () => {
+    const report = await reportAwaitingReporter(departmentStaff.id);
+    actAs(departmentStaff);
+
+    const result = await reporterDecisionAction(
+      null,
+      formData({ refCode: report.refCode, decision: 'confirm' }),
+    );
+
+    expect(result && !result.ok && result.error.code).toBe('FORBIDDEN');
+    expect((await stored(report.id)).status).toBe('action_taken');
+  });
 
   it('closes the report when the reporter confirms it', async () => {
     const report = await reportAwaitingReporter(citizen.id);

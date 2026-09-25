@@ -170,6 +170,7 @@ export interface ReporterProblem {
   reopenCount: number;
   submitterId: string | null;
   submitterPhone: string;
+  assignedOrgId: string | null;
 }
 
 export async function reporterProblemFor(
@@ -188,6 +189,7 @@ export async function reporterProblemFor(
         reopenCount: problems.reopenCount,
         submitterId: problems.submitterId,
         submitterPhone: problems.submitterPhone,
+        assignedOrgId: problems.assignedOrgId,
       })
       .from(problems)
       .where(eq(problems.refCode, refCode))

@@ -31,6 +31,9 @@ vi.mock('@clerk/nextjs/server', () => ({
   },
 }));
 
+// The suites sign people in through the fake above, so they run as if Clerk keys were set.
+vi.mock('@/server/sign-in-mode', () => ({ signInEnabled: true }));
+
 vi.mock('@/server/clerk', async (importOriginal) => {
   const real = await importOriginal<typeof ClerkModule>();
   return {
@@ -57,6 +60,8 @@ vi.mock('@/server/clerk', async (importOriginal) => {
     },
   };
 });
+
+vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 
 vi.mock('next/cache', () => ({
   revalidatePath: () => undefined,

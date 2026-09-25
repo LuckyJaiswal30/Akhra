@@ -26,6 +26,7 @@ import {
 
 import { getActor } from '@/server/session';
 import { Alert, Button, Field, Input, StatusBadge } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { formatDate } from '@/lib/utils';
 
 export async function generateMetadata({
@@ -43,9 +44,10 @@ export default async function TrackPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string | string[] }>;
 }) {
-  const [{ locale }, { ref }] = await Promise.all([params, searchParams]);
+  const [{ locale }, search] = await Promise.all([params, searchParams]);
+  const ref = [search.ref].flat()[0]?.trim() || undefined;
   setRequestLocale(locale);
 
   const t = await getTranslations('track');
@@ -96,6 +98,12 @@ export default async function TrackPage({
       {ref && !problem && (
         <div className="mt-6">
           <Alert tone="error">{t('notFound')}</Alert>
+          <p className="text-subtle mt-3 text-sm">
+            {t('notFoundHelp')}{' '}
+            <Link href="/submit" className="text-sal font-medium underline">
+              {t('reportNew')}
+            </Link>
+          </p>
         </div>
       )}
 
@@ -107,6 +115,26 @@ export default async function TrackPage({
               <StatusBadge status={problem.status as ProblemStatus} locale={locale} />
             </div>
             <h2 className="mt-3 text-2xl leading-snug font-bold">{problem.title}</h2>
+            {problem.mergedInto && (
+              <div className="border-sal/30 bg-sal-wash mt-4 rounded-lg border p-4">
+                <p className="text-ink font-semibold">
+                  {t('mergedTitle', { ref: problem.mergedInto.refCode })}
+                </p>
+                <p className="text-subtle mt-1 text-sm">{t('mergedBody')}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <StatusBadge
+                    status={problem.mergedInto.status as ProblemStatus}
+                    locale={locale}
+                  />
+                  <Link
+                    href={{ pathname: '/track', query: { ref: problem.mergedInto.refCode } }}
+                    className="text-sal font-medium underline"
+                  >
+                    {t('mergedFollow', { ref: problem.mergedInto.refCode })}
+                  </Link>
+                </div>
+              </div>
+            )}
             <p className="text-subtle mt-3 whitespace-pre-line">{problem.description}</p>
 
             <dl className="mt-6 grid grid-cols-[minmax(7rem,auto)_1fr] gap-x-6 gap-y-2 text-sm">

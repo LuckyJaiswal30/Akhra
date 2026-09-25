@@ -23,6 +23,14 @@ export default async function SubmitPage({ params }: { params: Promise<{ locale:
 
   const labels: Record<string, string> = {
     stepsLabel: t('stepsLabel'),
+    offline: t('offline'),
+    draftSaved: t('draftSaved'),
+    draftDiscard: t('draftDiscard'),
+    voiceStart: t('voiceStart'),
+    voiceStop: t('voiceStop'),
+    voiceHint: t('voiceHint'),
+    contactNotice: t('contactNotice'),
+    privacyLink: t('privacyLink'),
     step_problem: t('step_problem'),
     step_location: t('step_location'),
     step_contact: t('step_contact'),

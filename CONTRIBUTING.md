@@ -1,122 +1,87 @@
-# Working on Akhra
+# Contributing to Akhra
 
-This file is for the person who did not write the code. Read [`README.md`](README.md) for what
-Akhra is and how to run it, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how it is built, and
-[`docs/adr/`](docs/adr/README.md) for why — including what was turned down.
+Read [`README.md`](README.md) to run it and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how
+it fits together. The fastest way to learn the code is to walk one report through
+[`docs/DEMO.md`](docs/DEMO.md).
 
-## Your first hour
+## Conventions
 
-```bash
-pnpm install
-cp .env.example .env.local     # fill in DATABASE_URL, INVITE_SIGNING_SECRET, the two Clerk keys
-pnpm db:migrate
-pnpm db:seed                   # 24 districts, 14 institutions, 57 reports, 16 projects, a year of history
-pnpm clerk:demo-users          # once per Clerk development instance
-pnpm dev
-```
+- **Routes only in `app/`.** A file under `apps/web/src/app/` is a page, layout, route handler or
+  metadata file. Everything else belongs to a module, `components/` or `server/`.
+- **Import a module through its `index.ts`.** ESLint fails deep imports such as
+  `@/modules/citizen/service`.
+- **Authorization lives in the service function**, next to the query: role, ownership, district.
+  Read through `query(actor, …)` so row-level security applies too.
+- **`withoutRls` only with a reason.** Use it when there is no actor yet (linking an account, rate
+  limits), for system work (scheduled jobs, outbox, audit, snapshots), for data that says nothing
+  about a person (counts, public figures), or where an explicit check runs in the same function.
+  ESLint bans it from pages, routes, components and server actions.
+- **Validate at the edge with the shared Zod schemas** in `packages/shared/src/schemas.ts`. Errors
+  use the one shape from `packages/shared/src/errors.ts`, returned by `apiRoute()` and
+  `runAction()`.
+- **Every string goes in both `messages/en.json` and `messages/hi.json`.** A missing key shows up as
+  a broken page, so the browser test catches it.
+- **Configuration goes in one place.** Domains, districts, roles, deadlines and retention live in
+  `packages/shared`. Environment variables go in the env schema, `.env.example` and the README table;
+  a test keeps all three identical.
+- **Schema changes:** edit `packages/db/src/schema`, run `pnpm db:generate --name <what>`, and read
+  the SQL. RLS policies go in the same migration. CI fails if a generated migration is not committed.
+- **Scheduled jobs claim a bounded batch** (200 rows) and are safe to run twice.
+- **Comments explain why, not what,** in a line or two. No commented-out code.
 
-Sign in as any persona listed in the README (password `akhra2026`, code `424242` if Clerk asks).
-Each role sees a different Akhra: file a report as `citizen+clerk_test@example.com`, validate it as
-`district.ranchi+clerk_test@example.com`, take it on as `university+clerk_test@example.com`. An
-hour spent walking a report from one end to the other explains the codebase better than reading it.
+## UI
 
-## Where things live
+- Design tokens (colours, radii, shadows, fonts) are defined once, in `apps/web/src/app/globals.css`.
+  Use the Tailwind names (`text-ink`, `bg-sal`, `text-subtle`…), never raw hex values.
+- Build from the primitives in `src/components/ui` (`Button`, `Field`, `Alert`, `Card`…) before
+  writing new ones.
+- Mobile first. Test at 360 px. Every interactive element is keyboard reachable and labelled.
+- `pnpm --filter @akhra/web contrast` checks every text/background token pair against WCAG AA.
+- Heavy client libraries (charts, maps) load with `next/dynamic` where they render, so other pages
+  don't pay for them.
+- The logo and icons are in `apps/web/public/brand` and `apps/web/src/app`. The mark is five figures
+  around a common ground; keep it as it is.
 
-```
-apps/web/src/app/              routes only — pages, layouts, API handlers. Nothing else lives here.
-apps/web/src/modules/<name>/   a slice of the product: service, queries, actions, components, README
-apps/web/src/components/       what more than one module draws with; ui/ is the primitives
-apps/web/src/server/           session, identity, logging, rate limiting, storage, mail
-apps/web/src/                  only Next.js's own three: proxy.ts, instrumentation*.ts
-apps/web/tests/                vitest, against the test database
-apps/web/e2e/                  Playwright, against a built app
-packages/shared/               schemas, the status machine, districts, roles, scoring
-packages/db/                   schema, migrations, RLS policies, seed data
-packages/classifier/           the AI provider chain and duplicate detection
-```
-
-Next.js lets you colocate anything beside a route. This project does not: a file under `app/` is a
-`page`, a `layout`, a `route` or a metadata convention, and everything else belongs to the module
-that owns it. A helper that two routes shared is a helper two routes had to reach across the tree
-for.
-
-Each module's README states its public API and the rules it keeps. Read that before changing it.
-
-## Adding a feature, end to end
-
-The example: recording a **site visit** on a project.
-
-1. **Shape it in `packages/shared`.** A Zod schema and any enum belong there, next to the others,
-   so the browser, the server and the tests all validate the same thing.
-2. **Change the database schema** in `packages/db/src/schema`, then
-   `pnpm --filter @akhra/db generate --name site_visits`. Read the generated SQL. If the change
-   needs row-level security, add a policy in the same migration; use `generate --custom` for a
-   policy-only change. An enum value gets its own migration file — a new label cannot be used in
-   the transaction that adds it.
-3. **Write the service function** in the owning module. It checks its own authorization — role,
-   ownership, district — and reads through `query(actor, …)` so the database enforces it too.
-   Multi-step writes go in one transaction (`transitionWithin` is the pattern for status changes).
-4. **Expose it** through the module's `index.ts`, and add a server action in `actions.ts` if a form
-   calls it. Pages never touch the database.
-5. **Add the UI** under the module's `components/`, with every string in
-   `apps/web/messages/en.json` **and** `hi.json`. A missing Hindi key is a broken page, not a
-   fallback.
-6. **Test the rule, not the plumbing.** `apps/web/tests/<module>/` — what the feature must refuse
-   is usually more valuable than what it allows.
-7. **Write it down.** The module README if the rule is new; an ADR in `docs/adr/` if you turned
-   something down to get here.
-
-If the feature adds a step to the path a report travels, add it to
-`tests/journey/report-to-solution.test.ts` as well — that file is the only place the handoffs
-between modules are checked.
-
-## Before you push
+## Running and testing
 
 ```bash
-pnpm ci:local        # lint, typecheck, tests, the production-safety scan, the production build
-pnpm format          # prettier
+pnpm dev                 # app on :3000
+pnpm test                # all Vitest suites against <db>_test (created and migrated for you)
+pnpm exec vitest run apps/web/tests/citizen   # one folder
+pnpm test:browser        # Playwright smoke test of public pages (needs no Clerk keys)
+pnpm ci:local            # lint, typecheck, tests, safety scan, build: run before pushing
+pnpm format              # Prettier
 ```
 
-CI runs the same things against a real Postgres, twice — development and production configuration.
-It also fails on a committed secret, a hardcoded localhost URL, a generated migration that was not
-committed, and a colour pair below WCAG AA.
+Write tests for rules, not plumbing: permissions, state transitions, classification, duplicates,
+routing and new business logic. Test what must be refused as well as what must be allowed. A new
+step in a report's path goes into `tests/journey/report-to-solution.test.ts`.
 
-If you changed a page, run the browser suite too. It builds the app, serves it on port 3100 and
-opens every public page in both languages, on a phone and a desktop:
+## Dependency policy
 
-```bash
-pnpm --filter @akhra/web test:browser:install   # once, ~100 MB
-pnpm test:browser
-```
+- **Stable releases only.** No canary, beta or rc versions.
+- **Patch and minor updates** go in whenever tests pass. Check monthly with `pnpm -r outdated` and
+  `pnpm audit`.
+- **Major updates** get their own commit, after reading the changelog, with a note in the commit
+  message on what changed. Hold back when a tool we depend on doesn't support the new major yet
+  (for example, TypeScript 7 until typescript-eslint supports it).
+- **Deprecations:** a package marked deprecated on npm is replaced, not pinned. Deprecation warnings
+  in `pnpm build`, `pnpm lint` or the test output are treated as bugs.
+- **Hosted models:** `GEMINI_MODEL` and `GROQ_MODEL` are configuration. Check each provider's
+  deprecation page before a release; the TF-IDF tier keeps things working in the meantime.
+- **Runtime:** `engines.node` tracks a supported Node LTS, and CI runs on the current LTS. The
+  lockfile is committed, and `pnpm install --frozen-lockfile` must pass.
+- **New dependencies** need a reason in the commit message. Prefer the platform or a few lines of
+  our own code.
 
-It is not in `pnpm ci:local` because the app needs Clerk keys to boot, and CI has none
-([ADR 12](docs/adr/0012-two-layers-of-end-to-end-test.md)).
+## Things that trip people up
 
-## The rules that are enforced for you
-
-These are not style preferences; each exists because of a bug or a near miss.
-
-- **A module is imported through its `index.ts`.** ESLint fails a deep import.
-- **`withoutRls` may not be imported by a page, route, component or server action.** It turns
-  row-level security off, so the access check becomes yours to write, in a service or query file,
-  beside the query. See `src/modules/README.md` for the categories of legitimate use.
-- **No hardcoded URLs.** Read `appUrl` from `@/server/env`.
-- **No source file may assign the `super_admin` role** except `promotion.ts` and the bootstrap
-  script. A test walks the tree to prove it.
-- **Scheduled jobs claim a bounded batch** and never mark rows done unless the work can finish
-  ([ADR 10](docs/adr/0010-scheduled-jobs-are-batched.md)).
-- **Tests run against their own database** — `pnpm test` never touches your demo data.
-- **`.env.example` lists every variable the project reads**, the app's and the tooling's alike. A
-  test compares it against the environment schema, so adding one without listing it fails CI.
-
-## Things that will trip you up
-
-- **Next.js here is not the Next.js you know.** Read the guide in
-  `apps/web/node_modules/next/dist/docs/` before reaching for a pattern from memory.
-- **Drizzle renders `${table.column}` unqualified** inside a raw `sql` fragment with no join, so a
-  correlated subquery silently resolves to the inner table. Prefer a separate `count()` query.
-- **A scheduled job under test must not be given a future `now`.** It would act on every matching
-  row in the database. Backdate the fixture's own timestamps instead.
-- **Seed upserts must set `excluded.*`**, or they quietly write a column to its own value.
-- **The public figures are cached.** If a change should show up at once, expire them
-  (`expirePublicFigures()`), as filing a report does.
+- Next.js 16 changed many APIs. Check `apps/web/node_modules/next/dist/docs/` rather than relying
+  on memory.
+- A page that never reads the request gets prerendered at build time. `getActor()` marks the render
+  as per-request even when sign-in is off.
+- Inside a raw `sql` fragment with no join, Drizzle writes `${table.column}` unqualified, so a
+  correlated subquery can silently bind to the inner table.
+- In tests, never give a scheduled job a future `now`: it would act on every row. Backdate the
+  fixture's own timestamps instead.
+- Public figures are cached. Call `expirePublicFigures()` when a change must show at once.

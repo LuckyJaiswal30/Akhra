@@ -66,13 +66,8 @@ export function ValidationQueue({
   departments?: DepartmentOption[];
 }) {
   /**
-   * Every decision moves the report out of the tab it was in, so the row carrying the confirmation
-   * unmounts — in the same commit as the action's result, which means an effect inside the row may
-   * never run at all. An officer pressed Record decision and the screen simply went empty.
-   *
-   * So the queue watches instead: it notes which report a form was submitted for, and confirms it
-   * when that report leaves the list. A refusal leaves the row where it is, and the row's own
-   * message shows there.
+   * A decision moves the report out of its tab, unmounting the row in the same commit as the result,
+   * so the queue confirms once the report leaves the list. A refusal leaves the row with its message.
    */
   const [acting, setActing] = useState<{ id: string; refCode: string } | null>(null);
   const [done, setDone] = useState<{ title: string; message: string } | null>(null);

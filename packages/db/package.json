@@ -24,15 +24,15 @@
   "dependencies": {
     "@akhra/classifier": "workspace:*",
     "@akhra/shared": "workspace:*",
-    "@clerk/backend": "^3.17.2",
-    "drizzle-orm": "^0.44.6",
+    "@clerk/backend": "^3.19.0",
+    "drizzle-orm": "^0.45.3",
     "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/pg": "^8.15.5",
-    "dotenv": "^17.2.3",
-    "drizzle-kit": "^0.31.5",
-    "tsx": "^4.20.6",
-    "typescript": "5.9.3"
+    "dotenv": "^18.0.3",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "6.0.3"
   }
 }

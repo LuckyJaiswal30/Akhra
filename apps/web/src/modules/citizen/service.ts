@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import {
   getDb,
   problemAttachments,
@@ -140,7 +140,13 @@ export async function submitProblem(
       await tx
         .update(problemAttachments)
         .set({ problemId: problem.id })
-        .where(inArray(problemAttachments.id, payload.attachmentIds));
+        // Only files not yet on a report: an id cannot pull another report's photo into this one.
+        .where(
+          and(
+            inArray(problemAttachments.id, payload.attachmentIds),
+            isNull(problemAttachments.problemId),
+          ),
+        );
     }
 
     if (submitterId) await rememberContactDetails(tx, submitterId, payload);

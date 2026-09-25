@@ -13,7 +13,7 @@ import {
 import { listProblems } from '@/modules/citizen';
 import { Link } from '@/i18n/navigation';
 import { getActor } from '@/server/session';
-import { Button, Field, Input, Select, StatusBadge } from '@/components/ui';
+import { Button, Field, Input, Select, StatusBadge, buttonVariants } from '@/components/ui';
 import { MobileCollapsible } from '@/components/mobile-collapsible';
 import { formatDate } from '@/lib/utils';
 
@@ -40,16 +40,37 @@ export default async function ProblemsPage({
   const t = await getTranslations('problems');
   const isHindi = locale === 'hi';
 
-  const parsed = problemFilterSchema.safeParse(rawSearch);
-  const filter = parsed.success ? parsed.data : problemFilterSchema.parse({});
+  const filter = problemFilterSchema.parse(rawSearch);
 
   const actor = await getActor();
-  const { items, total } = await listProblems(actor, filter);
+  let { items, total } = await listProblems(actor, filter);
+  const pageCount = Math.ceil(total / filter.pageSize);
+  if (items.length === 0 && filter.page > pageCount && pageCount > 0) {
+    filter.page = pageCount;
+    ({ items, total } = await listProblems(actor, filter));
+  }
+  const pageQuery = (page: number) =>
+    Object.fromEntries(
+      Object.entries({
+        q: filter.q,
+        domain: filter.domain,
+        districtCode: filter.districtCode,
+        status: filter.status,
+        page: String(page),
+      }).filter(([, value]) => value),
+    ) as Record<string, string>;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-      <h1 className="text-3xl font-bold">{t('title')}</h1>
-      <p className="text-subtle mt-2">{t('subtitle')}</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
+          <p className="text-subtle mt-2">{t('subtitle')}</p>
+        </div>
+        <Link href="/submit" className={buttonVariants({})}>
+          {t('reportNew')}
+        </Link>
+      </div>
 
       <form
         method="get"
@@ -139,6 +160,37 @@ export default async function ProblemsPage({
             </li>
           ))}
         </ul>
+      )}
+
+      {pageCount > 1 && (
+        <nav
+          aria-label={t('pagination')}
+          className="mt-6 flex items-center justify-between gap-3 text-sm"
+        >
+          {filter.page > 1 ? (
+            <Link
+              href={{ pathname: '/problems', query: pageQuery(filter.page - 1) }}
+              className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+            >
+              {t('previous')}
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="text-subtle">
+            {t('pageOf', { page: Math.min(filter.page, pageCount), total: pageCount })}
+          </span>
+          {filter.page < pageCount ? (
+            <Link
+              href={{ pathname: '/problems', query: pageQuery(filter.page + 1) }}
+              className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+            >
+              {t('next')}
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
       )}
     </div>
   );

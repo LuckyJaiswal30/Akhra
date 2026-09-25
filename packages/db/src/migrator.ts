@@ -85,6 +85,7 @@ export async function applyMigrations(
         await client.query('ROLLBACK');
         throw new Error(
           `${migration.tag}: ${error instanceof Error ? error.message : String(error)}`,
+          { cause: error },
         );
       }
     }

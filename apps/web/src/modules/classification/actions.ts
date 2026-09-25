@@ -13,6 +13,7 @@ import {
   type ActionState,
 } from '@akhra/shared';
 import { formId, parseInput, runAction } from '@/server/api';
+import { consumeRateLimit, rateLimitedError } from '@/server/rate-limit';
 import { getActor, requireRole } from '@/server/session';
 import {
   assignToDepartment,
@@ -165,6 +166,14 @@ export async function reporterDecisionAction(
       note: formData.get('note') || undefined,
     });
 
+    // Four digits are 10,000 guesses; a handful per report per hour makes guessing hopeless.
+    const attempts = await consumeRateLimit(
+      `reporter-decision:${input.refCode}`,
+      5,
+      60 * 60 * 1000,
+    );
+    if (!attempts.allowed) throw rateLimitedError(attempts.resetAt, 'attempts on this report');
+
     const actor = await getActor();
     const problem = await reporterProblemFor(input.refCode, {
       actorUserId: actor.userId,
@@ -174,6 +183,18 @@ export async function reporterDecisionAction(
       throw new AppError(
         'NOT_FOUND',
         'We could not match that report. Check the reference code and mobile number.',
+      );
+    }
+
+    // The department that did the work never signs it off, even on a report one of its staff filed.
+    if (
+      actor.role === 'dept_officer' &&
+      actor.organizationId !== null &&
+      actor.organizationId === problem.assignedOrgId
+    ) {
+      throw new AppError(
+        'FORBIDDEN',
+        'Your department did this work, so someone outside it has to confirm or reopen it.',
       );
     }
 

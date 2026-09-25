@@ -1,8 +1,9 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { DOMAIN_DEFINITIONS, isDomain } from '@akhra/shared';
+import { DOMAIN_DEFINITIONS, JHARKHAND_DISTRICTS, isDomain } from '@akhra/shared';
 import { PageIntro, StatsBand } from '@/components/marketing';
-import { Card } from '@/components/ui';
+import { DocColumns, DocSection, DocumentBody } from '@/components/document';
 import { BarList, DistrictMap, getPlatformStats, getPublicImpact } from '@/modules/analytics';
+import { serverEnv } from '@/server/env';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -20,29 +21,12 @@ const STAGES = [
   'deployed',
 ] as const;
 
-function Panel({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className="p-6">
-      <h2 className="text-ink font-semibold">{title}</h2>
-      {subtitle && <p className="text-subtle mt-1 text-sm">{subtitle}</p>}
-      <div className="mt-5">{children}</div>
-    </Card>
-  );
-}
-
 export default async function ImpactPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('impact');
   const outcomeLabel = await getTranslations('lifecycle');
+  const tLanding = await getTranslations('landing');
   const [stats, impact] = await Promise.all([getPlatformStats(), getPublicImpact()]);
   const isHindi = locale === 'hi';
 
@@ -55,6 +39,11 @@ export default async function ImpactPage({ params }: { params: Promise<{ locale:
       value: row.count,
     };
   });
+  const districtRows = JHARKHAND_DISTRICTS.map((district) => ({
+    code: district.code,
+    name: isHindi ? district.nameHi : district.nameEn,
+    count: impact.byDistrict.find((row) => row.code === district.code)?.count ?? 0,
+  })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const stageRows = STAGES.map((stage) => ({
     key: stage,
     label: t(`stage_${stage}`),
@@ -69,32 +58,61 @@ export default async function ImpactPage({ params }: { params: Promise<{ locale:
   return (
     <>
       <PageIntro title={t('title')} intro={t('intro')} />
-      <StatsBand stats={stats} locale={locale} />
+      <StatsBand
+        stats={stats}
+        locale={locale}
+        note={serverEnv.ALLOW_SEED ? tLanding('sampleData') : undefined}
+      />
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8">
-        <Panel title={t('funnel')} subtitle={t('funnelNote')}>
-          {(stageRows[0]?.value ?? 0) > 0 ? <BarList rows={stageRows} /> : empty}
-        </Panel>
-        <Panel title={t('mapTitle')} subtitle={t('mapNote')}>
-          <DistrictMap
-            values={impact.byDistrict.map((d) => ({ code: d.code, value: d.count }))}
-            locale={locale}
-            labels={{
-              fewer: t('mapFewer'),
-              more: t('mapMore'),
-              none: t('mapNone'),
-              reports: t('mapTitle'),
-              credit: t('mapCredit'),
-            }}
-          />
-        </Panel>
-        <Panel title={t('byCategory')}>
-          {domainRows.length > 0 ? <BarList rows={domainRows} /> : empty}
-        </Panel>
-        <Panel title={t('outcomesTitle')} subtitle={t('peopleNote')}>
-          {outcomeRows.length > 0 ? <BarList rows={outcomeRows} /> : empty}
-        </Panel>
-      </section>
+      <DocumentBody>
+        <DocColumns>
+          <DocSection size="md" title={t('funnel')} lead={t('funnelNote')}>
+            <div className="mt-5">
+              {(stageRows[0]?.value ?? 0) > 0 ? <BarList rows={stageRows} /> : empty}
+            </div>
+          </DocSection>
+          <DocSection size="md" title={t('mapTitle')} lead={t('mapNote')}>
+            <div className="mt-5">
+              <DistrictMap
+                values={impact.byDistrict.map((d) => ({ code: d.code, value: d.count }))}
+                locale={locale}
+                labels={{
+                  fewer: t('mapFewer'),
+                  more: t('mapMore'),
+                  none: t('mapNone'),
+                  reports: t('mapTitle'),
+                  credit: t('mapCredit'),
+                }}
+              />
+              <details className="mt-4">
+                <summary className="text-sal cursor-pointer text-sm font-medium">
+                  {t('mapList')}
+                </summary>
+                <ul className="divide-line mt-2 grid grid-cols-2 gap-x-6 text-sm">
+                  {districtRows.map((row) => (
+                    <li key={row.code} className="border-line flex justify-between border-b py-1.5">
+                      <span className="text-ink">{row.name}</span>
+                      <span className="text-subtle tabular-nums">{row.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+          </DocSection>
+        </DocColumns>
+        <DocColumns>
+          <DocSection size="md" title={t('byCategory')}>
+            <div className="mt-5">
+              {domainRows.length > 0 ? <BarList rows={domainRows} /> : empty}
+            </div>
+          </DocSection>
+          <DocSection size="md" title={t('outcomesTitle')} lead={t('peopleNote')}>
+            <div className="mt-5">
+              {outcomeRows.length > 0 ? <BarList rows={outcomeRows} /> : empty}
+            </div>
+          </DocSection>
+        </DocColumns>
+      </DocumentBody>
     </>
   );
 }
