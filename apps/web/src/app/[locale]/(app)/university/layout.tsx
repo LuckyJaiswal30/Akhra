@@ -7,7 +7,6 @@ export default async function UniversityLayout({ children }: { children: ReactNo
   const t = await getTranslations('university');
   const actor = await getActor();
 
-  // A student works on their own projects; the institution's inbox, team and profile are not theirs.
   const nav =
     actor.role === 'student'
       ? [{ href: '/university/projects', label: t('tabProjects') }]

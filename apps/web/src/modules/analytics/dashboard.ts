@@ -20,7 +20,6 @@ export interface Kpis {
   districtsReached: number;
   patents: number;
   startups: number;
-  /** People and households counted by recorded outcomes whose measure is about people. */
   communityReach: number;
   criticalOpen: number;
 }
@@ -74,7 +73,6 @@ export interface NamedCount {
   total: number;
 }
 
-/** How many reports each district raised in each sector. */
 export interface SectorDistrictCell {
   districtCode: string;
   domain: Domain;
@@ -82,7 +80,6 @@ export interface SectorDistrictCell {
 }
 
 export interface Dashboard {
-  /** When these figures were computed, so a cached view says how fresh it is. */
   computedAt: string;
   kpis: Kpis;
   monthly: MonthlyPoint[];
@@ -124,10 +121,8 @@ const statusList = (statuses: readonly string[]): SQL =>
     sql`, `,
   )})`;
 
-/** Reports nobody has finished with: still waiting to be validated, routed or acted on. */
 const OPEN_STATUS_LIST = statusList(['submitted', 'validated', 'assigned']);
 
-/** Reports someone is working on, on either track. */
 const IN_HAND_STATUS_LIST = statusList([
   'validated',
   'assigned',
@@ -150,7 +145,6 @@ export function snapshotKey(filter: DashboardFilter, scope: SnapshotScope): stri
   return `dashboard:v${SNAPSHOT_VERSION}:${scope.role}:${scope.jurisdiction ?? 'all'}:${filter.domain ?? 'all'}:${filter.districtCode ?? 'all'}`;
 }
 
-/** Short enough that an officer acting on the dashboard sees today's work, long enough to spare the database. */
 const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 
 export async function getDashboard(actor: Actor, filter: DashboardFilter = {}): Promise<Dashboard> {

@@ -1,4 +1,3 @@
-// Attachments and consent are left out: an upload needs a connection, and consent is given at the moment of sending.
 export const DRAFT_FIELDS = [
   'title',
   'description',
@@ -57,7 +56,6 @@ export function parseLocation(value: string | undefined): { lat: number; lng: nu
   }
 }
 
-// Storage can be missing or throw (private browsing, full quota); a draft is a convenience, never a failure.
 export function loadDraft(): Draft | null {
   try {
     return parseDraft(window.localStorage.getItem(DRAFT_KEY));

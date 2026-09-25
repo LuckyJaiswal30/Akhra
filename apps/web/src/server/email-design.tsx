@@ -123,9 +123,17 @@ function Tricolour() {
   );
 }
 
-const COPY: Record<EmailLanguage, { name: string; footer: string }> = {
-  en: { name: 'Akhra', footer: 'Akhra · An initiative of the Government of Jharkhand' },
-  hi: { name: 'अखरा', footer: 'अखरा · झारखंड सरकार की एक पहल' },
+const COPY: Record<EmailLanguage, { name: string; footer: string; reason: string }> = {
+  en: {
+    name: 'Akhra',
+    footer: 'Akhra · A Smart India Hackathon prototype for Jharkhand',
+    reason: 'You are getting this email because you used Akhra. Please do not reply to it.',
+  },
+  hi: {
+    name: 'अखरा',
+    footer: 'अखरा · झारखंड के लिए स्मार्ट इंडिया हैकथॉन का एक प्रोटोटाइप',
+    reason: 'यह ईमेल आपको इसलिए मिला क्योंकि आपने अखरा का उपयोग किया। कृपया इसका उत्तर न दें।',
+  },
 };
 
 export function EmailCard({
@@ -192,6 +200,8 @@ export function EmailCard({
             }}
           >
             {COPY[lang].footer}
+            <br />
+            {COPY[lang].reason}
           </Text>
         </Section>
       </Container>

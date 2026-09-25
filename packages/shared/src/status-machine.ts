@@ -264,16 +264,10 @@ export const MILESTONE_STATUSES = [
 ] as const;
 export type MilestoneStatus = (typeof MILESTONE_STATUSES)[number];
 
-/**
- * A project is planned before it is worked on. Until the district officer approves its proposal the
- * report stays "sent to an institution", and the project cannot plan milestones or change stage.
- */
 export const PROJECT_PLANNING_STATUS = 'routed' satisfies ProblemStatus;
 
-/** The statuses a team may give its own proposal. Every other status is a reviewer's decision. */
 export const PROPOSAL_SUBMISSION_STATUSES = ['draft', 'submitted'] as const;
 
-/** The decisions a district officer can record on a submitted proposal. */
 export const PROPOSAL_DECISIONS = ['approved', 'revision_requested', 'rejected'] as const;
 export type ProposalDecision = (typeof PROPOSAL_DECISIONS)[number];
 

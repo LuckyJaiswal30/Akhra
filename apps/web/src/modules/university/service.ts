@@ -34,7 +34,6 @@ export interface RoutedProblem {
   districtName: string;
   matchScore: number;
   matchRationale: string | null;
-  /** What the district officer asked this institution for, in their words. */
   brief: string | null;
   response: RoutingResponse;
   createdAt: Date;
@@ -48,10 +47,6 @@ function requireOrganization(actor: Actor): string {
   return actor.organizationId;
 }
 
-/**
- * Speaking for the institution — answering a referral, forming a team, writing a proposal — belongs
- * to its administrator and its faculty. A student takes part in the work, not in the decisions.
- */
 function requireInstitutionVoice(actor: Actor): string {
   const organizationId = requireOrganization(actor);
   if (!(UNIVERSITY_ROLES as readonly string[]).includes(actor.role)) {
@@ -227,11 +222,18 @@ export async function createProject(
     return created;
   });
 
-  await notifyReporterUpdate(input.problemId, {
-    type: 'team_formed',
-    title: 'A team has taken up your report',
-    body: `${actor.name ?? 'An institution'} has formed a team and is preparing a proposal for the district officer to approve.`,
-  });
+  await notifyReporterUpdate(
+    input.problemId,
+    {
+      type: 'team_formed',
+      title: 'A team has taken up your report',
+      body: `${actor.name ?? 'An institution'} has formed a team and is preparing a proposal for the district officer to approve.`,
+    },
+    {
+      title: 'एक टीम ने आपकी रिपोर्ट पर काम शुरू किया है',
+      body: `${actor.name ?? 'एक संस्थान'} ने टीम बना ली है और ज़िला अधिकारी की मंज़ूरी के लिए प्रस्ताव तैयार कर रही है।`,
+    },
+  );
 
   logger.info({ projectId: project.id, problemId: input.problemId }, 'project created');
   return project;
@@ -498,10 +500,6 @@ export async function listOrganizationProjects(
   );
 }
 
-/**
- * A student sees the projects they were put on, not everything the institution is working on.
- * Faculty and the administrator see the institution's whole portfolio.
- */
 function onlyOwnWork(actor: Actor, tx: Transaction) {
   if (actor.role !== 'student' || !actor.userId) return undefined;
   return inArray(

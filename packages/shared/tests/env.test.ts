@@ -25,10 +25,6 @@ describe('environment near-miss detection', () => {
   });
 });
 
-/**
- * Read by the test runner and the browser suite rather than by the app, so they are absent from
- * the env schema but still belong in the file a contributor copies.
- */
 const TOOLING_KEYS = ['TEST_DATABASE_URL', 'E2E_BASE_URL'];
 
 const EXPECTED_KEYS = [...ENV_KEYS.filter((key) => key !== 'NODE_ENV'), ...TOOLING_KEYS].sort();

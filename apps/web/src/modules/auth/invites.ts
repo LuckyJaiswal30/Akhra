@@ -54,11 +54,6 @@ export interface InviteRecord {
 
 const isOrgAdmin = (role: Actor['role']) => (ORG_ADMIN_ROLES as readonly string[]).includes(role);
 
-/**
- * State-wide access is deliberate, never the result of leaving the district blank. This runs after
- * the permission check so that someone who may not invite at all is told that, rather than being
- * handed a field-by-field description of a form they cannot use.
- */
 function officerScope(input: IssueInviteInput): string | null {
   if (input.role !== 'gov_admin') return null;
   if (!input.scope) {
@@ -84,11 +79,6 @@ function officerScope(input: IssueInviteInput): string | null {
   return input.jurisdictionCode;
 }
 
-/**
- * An invitation creates access; it never edits access that already exists. Someone who already
- * holds a posting is moved with a reposting order instead, which is why the officer is told where
- * to go rather than simply being refused.
- */
 function assertEmailFree(account: { role: Role } | null): void {
   if (!account || account.role === 'citizen') return;
   if ((GOVERNMENT_ROLES as readonly string[]).includes(account.role)) {

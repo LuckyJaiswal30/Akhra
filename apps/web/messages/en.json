@@ -270,6 +270,7 @@
     "draftDiscard": "Discard draft",
     "voiceStart": "Speak instead",
     "voiceStop": "Stop listening",
+    "voiceLanguage": "Language you will speak in",
     "voiceHint": "Your browser turns speech into text, which may use its own speech service.",
     "contactNotice": "Your name and mobile number let the district officer and the team working on this report reach you. They are never shown publicly, and are removed one year after the report is closed.",
     "privacyLink": "How Akhra uses your information"

@@ -22,6 +22,7 @@ export interface NotificationInput {
   body?: string;
   linkUrl?: string;
   email?: boolean;
+  locale?: string;
 }
 
 function inBackground(task: () => Promise<void>): void {
@@ -35,8 +36,12 @@ function inBackground(task: () => Promise<void>): void {
 function composeEmail(input: NotificationInput): string {
   return [
     input.body,
-    input.linkUrl ? `Open in Akhra: ${appUrl}${input.linkUrl}` : null,
-    '— Akhra, an initiative of the Government of Jharkhand',
+    input.linkUrl
+      ? `${input.locale === 'hi' ? 'अखरा में खोलें' : 'Open in Akhra'}: ${appUrl}${input.linkUrl}`
+      : null,
+    input.locale === 'hi'
+      ? '— अखरा, झारखंड के लिए स्मार्ट इंडिया हैकथॉन का एक प्रोटोटाइप'
+      : '— Akhra, a Smart India Hackathon prototype for Jharkhand',
   ]
     .filter(Boolean)
     .join('\n\n');
@@ -78,7 +83,12 @@ async function deliver(
 
   try {
     const html = content
-      ? await renderEmail({ title: content.title, body: content.body, linkUrl: content.linkUrl })
+      ? await renderEmail({
+          title: content.title,
+          body: content.body,
+          linkUrl: content.linkUrl,
+          locale: content.locale,
+        })
           .then((r) => r.html)
           .catch(() => undefined)
       : undefined;
@@ -181,7 +191,6 @@ export async function notifyOrganizations(
   }
 }
 
-/** Routine work for a district goes to its officer, or to the state desk while the post is vacant. */
 export async function notifyDistrictOfficers(
   districtCode: string,
   input: NotificationInput,
@@ -196,7 +205,6 @@ export async function notifyDistrictOfficers(
   }
 }
 
-/** Something has gone wrong in a district: its officer, the state desk and super administrators hear. */
 export async function notifyEscalation(
   districtCode: string,
   input: NotificationInput,
@@ -223,9 +231,10 @@ async function sendToReporters(
 }
 
 function mergedPrefix(reporter: Reporter): string {
-  return reporter.mergedInto
-    ? `Your report ${reporter.refCode} was merged into ${reporter.mergedInto}, which covers the same problem. `
-    : '';
+  if (!reporter.mergedInto) return '';
+  return reporter.locale === 'hi'
+    ? `आपकी रिपोर्ट ${reporter.refCode} को ${reporter.mergedInto} में मिला दिया गया है, जो इसी समस्या के बारे में है। `
+    : `Your report ${reporter.refCode} was merged into ${reporter.mergedInto}, which covers the same problem. `;
 }
 
 export async function notifyReporter(
@@ -234,13 +243,22 @@ export async function notifyReporter(
   note?: string,
 ): Promise<void> {
   try {
-    const label = STATUS_DEFINITIONS[status].labelEn;
-    await sendToReporters(problemId, (reporter) => ({
-      type: `problem_${status}`,
-      title: `Update on your report ${reporter.refCode}`,
-      body: `${mergedPrefix(reporter)}"${reporter.title}" is now: ${label}.${note ? `\n\n${note}` : ''}`,
-      linkUrl: `/track?ref=${reporter.refCode}`,
-    }));
+    await sendToReporters(problemId, (reporter) => {
+      const hindi = reporter.locale === 'hi';
+      const label = hindi ? STATUS_DEFINITIONS[status].labelHi : STATUS_DEFINITIONS[status].labelEn;
+      const update = hindi
+        ? `"${reporter.title}" की स्थिति अब: ${label}।`
+        : `"${reporter.title}" is now: ${label}.`;
+      return {
+        type: `problem_${status}`,
+        title: hindi
+          ? `आपकी रिपोर्ट ${reporter.refCode} पर अपडेट`
+          : `Update on your report ${reporter.refCode}`,
+        body: `${mergedPrefix(reporter)}${update}${note ? `\n\n${note}` : ''}`,
+        linkUrl: `/track?ref=${reporter.refCode}`,
+        locale: reporter.locale,
+      };
+    });
   } catch (error) {
     logger.error(
       { err: error instanceof Error ? error.message : String(error), problemId },
@@ -251,14 +269,19 @@ export async function notifyReporter(
 
 export async function notifyReporterUpdate(
   problemId: string,
-  input: Omit<NotificationInput, 'linkUrl'>,
+  input: Omit<NotificationInput, 'linkUrl' | 'locale'>,
+  hindi?: { title: string; body?: string },
 ): Promise<void> {
   try {
-    await sendToReporters(problemId, (reporter) => ({
-      ...input,
-      body: `${mergedPrefix(reporter)}${input.body ?? ''}`.trim() || undefined,
-      linkUrl: `/track?ref=${reporter.refCode}`,
-    }));
+    await sendToReporters(problemId, (reporter) => {
+      const text = reporter.locale === 'hi' && hindi ? { ...input, ...hindi } : input;
+      return {
+        ...text,
+        body: `${mergedPrefix(reporter)}${text.body ?? ''}`.trim() || undefined,
+        linkUrl: `/track?ref=${reporter.refCode}`,
+        locale: reporter.locale,
+      };
+    });
   } catch (error) {
     logger.error(
       { err: error instanceof Error ? error.message : String(error), problemId },

@@ -3,11 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-/**
- * Text cut to a few lines, with a toggle that appears only when something is actually hidden.
- * Whether it overflows depends on the width it renders at, so it is measured rather than guessed
- * from the character count, and measured again when the width changes.
- */
 export function ClampedText({
   text,
   moreLabel,

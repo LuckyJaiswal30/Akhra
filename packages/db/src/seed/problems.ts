@@ -388,7 +388,6 @@ const JOURNEY: ProblemStatus[] = [
 ];
 
 const STAGE_NOTES: Partial<Record<ProblemStatus, string>> = {
-  submitted: 'Report received.',
   validated: 'Verified as a genuine, actionable challenge.',
   routed: 'Sent to matched institutions for review.',
   in_progress: 'A university team has taken this on and begun work.',
@@ -402,7 +401,6 @@ function daysAgo(days: number): Date {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
 
-/** Groups and local bodies usually report on behalf of a whole village; individuals, their street. */
 function reachOf(type: SubmitterType): AffectedScale {
   return type === 'individual' ? 'neighbourhood' : 'village';
 }

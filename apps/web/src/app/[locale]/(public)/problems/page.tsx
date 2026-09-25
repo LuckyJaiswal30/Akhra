@@ -9,6 +9,7 @@ import {
   problemFilterSchema,
   type Domain,
   type ProblemStatus,
+  DISTRICT_BY_CODE,
 } from '@akhra/shared';
 import { listProblems } from '@/modules/citizen';
 import { Link } from '@/i18n/navigation';
@@ -142,7 +143,8 @@ export default async function ProblemsPage({
                 <h2 className="text-ink mt-1 font-medium">{problem.title}</h2>
                 <p className="text-subtle mt-1 text-sm">
                   {[
-                    problem.districtName,
+                    (isHindi && DISTRICT_BY_CODE[problem.districtCode]?.nameHi) ||
+                      problem.districtName,
                     problem.domain
                       ? isHindi
                         ? DOMAIN_DEFINITIONS[problem.domain as Domain].labelHi

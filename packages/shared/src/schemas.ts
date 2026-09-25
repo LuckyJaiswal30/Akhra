@@ -88,7 +88,6 @@ export const trackProblemSchema = z.object({
   refCode: refCodeSchema,
 });
 
-/** A search form sends every field, blank or not; one blank or bad field must not void the others. */
 const lenient = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => (value === '' ? undefined : value), schema.optional()).catch(undefined);
 
@@ -143,11 +142,6 @@ export const issueInviteSchema = z
     email: emailField,
     role: roleSchema,
     organizationId: z.uuid('Choose a valid organisation.').optional(),
-    /**
-     * State-wide access is an explicit choice, never the result of leaving the district blank.
-     * An officer who can see all 24 districts is the most powerful account below a super
-     * administrator, so it must be selected on purpose.
-     */
     scope: z
       .enum(OFFICER_SCOPES, { error: 'Choose what this officer is responsible for.' })
       .optional(),
@@ -161,11 +155,6 @@ export const issueInviteSchema = z
   })
   .strict();
 
-/**
- * A posting is issued to an officer who already holds an account. Real administrations transfer
- * officers far more often than they appoint new ones, so this is a first-class action rather than
- * something to be worked around by inviting the same person twice.
- */
 export const reassignOfficerSchema = z
   .object({
     posting: z.enum(['district', 'state', 'department'], {
@@ -186,7 +175,6 @@ export const reassignOfficerSchema = z
   })
   .strict();
 
-/** What a university says it can do. Routing reads nothing else, so this is how it gets referrals. */
 export const institutionProfileSchema = z
   .object({
     description: z.string().trim().max(2000, 'Keep the description under 2,000 characters.'),
@@ -390,7 +378,6 @@ export const OUTCOME_TYPES = [
 export const outcomeTypeSchema = z.enum(OUTCOME_TYPES);
 export type OutcomeType = (typeof OUTCOME_TYPES)[number];
 
-/** Where a patent stands. Only a patent carries one; the office's reference number goes with it. */
 export const IP_STATUSES = ['filed', 'published', 'granted'] as const;
 export type IpStatus = (typeof IP_STATUSES)[number];
 
@@ -420,7 +407,6 @@ export const outcomeSchema = z
 export const TEST_RESULTS = ['passed', 'failed', 'inconclusive'] as const;
 export type TestResult = (typeof TEST_RESULTS)[number];
 
-/** A test of the solution in the field or the lab, recorded whatever it showed. */
 export const projectTestSchema = z
   .object({
     title: z.string().trim().min(5, 'Say what was tested.').max(200),

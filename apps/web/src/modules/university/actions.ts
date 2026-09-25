@@ -113,10 +113,6 @@ export async function submitProposalAction(
   });
 }
 
-/**
- * The profile form posts one strength per area (0 meaning "not an area we work on") and a checkbox
- * per discipline and facility, so each list is read against its fixed set of values.
- */
 export async function updateInstitutionProfileAction(
   _prev: ActionState,
   formData: FormData,

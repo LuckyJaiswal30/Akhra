@@ -13,7 +13,7 @@ describe('the emails Akhra sends', () => {
     const { html } = await renderEmail(invitation);
 
     expect(html).toContain('Akhra');
-    expect(html).toContain('Government of Jharkhand');
+    expect(html).toContain('Smart India Hackathon prototype for Jharkhand');
     expect(html.toLowerCase()).toContain('#1f6b45');
     expect(html).not.toMatch(/<img/i);
     expect(html).toMatch(/border-radius:14px 0 14px 0/);
@@ -39,7 +39,7 @@ describe('the emails Akhra sends', () => {
 
     expect(text).toContain('You have been invited to Akhra as Faculty');
     expect(text).toContain('http://localhost:3000/invite/abc');
-    expect(text).toContain('Government of Jharkhand');
+    expect(text).toContain('Smart India Hackathon prototype for Jharkhand');
     expect(text).not.toContain('<');
   });
 

@@ -7,6 +7,10 @@ export const SYSTEM_PROMPT = `You are a classification service for Akhra, a civi
 
 Classify a citizen-reported problem into exactly one thematic domain.
 
+Reports may be in English, Hindi, Hinglish (Hindi typed in Latin letters) or another language of
+Jharkhand such as Santali, Nagpuri, Khortha, Kurukh, Mundari, Ho, Bengali, Odia or Urdu, and may
+mix them. Classify by meaning, not by the words used. Write the rationale in English.
+
 Available domains:
 ${DOMAIN_MENU}
 

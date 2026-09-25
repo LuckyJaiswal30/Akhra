@@ -23,10 +23,6 @@ export async function organizationMemberIds(
   return rows.map((r) => r.id);
 }
 
-/**
- * The officers answerable for a district's routine work: its own district officer. A district
- * whose post is vacant is covered by the state desk, so the work is never addressed to nobody.
- */
 export async function districtOfficerIds(districtCode: string): Promise<string[]> {
   const officers = (district: string | null) =>
     withoutRls(getDb(), (tx) =>
@@ -47,7 +43,6 @@ export async function districtOfficerIds(districtCode: string): Promise<string[]
   return (posted.length > 0 ? posted : await officers(null)).map((row) => row.id);
 }
 
-/** Everyone an escalation reaches: the district's officer, the state desk and super administrators. */
 export async function escalationRecipientIds(districtCode: string): Promise<string[]> {
   const rows = await withoutRls(getDb(), (tx) =>
     tx
@@ -74,14 +69,10 @@ export interface Reporter {
   title: string;
   userId: string | null;
   email: string | null;
-  /** Set when this person's report was merged into the one the update is about. */
+  locale: string;
   mergedInto: string | null;
 }
 
-/**
- * Everyone who reported this problem: its own reporter, and the reporters whose reports an officer
- * merged into it as duplicates. Each keeps their own reference code.
- */
 export async function findReporters(problemId: string): Promise<Reporter[]> {
   return withoutRls(getDb(), async (tx) => {
     const [original] = await tx
@@ -90,6 +81,7 @@ export async function findReporters(problemId: string): Promise<Reporter[]> {
         title: problems.title,
         userId: problems.submitterId,
         email: problems.submitterEmail,
+        locale: problems.locale,
       })
       .from(problems)
       .where(eq(problems.id, problemId))
@@ -102,6 +94,7 @@ export async function findReporters(problemId: string): Promise<Reporter[]> {
         title: problems.title,
         userId: problems.submitterId,
         email: problems.submitterEmail,
+        locale: problems.locale,
       })
       .from(problems)
       .where(and(eq(problems.duplicateOfId, problemId), eq(problems.status, 'duplicate')));

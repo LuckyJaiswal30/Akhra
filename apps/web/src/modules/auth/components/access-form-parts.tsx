@@ -9,17 +9,12 @@ import { requestJson } from '@/lib/api-client';
 
 export type Labels = Record<string, string>;
 
-/** Districts read in the order the reader expects, which differs between English and Hindi. */
 export function districtsByName(locale = 'en') {
   return [...JHARKHAND_DISTRICTS].sort((a, b) =>
     locale === 'hi' ? a.nameHi.localeCompare(b.nameHi, 'hi') : a.nameEn.localeCompare(b.nameEn),
   );
 }
 
-/**
- * Actions inside an officer card sit flush with the card's text. A pill's side padding would
- * indent them past the name above, which reads as a misalignment rather than a button.
- */
 export const CARD_ACTION =
   'h-auto px-0 py-1 underline-offset-4 hover:bg-transparent hover:underline';
 
@@ -78,7 +73,6 @@ export interface IssuedInvite {
   inviteLink?: string;
 }
 
-/** The person an access dialog is about, so an administrator never acts on the wrong one. */
 export interface PersonDetails {
   name: string;
   email: string;

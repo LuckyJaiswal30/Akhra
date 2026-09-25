@@ -15,7 +15,6 @@ import { isUuid } from './tokens';
 
 export type ReassignOfficerInput = z.output<typeof reassignOfficerSchema>;
 
-/** Postings an officer can be moved between. A citizen is appointed by invitation, not by transfer. */
 const POSTED_ROLES = [
   'dept_officer',
   'gov_admin',
@@ -32,11 +31,6 @@ function fieldError(field: string, message: string): never {
   throw new AppError('VALIDATION_FAILED', message, { fields: { [field]: message } });
 }
 
-/**
- * A posting is one of three shapes, and each clears the fields the other two use. The database
- * enforces the same separation with check constraints; keeping it explicit here means the officer
- * is told what is wrong instead of seeing a constraint violation.
- */
 function shapeOf(input: ReassignOfficerInput): Posting {
   if (input.posting === 'district') {
     if (!input.jurisdictionCode)
@@ -55,13 +49,6 @@ function shapeOf(input: ReassignOfficerInput): Posting {
   return { role: 'dept_officer', jurisdictionCode: null, organizationId: input.organizationId };
 }
 
-/**
- * Move an officer to a different district, to the state desk, or into a department.
- *
- * Appointments in an administration are issued *to* someone, never *by* them: the officer whose
- * access is changing never signs their own order. That is why a super administrator cannot use this
- * on their own account, and why the database refuses the same columns to the account holder.
- */
 export async function reassignOfficer(
   actor: Actor,
   targetUserId: string,

@@ -1,0 +1,1 @@
+ALTER TABLE "problems" ADD COLUMN "locale" text DEFAULT 'en' NOT NULL;

@@ -38,11 +38,6 @@ import { refreshPriority } from './priority';
 import { suggestOrganizations } from './routing';
 import type { DuplicateMatch } from './service';
 
-/**
- * Moves a report to a new status inside the caller's transaction, after checking that this actor may
- * act on it and that the move is allowed. The caller notifies the reporter once the transaction has
- * committed; see {@link transitionProblem}.
- */
 export async function transitionWithin(
   tx: Transaction,
   actor: Actor,
@@ -163,11 +158,9 @@ export async function markAsDuplicate(
     await tx.update(problems).set({ duplicateOfId }).where(eq(problems.id, problemId));
     await transitionWithin(tx, actor, problemId, 'duplicate', { note: mergeNote });
   });
-  // Reports already merged into this one follow it to the new original, so no reporter is left behind.
   await withoutRls(getDb(), (tx) =>
     tx.update(problems).set({ duplicateOfId }).where(eq(problems.duplicateOfId, problemId)),
   );
-  // The original now stands for one more person's report, which raises its priority.
   await withoutRls(getDb(), (tx) => refreshPriority(tx, duplicateOfId));
   await notifyReporter(problemId, 'duplicate', mergeNote);
 }

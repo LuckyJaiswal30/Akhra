@@ -22,14 +22,6 @@ export interface RoutingSuggestion {
   rationale: string;
 }
 
-/**
- * Ranks universities for a problem on what they have said about themselves: how strong they are in
- * the problem's domain, which relevant disciplines they teach, how many of their faculty work in
- * those fields, the facilities they can prototype and pilot with, and how far away they are.
- *
- * The rationale is written for the district officer, who routes on it, so every figure behind the
- * score appears in it.
- */
 export async function suggestOrganizations(input: {
   domain: Domain;
   districtCode: string;

@@ -49,10 +49,6 @@ async function currentState(problemId: string, actor: Actor): Promise<SupportSta
   };
 }
 
-/**
- * "This affects me too." One per person, for public reports that are still open. Each change
- * recomputes the report's priority, which is how a problem many people share rises in the queue.
- */
 export async function supportProblem(actor: Actor, problemId: string): Promise<SupportState> {
   const userId = signedIn(actor);
   await supportable(problemId, userId);

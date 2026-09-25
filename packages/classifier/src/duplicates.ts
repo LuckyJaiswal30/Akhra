@@ -1,5 +1,5 @@
 import type { DuplicateCandidate, IDuplicateDetector, SimilarProblem } from './types';
-import { cosineSimilarity, jaccardSimilarity, normalize, termFrequency, trigrams } from './text';
+import { concepts, cosineSimilarity, jaccardSimilarity, termFrequency, trigrams } from './text';
 
 const DEFAULT_THRESHOLD = 0.3;
 const DEFAULT_LIMIT = 5;
@@ -16,11 +16,15 @@ export class TextSimilarityDetector implements IDuplicateDetector {
     const limit = options.limit ?? DEFAULT_LIMIT;
 
     const inputTitleGrams = trigrams(input.title);
+    const inputTitleConcepts = new Set(concepts(input.title));
     const inputBodyVector = countVector(input.description);
 
     return candidates
       .map((candidate) => {
-        const titleScore = jaccardSimilarity(inputTitleGrams, trigrams(candidate.title));
+        const titleScore = Math.max(
+          jaccardSimilarity(inputTitleGrams, trigrams(candidate.title)),
+          jaccardSimilarity(inputTitleConcepts, new Set(concepts(candidate.title))),
+        );
         const bodyScore = cosineSimilarity(inputBodyVector, countVector(candidate.description));
         return {
           problemId: candidate.problemId,
@@ -36,5 +40,5 @@ export class TextSimilarityDetector implements IDuplicateDetector {
 }
 
 function countVector(text: string): Map<string, number> {
-  return termFrequency(normalize(text));
+  return termFrequency(concepts(text));
 }

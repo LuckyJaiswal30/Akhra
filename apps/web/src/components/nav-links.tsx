@@ -3,7 +3,6 @@
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
-/** Where the header may send someone: the public pages, plus each role's own front door. */
 export type SiteHref =
   | '/how-it-works'
   | '/success-stories'
@@ -21,7 +20,6 @@ export type SiteHref =
 export interface NavItem {
   href: SiteHref;
   label: string;
-  /** The person's own work, marked so it reads as theirs rather than as another public page. */
   primary?: boolean;
 }
 

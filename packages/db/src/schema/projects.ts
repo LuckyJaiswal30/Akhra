@@ -181,7 +181,6 @@ export const outcomes = pgTable(
     evidenceUrl: text('evidence_url'),
     impactMetricName: text('impact_metric_name'),
     impactMetricValue: numeric('impact_metric_value', { precision: 14, scale: 2 }),
-    /** The office's number for a patent, a DOI for a publication, a registration for a startup. */
     reference: text('reference'),
     ipStatus: ipStatusEnum('ip_status'),
     recordedById: uuid('recorded_by_id').references(() => users.id, { onDelete: 'set null' }),
@@ -197,7 +196,6 @@ export const outcomes = pgTable(
   ],
 );
 
-/** What the team tested, how, and what it showed. Failed tests are kept: they are evidence too. */
 export const projectTests = pgTable(
   'project_tests',
   {

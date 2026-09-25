@@ -102,8 +102,6 @@ function TeamPanel({
         <form {...addForm} className="border-line mt-5 space-y-3 border-t pt-4">
           <input type="hidden" name="projectId" value={project.id} />
 
-          {/* Adding and removing share this line, so a removal never leaves "Team member
-              added." standing over a list it no longer describes. */}
           <ActionFeedback state={removeState ?? addState} />
 
           <label className="block space-y-1">

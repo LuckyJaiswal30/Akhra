@@ -35,14 +35,12 @@ async function as(user: TestUser) {
   return getActor();
 }
 
-/** The one milestone these fixtures create, or a clear failure if the fixture changed. */
 async function onlyMilestone(user: TestUser, projectId: string) {
   const [milestone] = (await getLifecycle(await as(user), projectId)).milestones;
   if (!milestone) throw new Error('the fixture project has no milestone');
   return milestone;
 }
 
-/** A project past its proposal review, so milestones and outcomes are open. */
 async function underwayProject(title: string): Promise<string> {
   const problemId = await createReport({ districtCode: 'PAL', status: 'routed', title });
   await referTo(problemId, university);
@@ -126,7 +124,6 @@ describe('what a student may do', () => {
 
     const lifecycle = await getLifecycle(team, projectId);
     expect(lifecycle.canManage).toBe(false);
-    // They may still hand in the work itself.
     expect(lifecycle.canContribute).toBe(true);
     await expect(
       createMilestone(team, projectId, { title: 'Something of my own', orderIndex: 1 }),

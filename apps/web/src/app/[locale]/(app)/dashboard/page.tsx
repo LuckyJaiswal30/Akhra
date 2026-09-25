@@ -1,5 +1,11 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { DOMAIN_DEFINITIONS, ROLE_HOME_PATH, type Domain, type ProblemStatus } from '@akhra/shared';
+import {
+  DOMAIN_DEFINITIONS,
+  ROLE_HOME_PATH,
+  type Domain,
+  type ProblemStatus,
+  DISTRICT_BY_CODE,
+} from '@akhra/shared';
 import { listOwnReports } from '@/modules/citizen';
 import { Link, redirect } from '@/i18n/navigation';
 import { buttonVariants, StatusBadge } from '@/components/ui';
@@ -11,8 +17,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale);
 
   const actor = await requireActor();
-  // Everyone but a citizen works somewhere else; one table decides where, so a new role can never
-  // land here by accident and be shown a citizen's page.
   if (actor.role !== 'citizen' && actor.role !== 'anonymous') {
     redirect({ href: ROLE_HOME_PATH[actor.role], locale });
   }
@@ -52,7 +56,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                   <h2 className="text-ink mt-1 font-medium">{report.title}</h2>
                   <p className="text-subtle mt-1 text-sm">
                     {[
-                      report.districtName,
+                      (isHindi && DISTRICT_BY_CODE[report.districtCode]?.nameHi) ||
+                        report.districtName,
                       domain ? (isHindi ? domain.labelHi : domain.labelEn) : null,
                       formatDate(report.createdAt, isHindi ? 'hi-IN' : 'en-IN'),
                     ]

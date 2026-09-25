@@ -152,7 +152,6 @@ export default async function ValidationQueuePage({
           </p>
         )}
       </header>
-      {/* One scrolling row on a phone: three pills that each wrap to two lines read as six. */}
       <nav
         className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
         aria-label={t('title')}

@@ -6,6 +6,7 @@ import {
   TERMINAL_STATUSES,
   type Domain,
   type ProblemStatus,
+  DISTRICT_BY_CODE,
 } from '@akhra/shared';
 import {
   hasSupported,
@@ -139,7 +140,8 @@ export default async function TrackPage({
 
             <dl className="mt-6 grid grid-cols-[minmax(7rem,auto)_1fr] gap-x-6 gap-y-2 text-sm">
               <Detail label={t('district')}>
-                {isHindi ? (problem.districtName ?? problem.districtCode) : problem.districtName}
+                {(isHindi && DISTRICT_BY_CODE[problem.districtCode]?.nameHi) ||
+                  problem.districtName}
                 {problem.blockName && <span className="text-subtle">, {problem.blockName}</span>}
               </Detail>
               <Detail label={t('category')}>

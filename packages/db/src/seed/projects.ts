@@ -217,7 +217,6 @@ const SEED_PROJECTS: SeedProject[] = [
     seq: 6,
     problemSeq: 6,
     org: 106,
-    // Left in planning, with a proposal waiting for the Dumka district officer.
     status: PROJECT_PLANNING_STATUS,
     title: 'Remote science teaching support for Jarmundi upper primary',
     summary:

@@ -76,8 +76,6 @@ export async function assignToDepartment(
   if (!department) throw Errors.notFound('That department could not be found.');
 
   const assignedAt = new Date();
-  // The status change and the department it went to are one fact. Written in two transactions, a
-  // failure between them would leave a report "assigned" to nobody, with no clock and no inbox.
   await withoutRls(getDb(), async (tx) => {
     await transitionWithin(tx, actor, problemId, 'assigned', {
       note: note ? `${department.name}: ${note}` : `Sent to ${department.name}.`,
@@ -144,7 +142,6 @@ export async function recordActionTaken(
   assertCanAct(actor, problem);
 
   const actionTakenAt = new Date();
-  // What was done and the status that says it was done are recorded together or not at all.
   await withoutRls(getDb(), async (tx) => {
     await transitionWithin(tx, actor, problemId, 'action_taken', { note });
     await tx
@@ -301,7 +298,6 @@ export async function reopenReport(problem: ReporterProblem, reason: string): Pr
   logger.info({ problemId: problem.id }, 'report reopened by the reporter');
 }
 
-/** Bounded like every scheduled job, so one run can always finish what it started. */
 const AUTO_CLOSE_BATCH = 200;
 
 export async function autoCloseSettledReports(now = new Date()): Promise<number> {

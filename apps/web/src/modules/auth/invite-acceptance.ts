@@ -20,11 +20,6 @@ export interface InvitePreview {
   jurisdictionCode?: string | null;
   designation?: string | null;
   expiresAt?: Date;
-  /**
-   * Whether the invited address already signs in to Akhra. The invitee holds the token and already
-   * knows their own address, so telling them saves a form they would only be turned away from —
-   * this is not an address anyone else can probe.
-   */
   hasAccount?: boolean;
 }
 

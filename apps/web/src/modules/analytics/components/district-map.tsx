@@ -4,18 +4,9 @@ import { formatNumber } from '@/lib/utils';
 export interface DistrictValue {
   code: string;
   value: number;
-  /** Extra lines for the hover text, such as how many of those reports reached the field. */
   detail?: string;
 }
 
-/**
- * Jharkhand by district, shaded by how many reports came from each.
- *
- * The outlines are the state's real district boundaries, drawn as plain SVG: no tile server, no map
- * library, nothing to load from anywhere else. A government portal should not depend on someone
- * else's map service to show its own districts — and a reader on a slow connection in Simdega gets
- * the map at the same moment as the rest of the page.
- */
 export function DistrictMap({
   values,
   locale,
@@ -30,7 +21,6 @@ export function DistrictMap({
   const byCode = new Map(values.map((entry) => [entry.code, entry]));
   const highest = Math.max(1, ...values.map((entry) => entry.value));
 
-  /** Five steps of one hue: the more reports a district sent, the darker it sits. */
   const shadeOf = (value: number): string => {
     if (value <= 0) return 'var(--viz-grid)';
     const step = Math.min(5, Math.ceil((value / highest) * 5));
@@ -39,7 +29,6 @@ export function DistrictMap({
 
   return (
     <figure className="space-y-3">
-      {/* The state is wider than it is tall; past this width the map only pushes the page down. */}
       <svg
         viewBox={DISTRICT_MAP_VIEWBOX}
         role="img"

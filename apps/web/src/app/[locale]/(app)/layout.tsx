@@ -23,7 +23,6 @@ export default async function AppLayout({
   return (
     <>
       <SiteHeader locale={locale} />
-      {/* Same container as the header, the footer and every public page, so nothing sits inset. */}
       <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">{children}</div>
       <SiteFooter />
     </>

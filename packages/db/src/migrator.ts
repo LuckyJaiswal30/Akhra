@@ -96,7 +96,6 @@ export async function applyMigrations(
   return applied;
 }
 
-/** Creates the database named in the connection string when it does not exist yet. */
 export async function ensureDatabase(connectionString: string): Promise<void> {
   const name = decodeURIComponent(new URL(connectionString).pathname.replace(/^\//, ''));
   const maintenance = new URL(connectionString);

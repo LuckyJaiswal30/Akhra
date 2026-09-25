@@ -32,7 +32,6 @@ const DECISION_MESSAGE: Record<ProposalDecision, (project: string) => string> = 
   rejected: (project) => `Proposal not approved: ${project}`,
 };
 
-/** The latest submitted version of each proposal in the officer's district, oldest first. */
 export async function listProposalsForReview(actor: Actor): Promise<ProposalForReview[]> {
   if (!isAdmin(actor)) throw new ForbiddenError('Only a government officer can review proposals.');
 
@@ -79,13 +78,6 @@ export async function listProposalsForReview(actor: Actor): Promise<ProposalForR
   );
 }
 
-/**
- * Records the district officer's decision on the latest submitted version of a proposal.
- *
- * Approval is what lets work begin: the project leaves planning and the report moves to "research in
- * progress", which the citizen sees on their tracker. A request for changes or a refusal keeps the
- * project in planning and tells the team why, so they can submit a new version.
- */
 export async function reviewProposal(
   actor: Actor,
   proposalId: string,

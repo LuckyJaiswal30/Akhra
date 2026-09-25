@@ -30,7 +30,6 @@ export interface InstitutionProfile {
   disciplines: AcademicDiscipline[];
   facilities: InstitutionFacility[];
   faculty: FacultyExpertise[];
-  /** Without a declared area or a discipline, routing has nothing to match and sends no referrals. */
   isRoutable: boolean;
 }
 
@@ -106,7 +105,6 @@ export async function getInstitutionProfile(actor: Actor): Promise<InstitutionPr
   });
 }
 
-/** Replaces the institution's declared areas, disciplines and facilities in one step. */
 export async function updateInstitutionProfile(
   actor: Actor,
   input: InstitutionProfileInput,
@@ -138,7 +136,6 @@ export async function updateInstitutionProfile(
   );
 }
 
-/** The administrator records which department a colleague belongs to and what they work on. */
 export async function setFacultyExpertise(
   actor: Actor,
   userId: string,

@@ -97,12 +97,11 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
 }
 
 export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  // Native selects clip a long option mid-word; an ellipsis at least shows the text was cut.
   return (
     <select
       className={cn(
         controlClasses,
-        'cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap',
+        'select-chevron cursor-pointer overflow-hidden pr-10 text-ellipsis whitespace-nowrap',
         className,
       )}
       {...props}

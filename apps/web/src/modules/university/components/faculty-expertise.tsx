@@ -22,7 +22,6 @@ function disciplineName(discipline: AcademicDiscipline | null, locale: string): 
   return locale === 'hi' ? DISCIPLINE_LABELS[discipline].hi : DISCIPLINE_LABELS[discipline].en;
 }
 
-/** Who teaches what. Routing counts the staff whose discipline fits a problem's domain. */
 export function FacultyExpertiseList({
   faculty,
   canEdit,

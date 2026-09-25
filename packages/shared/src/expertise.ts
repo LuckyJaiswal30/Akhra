@@ -1,9 +1,5 @@
 import type { Domain } from './domains';
 
-/**
- * Academic disciplines an institution teaches and its faculty belong to. A fixed list rather than
- * free text, because routing has to match a problem's domain against them.
- */
 export const ACADEMIC_DISCIPLINES = [
   'agricultural_sciences',
   'veterinary_animal_sciences',
@@ -54,7 +50,6 @@ export const DISCIPLINE_LABELS: Record<AcademicDiscipline, { en: string; hi: str
   architecture_planning: { en: 'Architecture and planning', hi: 'वास्तुकला एवं नियोजन' },
 };
 
-/** The disciplines whose people are most likely to solve a problem in each domain. */
 export const DOMAIN_DISCIPLINES: Record<Domain, readonly AcademicDiscipline[]> = {
   education: ['education', 'computer_science', 'social_work_sociology'],
   agriculture: ['agricultural_sciences', 'veterinary_animal_sciences', 'water_engineering'],
@@ -68,7 +63,6 @@ export const DOMAIN_DISCIPLINES: Record<Domain, readonly AcademicDiscipline[]> =
   rural_livelihoods: ['economics_management', 'agricultural_sciences', 'social_work_sociology'],
 };
 
-/** Facilities that let an institution go beyond a report to a prototype, a pilot or a venture. */
 export const INSTITUTION_FACILITIES = [
   'research_centre',
   'innovation_centre',
@@ -90,13 +84,10 @@ export const FACILITY_LABELS: Record<InstitutionFacility, { en: string; hi: stri
 export const EXPERTISE_STRENGTHS = [1, 2, 3, 4, 5] as const;
 
 export interface InstitutionSignals {
-  /** 1–5 as the institution declared it for the problem's domain, or null if it did not. */
   domainStrength: number | null;
   disciplines: readonly AcademicDiscipline[];
   facilities: readonly InstitutionFacility[];
-  /** Active faculty whose discipline is relevant to the problem's domain. */
   relevantFaculty: number;
-  /** Straight-line distance to the report's district, or null when either location is unknown. */
   distanceKm: number | null;
 }
 
@@ -113,16 +104,10 @@ const WEIGHTS = {
   proximity: 0.15,
 } as const;
 
-/** Faculty beyond this number stop adding to the score; a large department is not twice as good. */
 const FACULTY_SATURATION = 5;
 const FACILITY_SATURATION = 3;
 const MAX_MEANINGFUL_KM = 250;
 
-/**
- * How well an institution fits a problem, from 0 to 1. Each signal is capped so that no single one,
- * such as a long faculty list, can make up for having no relevant expertise at all. An institution
- * with neither a declared domain nor a relevant discipline scores zero and is not suggested.
- */
 export function scoreInstitution(domain: Domain, signals: InstitutionSignals): InstitutionScore {
   const wanted = DOMAIN_DISCIPLINES[domain];
   const relevantDisciplines = wanted.filter((d) => signals.disciplines.includes(d));

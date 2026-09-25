@@ -24,14 +24,12 @@ vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({
     userId: (globalThis as { __clerkUserId?: string | null }).__clerkUserId ?? null,
   }),
-  // Enough for a suite that reads the proxy's matcher; nothing here runs the proxy itself.
   clerkMiddleware: (handler: unknown) => handler,
   clerkClient: async () => {
     throw new Error('The Clerk backend is not reachable from tests.');
   },
 }));
 
-// The suites sign people in through the fake above, so they run as if Clerk keys were set.
 vi.mock('@/server/sign-in-mode', () => ({ signInEnabled: true }));
 
 vi.mock('@/server/clerk', async (importOriginal) => {

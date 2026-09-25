@@ -33,14 +33,6 @@ export const ESCALATE_AFTER_HOURS = 72;
 const INVITE_REMINDER_HOURS = 24;
 const MILESTONE_REMINDER_HOURS = 72;
 
-/**
- * How many rows a job may claim in one run.
- *
- * Every job here marks rows as done *before* it sends anything, so a run that dies half way —
- * a function timeout, a deploy, a database blip — would leave those people never told. Claiming a
- * bounded batch keeps one run short enough to finish, and a job that fills its batch simply says so
- * and is picked up by the next run.
- */
 const BATCH = 200;
 
 export interface MaintenanceReport {
@@ -54,11 +46,9 @@ export interface MaintenanceReport {
   rateLimitsPruned: number;
   contactsErased: number;
   snapshots: number;
-  /** Jobs that filled their batch and still have work waiting for the next run. */
   pending: string[];
 }
 
-/** Rate-limit buckets are only meaningful inside their window; after a day they are dead weight. */
 const RATE_LIMIT_KEEP_HOURS = 48;
 
 export async function pruneRateLimits(now = new Date()): Promise<number> {
@@ -365,10 +355,6 @@ export async function escalateOverdueReports(now = new Date()): Promise<number> 
 export async function runMaintenance(now = new Date()): Promise<MaintenanceReport> {
   const pending: string[] = [];
 
-  /**
-   * One failing job never stops the others, and a job that filled its batch is named in `pending`
-   * so whoever reads the response knows the next run still has work to do.
-   */
   const settle = async (name: string, task: Promise<number>, batch = BATCH): Promise<number> => {
     try {
       const handled = await task;

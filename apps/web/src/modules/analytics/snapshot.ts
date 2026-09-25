@@ -3,18 +3,6 @@ import { eq, inArray } from 'drizzle-orm';
 import { analyticsSnapshots, getDb, withoutRls } from '@akhra/db';
 import { logger } from '@/server/logger';
 
-/**
- * Figures that cost a dozen aggregates to produce, kept in `analytics_snapshots` and shared by every
- * server that reads the same database.
- *
- * Akhra caches these itself rather than through the framework, for two reasons. A public page on a
- * government portal is read far more often than the figures change — one visitor should not make
- * twenty thousand of them wait on the same `count(*)`. And this cache outlives any one rendering
- * model: it is a table, not a build flag.
- *
- * A stale snapshot is served immediately and refreshed after the response. Nobody waits for a
- * number that was already good enough a minute ago.
- */
 export interface Snapshot<T> {
   payload: T;
   computedAt: Date;
@@ -56,10 +44,6 @@ export async function writeSnapshot<T>(key: string, payload: T): Promise<void> {
   }
 }
 
-/**
- * Throws away stored figures, so the next reader recomputes them. Used when something happened that
- * a visitor would expect to see at once — a new report on the home page counter, for instance.
- */
 export async function forgetSnapshots(keys: string[]): Promise<void> {
   if (keys.length === 0) return;
   try {
@@ -74,7 +58,6 @@ export async function forgetSnapshots(keys: string[]): Promise<void> {
   }
 }
 
-/** Runs after the response has been sent, or inline where there is no request to finish. */
 function afterResponse(task: () => Promise<void>): void {
   try {
     after(task);
@@ -83,12 +66,6 @@ function afterResponse(task: () => Promise<void>): void {
   }
 }
 
-/**
- * The stored figures under `key`, recomputing only when there are none. A snapshot older than
- * `ttlMs` is still served, and refreshed once the reader has their page.
- *
- * `compute` must return something `JSON.stringify` keeps whole: a Date comes back as a string.
- */
 export async function cachedSnapshot<T>(
   key: string,
   ttlMs: number,

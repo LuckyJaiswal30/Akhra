@@ -1,13 +1,11 @@
 import type { Domain } from './domains';
 
-/** How many people the citizen says the problem reaches. */
 export const AFFECTED_SCALES = ['household', 'neighbourhood', 'village', 'block_or_town'] as const;
 export type AffectedScale = (typeof AFFECTED_SCALES)[number];
 
 export const PRIORITY_LEVELS = ['critical', 'high', 'medium', 'low'] as const;
 export type PriorityLevel = (typeof PRIORITY_LEVELS)[number];
 
-/** Each reason is recorded with the report, so an officer can see why it sits where it does. */
 export const PRIORITY_REASONS = [
   'safety_risk',
   'urgent_language',
@@ -36,10 +34,6 @@ export interface PriorityAssessment {
   reasons: PriorityReason[];
 }
 
-/**
- * Words that, in a report, mean someone could be hurt or has been. Matched as whole words, in
- * English and Hindi, so "shock absorber" or "firewood" do not raise a report on their own.
- */
 const URGENT_TERMS = [
   'death',
   'died',
@@ -81,7 +75,6 @@ const URGENT_TERMS = [
   'पीने का पानी नहीं',
 ];
 
-/** Services whose failure harms people directly rather than inconveniencing them. */
 const ESSENTIAL_DOMAINS: readonly Domain[] = ['healthcare', 'water_resources'];
 
 const REACH_POINTS: Record<AffectedScale, number> = {
@@ -100,11 +93,6 @@ function hasUrgentLanguage(text: string): boolean {
   });
 }
 
-/**
- * Orders the validation queue. Deliberately simple and additive, so the score can be explained in a
- * sentence and nobody has to trust a model: a risk to safety counts most, then how many people are
- * affected, then how many others have backed or re-reported it, then how long it has waited.
- */
 export function assessPriority(input: PriorityInput): PriorityAssessment {
   const reasons: PriorityReason[] = [];
   let score = 10;

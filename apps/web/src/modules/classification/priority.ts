@@ -5,13 +5,8 @@ import { logger } from '@/server/logger';
 
 const DAY = 24 * 60 * 60 * 1000;
 
-/** Reports still waiting on someone. Priority stops mattering once a report is closed. */
 const OPEN_STATUSES = ['submitted', 'validated', 'assigned'] as const;
 
-/**
- * Recomputes a report's supporters and priority from what is recorded about it. Both are derived,
- * never incremented, so a count can be refreshed any number of times and still be right.
- */
 export async function refreshPriority(
   tx: Transaction,
   problemId: string,
@@ -64,13 +59,6 @@ export async function refreshPriority(
     .where(eq(problems.id, problemId));
 }
 
-/**
- * Waiting time raises priority on its own, so open reports are reassessed by the daily job.
- *
- * Reassessing costs three queries per report, so a run takes the batch that has gone longest
- * without one — reports never assessed first. A backlog drains over the following runs instead of
- * holding one long transaction open.
- */
 export const PRIORITY_BATCH = 200;
 
 export async function refreshOpenPriorities(now = new Date()): Promise<number> {

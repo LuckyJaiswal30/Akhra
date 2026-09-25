@@ -65,7 +65,10 @@ export async function submitProblemAction(
       if (!network.allowed) throw rateLimitedError(network.resetAt, 'reports this hour');
     }
 
-    return { data: await submitProblem(actor, input), message: 'Your report has been received.' };
+    return {
+      data: await submitProblem(actor, input, formData.get('locale') === 'hi' ? 'hi' : 'en'),
+      message: 'Your report has been received.',
+    };
   });
 }
 

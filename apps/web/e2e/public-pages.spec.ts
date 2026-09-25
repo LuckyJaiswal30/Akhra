@@ -1,15 +1,5 @@
 import { expect, test, type ConsoleMessage, type Page } from '@playwright/test';
 
-/**
- * Every page a visitor can reach without an account, in both languages.
- *
- * The assertions are deliberately shallow — a heading, a language, a clean console. Anything deeper
- * belongs in `tests/`, where it runs against a database instead of a browser. What this catches is
- * the class of failure those tests cannot see: a page that throws while rendering, a translation
- * key that reaches the screen raw, a client component that breaks hydration.
- */
-
-/** next-intl prints a key it cannot resolve. These are the namespaces the public pages read. */
 const RAW_MESSAGE_KEY =
   /\b(brand|nav|common|footer|landing|how|stories|impact|resources|problems|track|submit|privacy|thread|lifecycle|errors)\.[a-zA-Z]/;
 
@@ -37,7 +27,6 @@ const PAGES: PageCheck[] = [
   },
 ];
 
-/** Warnings are the browser's business; an error is ours. */
 function watchConsole(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (message: ConsoleMessage) => {
@@ -48,7 +37,6 @@ function watchConsole(page: Page): string[] {
 }
 
 for (const locale of ['en', 'hi'] as const) {
-  // The default locale has no prefix; Hindi does.
   const prefix = locale === 'en' ? '' : '/hi';
 
   test.describe(`public pages in ${locale}`, () => {
@@ -61,7 +49,6 @@ for (const locale of ['en', 'hi'] as const) {
         await expect(page.locator('html')).toHaveAttribute('lang', locale);
         await expect(page.getByRole('heading', { level: 1 })).toContainText(heading[locale]);
 
-        // A missing translation reaches the screen as "namespace.key", never as prose.
         await expect(page.locator('body')).not.toContainText(RAW_MESSAGE_KEY);
         expect(errors, errors.join('\n')).toEqual([]);
       });

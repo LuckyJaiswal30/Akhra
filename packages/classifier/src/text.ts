@@ -1,3 +1,5 @@
+import { CONCEPTS, foldToken } from './lexicon';
+
 const STOP_WORDS = new Set([
   'a',
   'an',
@@ -106,7 +108,8 @@ const STOP_WORDS = new Set([
   'थी',
 ]);
 
-const TOKEN_PATTERN = /[a-z0-9\p{Script=Devanagari}]+/gu;
+const TOKEN_PATTERN =
+  /[a-z0-9\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Oriya}\p{Script=Ol_Chiki}\p{Script=Arabic}\p{M}]+/gu;
 
 export function tokenize(text: string): string[] {
   const matches = text.toLowerCase().match(TOKEN_PATTERN);
@@ -126,6 +129,17 @@ export function stem(token: string): string {
 
 export function normalize(text: string): string[] {
   return tokenize(text).map(stem);
+}
+
+export function concepts(text: string): string[] {
+  return tokenize(text).flatMap((token) => {
+    const latin = /^[a-z]+$/.test(token);
+    const concept =
+      CONCEPTS.get(foldToken(token)) ?? (latin ? CONCEPTS.get(foldToken(stem(token))) : undefined);
+    if (concept === '') return [];
+    if (concept) return [stem(concept)];
+    return [latin ? stem(token) : foldToken(token)];
+  });
 }
 
 export type TermFrequency = Map<string, number>;

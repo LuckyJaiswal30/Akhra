@@ -35,11 +35,6 @@ export const ORGANIZATION_TYPES = [
 
 export type OrganizationType = (typeof ORGANIZATION_TYPES)[number];
 
-/**
- * What kind of industry partner an organisation is. They bring different things: a startup builds, a
- * CSR foundation funds, a research lab tests, an innovation hub connects. Set when the partner is
- * onboarded, from its registration, and shown wherever its offers are weighed.
- */
 export const PARTNER_KINDS = [
   'corporate',
   'startup',
@@ -59,10 +54,8 @@ export const PARTNER_KIND_LABELS: Record<PartnerKind, { en: string; hi: string }
   innovation_hub: { en: 'Innovation hub', hi: 'नवाचार केंद्र' },
 };
 
-/** Who speaks for the institution: answers referrals, forms teams, submits proposals. */
 export const UNIVERSITY_ROLES = ['university_admin', 'faculty'] as const satisfies readonly Role[];
 
-/** Everyone who belongs to an institution, students included. */
 export const INSTITUTION_ROLES = [
   ...UNIVERSITY_ROLES,
   'student',

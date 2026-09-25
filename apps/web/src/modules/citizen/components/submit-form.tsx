@@ -147,6 +147,7 @@ export function SubmitForm({
 
   return (
     <form {...form} onInput={rememberDraft} className="space-y-6" noValidate>
+      <input type="hidden" name="locale" value={locale} />
       <div>
         <p className="text-ink font-medium" aria-live="polite">
           {labels[`stepOf_${step}`]}
@@ -197,7 +198,12 @@ export function SubmitForm({
           <VoiceInput
             locale={locale}
             onText={appendToDescription}
-            labels={{ start: labels.voiceStart!, stop: labels.voiceStop!, hint: labels.voiceHint! }}
+            labels={{
+              start: labels.voiceStart!,
+              stop: labels.voiceStop!,
+              hint: labels.voiceHint!,
+              language: labels.voiceLanguage!,
+            }}
           />
         </Field>
 

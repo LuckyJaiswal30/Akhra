@@ -62,11 +62,8 @@ export interface ProjectAccess {
   districtCode: string;
   status: ProblemStatus;
   problemStatus: ProblemStatus;
-  /** The institution that owns the project, through someone who may direct its work. */
   isOwner: boolean;
-  /** Named on the team. A student's rights reach exactly this far and no further. */
   onTeam: boolean;
-  /** A government officer answerable for the project's district, or a super administrator. */
   isOverseer: boolean;
 }
 
@@ -93,7 +90,6 @@ async function loadAccess(tx: Tx, actor: Actor, projectId: string): Promise<Proj
 
   return {
     ...row,
-    // A student belongs to the institution but speaks only for the projects they are named on.
     isOwner: inOwningOrganization && actor.role !== 'student',
     onTeam: inOwningOrganization && (await isOnTeam(tx, actor, projectId)),
     isOverseer: canOverseeDistrict(actor, row.districtCode),
@@ -110,7 +106,6 @@ async function isOnTeam(tx: Tx, actor: Actor, projectId: string): Promise<boolea
   return row !== undefined;
 }
 
-/** Work a student shares in: the files and the progress of milestones they were given. */
 function requireContributorOrOverseer(access: ProjectAccess): void {
   if (!access.isOwner && !access.onTeam && !access.isOverseer) {
     throw new ForbiddenError('Only the project team or the district’s officer can do this');
@@ -123,7 +118,6 @@ function requireTeamOrOverseer(access: ProjectAccess): void {
   }
 }
 
-/** Milestones, stages and outcomes belong to work that has been approved to start. */
 function requireUnderway(access: ProjectAccess): void {
   if (access.status === PROJECT_PLANNING_STATUS) {
     throw Errors.conflict(
@@ -182,14 +176,10 @@ export interface TestRecord {
 export interface Lifecycle {
   organizationId: string;
   status: ProblemStatus;
-  /** False while the proposal is still awaiting approval. */
   underway: boolean;
   nextStatuses: ProblemStatus[];
-  /** Direct the work: plan milestones, move the stage, record tests and outcomes. */
   canManage: boolean;
-  /** Take part in the work: record progress on it. A student on the team may, and does. */
   canContribute: boolean;
-  /** Share a file. Not gated on approval: a team drafting a proposal needs to attach surveys and quotes. */
   canAddDocument: boolean;
   canApprove: boolean;
   milestones: MilestoneRecord[];
@@ -384,11 +374,18 @@ export async function updateMilestoneStatus(
     });
   } else if (toStatus === 'approved' || toStatus === 'rejected') {
     if (toStatus === 'approved' && changed.problemId) {
-      await notifyReporterUpdate(changed.problemId, {
-        type: 'milestone_reached',
-        title: 'A step on your report is complete',
-        body: `The team has completed: ${changed.title}.`,
-      });
+      await notifyReporterUpdate(
+        changed.problemId,
+        {
+          type: 'milestone_reached',
+          title: 'A step on your report is complete',
+          body: `The team has completed: ${changed.title}.`,
+        },
+        {
+          title: 'आपकी रिपोर्ट पर एक चरण पूरा हुआ',
+          body: `टीम ने यह काम पूरा कर लिया है: ${changed.title}।`,
+        },
+      );
     }
     await notifyOrganizations([changed.organizationId], ['university_admin', 'faculty'], {
       type: `milestone_${toStatus}`,
@@ -517,7 +514,6 @@ export async function recordOutcome(
 export type OutcomeInput = z.output<typeof outcomeSchema>;
 export type ProjectTestInput = z.output<typeof projectTestSchema>;
 
-/** Records a test of the solution. Tests that failed are recorded too; they shape what comes next. */
 export async function recordTest(
   actor: Actor,
   projectId: string,

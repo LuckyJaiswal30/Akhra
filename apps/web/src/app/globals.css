@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-/* Light theme only, by design. `pnpm --filter @akhra/web contrast` checks every text/background pair against WCAG AA. */
 @theme {
   --font-sans: var(--font-plex-sans), var(--font-plex-deva), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -42,14 +41,12 @@
 :root {
   color-scheme: light;
 
-  /* Chart tokens: the validated categorical order (blue, orange, aqua, yellow), checked against the white surface. */
   --viz-surface: #ffffff;
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
   --series-4: #eda100;
   --viz-neutral: #c3c8cf;
-  /* Sequential blue, light to dark, for magnitude (heatmaps). --series-1 is step 450 of the same ramp. */
   --seq-1: #cde2fb;
   --seq-2: #9ec5f4;
   --seq-3: #6da7ec;
@@ -86,8 +83,6 @@
     line-height: 1.7;
   }
 
-  /* pretty, not balance: balance halves a line that nearly fits, leaving a gap at the end of every
-     row. pretty fills lines normally and only avoids stranding a single word on the last one. */
   h1,
   h2,
   h3,
@@ -140,7 +135,6 @@
   }
 }
 
-/* Dialogs rise in rather than snapping open. The reduced-motion rule above already cancels this. */
 @keyframes dialog-in {
   from {
     opacity: 0;
@@ -160,4 +154,12 @@ dialog[open] {
 
 dialog[open]::backdrop {
   animation: backdrop-in 160ms ease-out;
+}
+
+@utility select-chevron {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2356635c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 1rem;
 }

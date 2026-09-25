@@ -29,8 +29,6 @@ export function StagePanel({
         <span className="font-medium">{statusLabel(lifecycle.status, locale)}</span>
       </p>
 
-      {/* A panel whose only content is the stage it is already on reads as broken. Say why there
-          is nothing to press: the work is finished, or it is not this account's to move. */}
       {lifecycle.nextStatuses.length === 0 && (
         <p className="text-subtle mt-2 text-sm">
           {label(

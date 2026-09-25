@@ -59,10 +59,9 @@ export const problems = pgTable(
     submitterPhone: text('submitter_phone').notNull(),
     submitterEmail: text('submitter_email'),
     submitterOrganization: text('submitter_organization'),
-    /** The reporter's own sense of reach and danger; both feed the report's priority. */
+    locale: text('locale').notNull().default('en'),
     affectedScale: affectedScaleEnum('affected_scale'),
     safetyRisk: boolean('safety_risk').notNull().default(false),
-    /** Kept equal to the rows in problem_supports; changed only alongside them. */
     supportCount: integer('support_count').notNull().default(0),
     priorityScore: integer('priority_score').notNull().default(10),
     priority: priorityLevelEnum('priority').notNull().default('low'),
@@ -128,7 +127,6 @@ export const problems = pgTable(
   ],
 );
 
-/** One row per person who says a public report affects them too. */
 export const problemSupports = pgTable(
   'problem_supports',
   {
@@ -179,11 +177,6 @@ export const problemRoutings = pgTable(
       .references(() => organizations.id, { onDelete: 'cascade' }),
     matchScore: real('match_score').notNull().default(0),
     matchRationale: text('match_rationale'),
-    /**
-     * What the officer asked this institution for, in their own words. The match rationale beside
-     * it is the algorithm's reasoning; this is the brief, and without it an institution sees only
-     * that a report arrived and not what the district wants done about it.
-     */
     brief: text('brief'),
     response: routingResponseEnum('response').notNull().default('proposed'),
     responseNote: text('response_note'),

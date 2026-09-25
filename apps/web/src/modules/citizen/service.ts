@@ -85,20 +85,19 @@ async function rememberContactDetails(
 export async function submitProblem(
   actor: Actor,
   payload: CreateProblemPayload,
+  locale = 'en',
 ): Promise<SubmissionResult> {
-  const [classification, duplicateReport] = await Promise.all([
-    classifyProblem({
-      title: payload.title,
-      description: payload.description,
-      districtCode: payload.districtCode,
-    }),
-    findDuplicates({
-      title: payload.title,
-      description: payload.description,
-      districtCode: payload.districtCode,
-      domain: payload.domain ?? null,
-    }),
-  ]);
+  const classification = await classifyProblem({
+    title: payload.title,
+    description: payload.description,
+    districtCode: payload.districtCode,
+  });
+  const duplicateReport = await findDuplicates({
+    title: payload.title,
+    description: payload.description,
+    districtCode: payload.districtCode,
+    domain: payload.domain ?? classification.domain,
+  });
   const duplicates = duplicateReport.matches;
 
   const db = getDb();
@@ -125,6 +124,7 @@ export async function submitProblem(
         submitterName: payload.submitterName,
         submitterPhone: payload.submitterPhone,
         submitterEmail: payload.submitterEmail || null,
+        locale: locale === 'hi' ? 'hi' : 'en',
         submitterOrganization: payload.submitterOrganization ?? null,
         affectedScale: payload.affectedScale,
         safetyRisk: payload.safetyRisk,
@@ -159,7 +159,7 @@ export async function submitProblem(
       toStatus: 'submitted',
       actorId: submitterId,
       actorLabel: payload.submitterName,
-      note: 'Report received.',
+      note: null,
       isPublic: true,
     });
 
@@ -179,7 +179,6 @@ export async function submitProblem(
     'problem submitted',
   );
 
-  // The home page counts every report. Someone who just filed one should see their own in it.
   await expirePublicFigures();
 
   if (payload.submitterEmail) {

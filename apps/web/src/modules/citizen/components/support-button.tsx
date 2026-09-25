@@ -7,10 +7,6 @@ import { Link } from '@/i18n/navigation';
 import { toggleSupportAction } from '../actions';
 import type { SupportState } from '../support';
 
-/**
- * Lets someone who faces the same problem say so. Signed-out visitors are sent to sign in and
- * brought back, because one account can back a report only once.
- */
 export function SupportButton({
   problemId,
   initial,

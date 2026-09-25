@@ -1,23 +1,16 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
-/**
- * `withoutRls` runs a query with the database's full powers: row-level security is off, and whether
- * the caller may see or change those rows becomes the code's own responsibility. That responsibility
- * belongs in a service or query file, beside the check that enforces it — never in a page, a route,
- * a component or a server action, where a missing check is invisible.
- */
 const MODULE_INTERNALS = {
   group: ['@/modules/*/*'],
-  message:
-    'Import a module through its public API (@/modules/<name>), not its internals. See CONTRIBUTING.md.',
+  message: 'Import a module through its public API (@/modules/<name>), not its internals.',
 };
 
 const UNGUARDED_DB = {
   name: '@akhra/db',
   importNames: ['withoutRls'],
   message:
-    'withoutRls turns row-level security off, so the access check becomes yours to write. Call a module function that owns that check instead — see CONTRIBUTING.md.',
+    'withoutRls turns row-level security off, so the access check becomes yours to write. Call a module function that owns that check instead.',
 };
 
 export default tseslint.config(
@@ -64,22 +57,12 @@ export default tseslint.config(
     },
   },
   {
-    /**
-     * Inside a module, the same database rule for the files that must never hold an access check.
-     * The module-boundary rule is deliberately not applied here: a client component reaching another
-     * module's component imports that file directly, because going through the module's index would
-     * pull its server-only services into the browser bundle.
-     */
     files: ['apps/web/src/modules/*/components/**/*.{ts,tsx}', 'apps/web/src/modules/*/actions.ts'],
     rules: {
       'no-restricted-imports': ['error', { paths: [UNGUARDED_DB] }],
     },
   },
   {
-    /**
-     * `src/server` is the layer underneath the modules: session, identity linking, rate limiting.
-     * Some of it runs before there is an actor to check, so the bypass is its job, not a smell.
-     */
     files: ['apps/web/src/server/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [MODULE_INTERNALS] }],

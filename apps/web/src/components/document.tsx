@@ -2,7 +2,6 @@ import { Check, Minus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-/** The body of a text page: sections one under another, divided by a rule, at a readable width. */
 export function DocumentBody({ children }: { children: ReactNode }) {
   return (
     <article className="[&>*+*]:border-line mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 [&>*+*]:mt-12 [&>*+*]:border-t [&>*+*]:pt-10">
@@ -35,7 +34,6 @@ export function DocSection({
   );
 }
 
-/** Two sections side by side from tablet width, stacked on a phone. */
 export function DocColumns({ children }: { children: ReactNode }) {
   return <div className="grid gap-x-12 gap-y-10 md:grid-cols-2">{children}</div>;
 }

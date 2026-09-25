@@ -66,6 +66,27 @@ describe('reports merged as duplicates', () => {
     expect(forLater?.body).toContain(`merged into ${await refOf(original)}`);
   });
 
+  it('writes to each reporter in the language they reported in', async () => {
+    const original = await createReport({ submitterId: firstReporter.id });
+    const duplicate = await createReport({ submitterId: laterReporter.id });
+    await withoutRls(getDb(), (tx) =>
+      tx.update(problems).set({ locale: 'hi' }).where(eq(problems.id, duplicate)),
+    );
+
+    actAs(officer);
+    await markAsDuplicate(await getActor(), duplicate, original);
+    await decideProblemAction(
+      null,
+      formData({ problemId: original, decision: 'reject', note: 'Outside the scheme' }),
+    );
+
+    const [english] = await notificationsFor(firstReporter, 'problem_rejected');
+    const [hindi] = await notificationsFor(laterReporter, 'problem_rejected');
+    expect(english?.body).toContain('is now:');
+    expect(hindi?.body).toContain(`${await refOf(original)} में मिला दिया गया है`);
+    expect(hindi?.body).toContain('की स्थिति अब:');
+  });
+
   it('carries earlier merges along when the original is itself merged', async () => {
     const first = await createReport({ submitterId: firstReporter.id });
     const second = await createReport({ submitterId: laterReporter.id });

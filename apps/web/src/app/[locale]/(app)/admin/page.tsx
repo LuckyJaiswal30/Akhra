@@ -43,11 +43,6 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
   const messages = await getMessages();
   const labels = messages.admin as Record<string, string>;
   const isHindi = locale === 'hi';
-  /**
-   * Designations are free text from an appointment order and are almost always written in English,
-   * whichever language the page is in. Comparing against the English label as well as the shown one
-   * keeps "District Officer, Deoghar" from being printed twice under a Hindi heading.
-   */
   const englishLabels = isHindi
     ? ((await getMessages({ locale: 'en' })).admin as Record<string, string>)
     : labels;
@@ -83,7 +78,6 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
   );
   const coveredDistricts = new Set(officersByDistrict.keys());
   const pendingInvites = invites.filter((invite) => invite.state === 'pending');
-  /** Actionable invitations first, then alphabetically, so a known address is quick to find. */
   const sortedInvites = [...invites].sort(
     (a, b) =>
       Number(b.state === 'pending') - Number(a.state === 'pending') ||
@@ -94,7 +88,6 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
       ? officerLabel(invite.jurisdictionCode)
       : (invite.organizationName ??
         (invite.role === 'gov_admin' ? labels.stateDesk : labels.government));
-  /** Only a pending invitation has an expiry worth showing; the rest have already been settled. */
   const inviteExpiry = (invite: (typeof invites)[number]) =>
     invite.state === 'pending'
       ? formatDate(invite.expiresAt, isHindi ? 'hi-IN' : 'en-IN')
@@ -153,8 +146,6 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
                 : person.role === 'gov_admin'
                   ? labels.stateDesk
                   : roleLabel(person.role);
-            // A district officer's designation usually restates their district word for word.
-            // Printing both is a stutter, so the designation only appears when it adds something.
             const sameAsPosting = [
               postingLine,
               person.jurisdictionCode && officerLabelEn(person.jurisdictionCode),
@@ -179,8 +170,6 @@ export default async function AdminPage({ params }: { params: Promise<{ locale: 
                     <p className="text-ink mt-1 text-xs font-medium">{postingLine}</p>
                     {designation && <p className="text-subtle text-xs">{designation}</p>}
                   </div>
-                  {/* No mt-auto: a card with one action would otherwise strand it at the bottom,
-                      level with its neighbours' second button and adrift from its own text. */}
                   {person.status === 'active' && (
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                       {person.id === actor.userId ? (

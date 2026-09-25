@@ -14,7 +14,6 @@ const key = (name: string) => {
   return value;
 };
 
-/** Backdates a stored snapshot, so a test does not have to wait out a time-to-live. */
 async function age(snapshotKey: string, minutes: number) {
   await withoutRls(getDb(), (tx) =>
     tx
@@ -81,7 +80,6 @@ describe('figures kept in a snapshot', () => {
     await writeSnapshot(name, { total: 1 });
     await age(name, 30);
 
-    // The reader gets what was stored; the refresh happens behind them.
     expect(await cachedSnapshot(name, 60_000, async () => ({ total: 2 }))).toEqual({ total: 1 });
   });
 

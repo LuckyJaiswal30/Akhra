@@ -20,7 +20,6 @@ export async function SiteHeader({ locale }: { locale: string }) {
     { href: '/resources', label: t('nav.resources') },
   ];
 
-  // Signed in, the same menu plus a way back to the person's own desk.
   const items: NavItem[] = role
     ? [{ href: DASHBOARD_HREF[role], label: t('nav.dashboard'), primary: true }, ...publicItems]
     : publicItems;

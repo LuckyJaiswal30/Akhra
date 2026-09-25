@@ -18,7 +18,6 @@ export function DataTable<Row>({
   rowKey: (row: Row) => string;
   caption?: string;
 }) {
-  // Figures and their short headings never wrap, so the name column keeps whatever width is left.
   const [first, ...rest] = columns;
   return (
     <>

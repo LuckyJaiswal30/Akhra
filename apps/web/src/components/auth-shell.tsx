@@ -38,8 +38,6 @@ export async function AuthShell({
         aria-label={t('auth.heroLabel')}
         className="bg-mint relative hidden flex-col overflow-hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:self-start"
       >
-        {/* The logo is the only way out of this panel. A sign-in page has one job, and a row of
-            links beside the form is a row of ways to abandon it. */}
         <div className="relative z-10 px-10 pt-8 xl:px-14">
           <Link href="/" className="inline-flex min-h-11 items-center rounded-md">
             <AkhraLogo name={t('brand.name')} tagline={t('brand.slogan')} />
@@ -66,7 +64,6 @@ export async function AuthShell({
               </li>
             ))}
           </ul>
-          {/* On a short laptop screen this is what would push the figures below the fold. */}
           <div className="[@media(max-height:820px)]:hidden">
             <span aria-hidden className="bg-sal mt-7 block h-1 w-12 rounded-full" />
             <p className="text-subtle mt-4 text-lg italic">{t('auth.heroQuote')}</p>
@@ -80,8 +77,6 @@ export async function AuthShell({
             className="absolute inset-0 bg-linear-to-b from-transparent via-[#0f2e1e]/45 to-[#0f2e1e]/95"
           />
           <div className="absolute inset-x-0 bottom-0 px-10 pb-9 text-white xl:px-14">
-            {/* The panel is exactly one screen tall. Below 2xl the figures take two rows, so the
-                decorative line gives up its room rather than pushing them off the bottom. */}
             <div className="hidden 2xl:block">
               <span aria-hidden className="block h-0.5 w-12 bg-white/80" />
               <p className="mt-4 font-medium">
@@ -90,7 +85,6 @@ export async function AuthShell({
                 {t('auth.heroFooter2')}
               </p>
             </div>
-            {/* Four abreast only when each label fits on one line; two by two until then. */}
             <dl className="grid grid-cols-2 gap-y-3 2xl:mt-6 2xl:grid-cols-4 2xl:divide-x 2xl:divide-white/30">
               {figures.map((figure) => (
                 <div key={figure.label} className="flex flex-col-reverse 2xl:px-4 2xl:first:pl-0">

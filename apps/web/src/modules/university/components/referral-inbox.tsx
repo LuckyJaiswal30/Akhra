@@ -100,8 +100,6 @@ function ReferralCard({
         </span>
       </div>
 
-      {/* The officer's own brief. The line above is why the algorithm chose this institution;
-          this is what the district is actually asking it to do. */}
       {referral.brief && (
         <div className="bg-mint mt-4 rounded-xl p-4">
           <p className="text-sal-deep text-xs font-semibold">{labels.brief}</p>

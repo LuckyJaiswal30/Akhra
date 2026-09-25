@@ -36,6 +36,8 @@ export const JUDGE_SYSTEM_PROMPT = `You compare a new citizen report from Jharkh
 
 Decide which existing reports describe the same underlying problem at the same place, so they can be merged. Similar topics in different places are NOT duplicates.
 
+Reports may be written in different languages or scripts (English, Hindi, Hinglish, Santali, Nagpuri and others). The same problem at the same place described in two languages IS a duplicate.
+
 Respond with ONLY a JSON object, no prose and no code fences:
 {"duplicates":[{"id":"<candidate id>","confidence":<0-1>,"reason":"<max 160 chars>"}]}
 

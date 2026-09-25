@@ -11,8 +11,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return { title: t('title') };
 }
 
-// The parts a notice under the Digital Personal Data Protection Act, 2023 must cover: what is
-// taken and why, what is shown, how long it is kept, what the person can do, and whom to ask.
 const SHOWN = ['shown1', 'shown2', 'shown3'] as const;
 const NEVER_SHOWN = ['hidden1', 'hidden2', 'hidden3'] as const;
 

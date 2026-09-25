@@ -28,7 +28,6 @@ export function RepostForm({
     jurisdictionCode: string | null;
     organizationId: string | null;
     designation: string | null;
-    /** The posting as the card shows it, so the dialog can say what is being moved away from. */
     label: string;
   };
   demotesSuperAdmin?: boolean;
@@ -44,11 +43,6 @@ export function RepostForm({
   const [designation, setDesignation] = useState(current.designation ?? '');
   const [done, setDone] = useState(false);
 
-  /**
-   * A designation names the post, and the post is usually the district: "District Officer, Deoghar"
-   * is wrong the moment the officer moves to Bokaro. Retyped text is kept; text carried over from
-   * the old posting is dropped rather than quietly saved against the new one.
-   */
   function retarget(next: () => void) {
     if (designation.trim() === (current.designation ?? '').trim()) setDesignation('');
     next();
@@ -62,7 +56,6 @@ export function RepostForm({
     setDesignation(current.designation ?? '');
   }
 
-  /** What the card will read after this is issued — shown beside the current posting. */
   const nextLabel =
     posting === 'state'
       ? labels.scopeState
@@ -107,7 +100,6 @@ export function RepostForm({
       >
         {labels.repost}
       </Button>
-      {/* Its own line, so confirming a change never reflows the buttons beside it. */}
       {done && (
         <p role="status" className="text-sal basis-full text-xs font-medium">
           {labels.repostDone}

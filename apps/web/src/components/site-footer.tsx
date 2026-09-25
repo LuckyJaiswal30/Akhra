@@ -8,7 +8,6 @@ export async function SiteFooter() {
     <footer className="border-line bg-surface border-t">
       <div className="text-subtle mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
         <p>{t('copyright', { year: new Date().getFullYear() })}</p>
-        {/* Where a government site is looked for first when someone needs either of these. */}
         <nav aria-label={t('legal')} className="flex flex-wrap items-center gap-x-6">
           <Link href="/privacy" className="hover:text-sal inline-flex min-h-11 items-center">
             {t('privacy')}

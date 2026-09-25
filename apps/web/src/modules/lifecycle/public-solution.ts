@@ -15,18 +15,6 @@ import {
 } from '@akhra/db';
 import type { MilestoneStatus, ProblemStatus, TestResult } from '@akhra/shared';
 
-/**
- * The work done on a report, as the person who reported it may see it.
- *
- * A citizen is told their problem was "routed to an institution" and then hears nothing until a
- * status changes. Everything that actually answers "what are they doing about it" — the approved
- * proposal, the plan, what was tried, what it showed — lived only behind a sign-in. This is that
- * same record, narrowed to what belongs in public.
- *
- * What is deliberately left out: the names of the students and staff on the team (the institution
- * answers for the work, not its individuals), budgets, draft or rejected proposals, internal
- * review notes, and the team's own uploaded files.
- */
 export interface PublicSolution {
   title: string;
   summary: string;
@@ -35,7 +23,6 @@ export interface PublicSolution {
   teamSize: number;
   startedAt: Date | null;
   completedAt: Date | null;
-  /** Only ever the approved one. A proposal still under review is not a promise to anybody. */
   plan: {
     abstract: string;
     methodology: string;

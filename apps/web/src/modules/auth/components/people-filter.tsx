@@ -6,16 +6,10 @@ import { Field, Input } from '@/components/ui';
 
 export interface FilterablePerson {
   id: string;
-  /** Everything worth matching on, already rendered: name, email, district, department, post. */
   haystack: string;
   card: ReactNode;
 }
 
-/**
- * An alphabetical list of thirty-odd officers is still thirty-odd cards to scan. Typing a few
- * letters of a name, a district or a department narrows it to the one person being looked for.
- * The filter is a plain substring match so it works the same in English and Hindi.
- */
 export function PeopleFilter({
   people,
   labels,
@@ -33,8 +27,6 @@ export function PeopleFilter({
   return (
     <div className="space-y-4">
       <div className="max-w-xl">
-        {/* A capsule, like every other action control in Akhra, and wide enough to read a
-            department name back. The placeholder says what to type, so no separate hint. */}
         <Field label={labels.searchLabel!} htmlFor="people-search">
           <Input
             id="people-search"

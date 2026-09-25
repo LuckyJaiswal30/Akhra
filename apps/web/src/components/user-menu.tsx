@@ -11,7 +11,6 @@ export async function UserMenu({ locale }: { locale: string }) {
   const actor = await getActor();
   const t = await getTranslations('nav');
 
-  // Sign-in stays visible at every width: it is the only entrance to every portal.
   if (!actor.userId || actor.role === 'anonymous') {
     return (
       <Link

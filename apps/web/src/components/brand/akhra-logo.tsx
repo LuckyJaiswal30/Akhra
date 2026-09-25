@@ -2,7 +2,6 @@ import { cn } from '@/lib/utils';
 
 const FIGURES = [0, 72, 144, 216, 288];
 
-/** Five people seated around common ground: the akhra where a village meets to decide. */
 export function AkhraMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" aria-hidden className={cn('h-9 w-9 shrink-0', className)}>

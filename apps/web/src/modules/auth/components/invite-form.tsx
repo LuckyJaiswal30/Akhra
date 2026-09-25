@@ -23,7 +23,6 @@ export function InviteForm({
   roles: { value: string; label: string }[];
   organizationId?: string;
   organizations?: { value: string; label: string }[];
-  /** Present only for the district-officer invite, which must choose a posting. */
   districts?: boolean;
   labels: Labels;
   locale?: string;
@@ -72,8 +71,6 @@ export function InviteForm({
       )}
       {done?.link && <InviteLinkNotice link={done.link} labels={labels} />}
 
-      {/* With a single role there is no second column, so the email field takes the full width
-          rather than stopping two thirds of the way across beside an empty gap. */}
       <div
         className={cn(
           'grid gap-4',

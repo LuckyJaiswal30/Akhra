@@ -186,7 +186,6 @@ export async function respondToInterest(
     if (status === 'withdrawn' ? !isOfferingPartner : !ownsProject) {
       throw new ForbiddenError('You cannot change that offer');
     }
-    // A team decides an offer once. A partner may pull out before or after it is accepted.
     const open = status === 'withdrawn' ? ['expressed', 'accepted'] : ['expressed'];
     if (!open.includes(interest.status)) {
       throw Errors.conflict('That offer has already been decided.');

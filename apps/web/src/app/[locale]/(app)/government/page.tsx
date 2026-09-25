@@ -375,7 +375,6 @@ export default async function GovernmentDashboardPage({
       </div>
 
       <MobileCollapsible label={t('moreFigures')}>
-        {/* Industry engagement has four columns and long partner names; outcomes has two short ones. */}
         <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <ChartCard
             title={t('tiersTitle')}

@@ -104,9 +104,7 @@ export const users = pgTable(
     jurisdictionCode: text('jurisdiction_code'),
     locality: text('locality'),
     designation: text('designation'),
-    /** The faculty member's department, from a fixed list so routing can match it. */
     discipline: academicDisciplineEnum('discipline'),
-    /** What they work on within it, in their own words: "groundwater hydrology". */
     specialisation: text('specialisation'),
     locale: text('locale').notNull().default('en'),
     privacyAcceptedAt: timestamp('privacy_accepted_at', { withTimezone: true }),

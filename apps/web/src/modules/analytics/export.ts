@@ -28,10 +28,6 @@ export function csvCell(value: string | number | null): string {
   return /[",\n\r]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 }
 
-/**
- * Every report the officer can see, as a spreadsheet for district reviews and returns to the state.
- * Contact details stay out: a file is forwarded far more easily than a page is shared.
- */
 export async function exportReportsCsv(actor: Actor, filter: DashboardFilter): Promise<string> {
   if (!isAdmin(actor)) throw new ForbiddenError('Only a government officer can export reports.');
   const districtCode = actor.jurisdiction ?? filter.districtCode;

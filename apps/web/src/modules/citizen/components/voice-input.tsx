@@ -2,7 +2,7 @@
 
 import { Mic, MicOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui';
+import { Button, Select } from '@/components/ui';
 
 interface Recognition {
   lang: string;
@@ -25,7 +25,11 @@ function recognitionConstructor(): RecognitionConstructor | null {
   return scope.SpeechRecognition ?? scope.webkitSpeechRecognition ?? null;
 }
 
-/** Dictation for people who find typing hard. Renders nothing where the browser cannot listen. */
+const SPOKEN_LANGUAGES = [
+  { code: 'hi-IN', label: 'हिन्दी' },
+  { code: 'en-IN', label: 'English' },
+];
+
 export function VoiceInput({
   locale,
   onText,
@@ -33,9 +37,10 @@ export function VoiceInput({
 }: {
   locale: string;
   onText: (text: string) => void;
-  labels: { start: string; stop: string; hint: string };
+  labels: { start: string; stop: string; hint: string; language: string };
 }) {
   const [supported, setSupported] = useState(false);
+  const [spoken, setSpoken] = useState(locale === 'hi' ? 'hi-IN' : 'en-IN');
   const [listening, setListening] = useState(false);
   const recognition = useRef<Recognition | null>(null);
 
@@ -50,7 +55,7 @@ export function VoiceInput({
     const Constructor = recognitionConstructor();
     if (!Constructor) return;
     const instance = new Constructor();
-    instance.lang = locale === 'hi' ? 'hi-IN' : 'en-IN';
+    instance.lang = spoken;
     instance.interimResults = false;
     instance.continuous = true;
     instance.onresult = (event) => {
@@ -67,6 +72,19 @@ export function VoiceInput({
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-3">
+      <Select
+        aria-label={labels.language}
+        value={spoken}
+        disabled={listening}
+        onChange={(event) => setSpoken(event.target.value)}
+        className="min-h-10 w-auto py-1.5"
+      >
+        {SPOKEN_LANGUAGES.map((option) => (
+          <option key={option.code} value={option.code} lang={option.code.slice(0, 2)}>
+            {option.label}
+          </option>
+        ))}
+      </Select>
       <Button
         type="button"
         variant="secondary"

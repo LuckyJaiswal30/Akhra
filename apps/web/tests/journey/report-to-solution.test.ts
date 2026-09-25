@@ -23,22 +23,12 @@ import {
 import { getActor } from '@/server/session';
 import { actAs, cleanupTestData, createOrg, createUser, formData, type TestUser } from '../helpers';
 
-/**
- * One report, walked from the citizen who files it to the solution the state deploys — through the
- * same server actions the screens post to, against a real database with row-level security on.
- *
- * The per-module tests prove each rule. This one proves the handoffs between them still line up:
- * every step below is a different person on a different screen, and the step before it is the only
- * reason they can see anything at all.
- */
-
 let officer: TestUser;
 let neighbouringOfficer: TestUser;
 let principal: TestUser;
 let student: TestUser;
 let university: string;
 
-/** A form posts to an action with no previous state. */
 const NEW_FORM = null;
 
 async function as(user: TestUser) {
@@ -46,7 +36,6 @@ async function as(user: TestUser) {
   return getActor();
 }
 
-/** Reads an action result the way the screen does, and fails with the message the user would see. */
 function succeeded<T>(result: ActionState<T>, step: string): T {
   if (!result) return expect.fail(`${step}: the action returned nothing`);
   if (!result.ok) return expect.fail(`${step}: ${result.error.code} — ${result.error.message}`);
@@ -71,7 +60,6 @@ afterAll(cleanupTestData);
 
 describe('a report becomes a deployed solution', () => {
   it('carries one report from the citizen who files it to the impact figures', async () => {
-    // 1. A citizen files a report. Nobody is signed in.
     actAs(null);
     const filed = succeeded(
       await submitProblemAction(
@@ -90,13 +78,11 @@ describe('a report becomes a deployed solution', () => {
     );
     expect(filed.refCode).toMatch(/^AKH-/);
 
-    // The public tracker finds it straight away, with no account.
     const tracked = await trackByRefCode(filed.refCode);
     expect(tracked).toMatchObject({ status: 'submitted' });
     const problemId = tracked!.id;
     const statusNow = async () => (await trackByRefCode(filed.refCode))?.status;
 
-    // 2. An officer from the next district cannot touch it. The district owns the report.
     await as(neighbouringOfficer);
     expect(
       refused(
@@ -109,7 +95,6 @@ describe('a report becomes a deployed solution', () => {
     ).toBe('FORBIDDEN');
     expect(await statusNow()).toBe('submitted');
 
-    // 3. The district's own officer validates it and gives it a domain.
     await as(officer);
     succeeded(
       await decideProblemAction(
@@ -120,7 +105,6 @@ describe('a report becomes a deployed solution', () => {
     );
     expect(await statusNow()).toBe('validated');
 
-    // 4. The officer routes it to an institution that works on water.
     succeeded(
       await routeProblemAction(
         NEW_FORM,
@@ -134,7 +118,6 @@ describe('a report becomes a deployed solution', () => {
     );
     expect(await statusNow()).toBe('routed');
 
-    // 5. The institution sees the referral in its inbox and accepts it.
     const referrals = await listRoutedProblems(await as(principal));
     const referral = referrals.find((row) => row.problemId === problemId);
     expect(referral, 'the referral never reached the institution').toMatchObject({
@@ -148,7 +131,6 @@ describe('a report becomes a deployed solution', () => {
       'accepting the referral',
     );
 
-    // 6. It forms a team and writes a proposal.
     const { projectId } = succeeded(
       await createProjectAction(
         NEW_FORM,
@@ -186,17 +168,14 @@ describe('a report becomes a deployed solution', () => {
       'submitting the proposal',
     );
 
-    // Until the officer approves it, the report still reads "sent to an institution".
     expect(await statusNow()).toBe('routed');
 
-    // 7. The proposal reaches the officer's review list, and the officer approves it.
     const forReview = await listProposalsForReview(await as(officer));
     const proposal = forReview.find((row) => row.projectId === projectId);
     expect(proposal, 'the proposal never reached the officer').toBeDefined();
     await reviewProposal(await as(officer), proposal!.proposalId, { decision: 'approved' });
     expect(await statusNow()).toBe('in_progress');
 
-    // 8. The team plans a milestone, completes it, and the officer approves it.
     const team = await as(principal);
     succeeded(
       await createMilestoneAction(
@@ -226,7 +205,6 @@ describe('a report becomes a deployed solution', () => {
       'approving the milestone',
     );
 
-    // 9. The team takes the solution through piloting to deployment.
     await as(principal);
     for (const stage of ['prototyped', 'piloted', 'deployed'] as const) {
       succeeded(
@@ -236,7 +214,6 @@ describe('a report becomes a deployed solution', () => {
     }
     expect(await statusNow()).toBe('deployed');
 
-    // 10. It records what the solution actually changed.
     succeeded(
       await recordOutcomeAction(
         NEW_FORM,
@@ -251,7 +228,6 @@ describe('a report becomes a deployed solution', () => {
       'recording the outcome',
     );
 
-    // 11. The public pages show the result: the tracker, the story and the impact figures.
     await expirePublicFigures();
     const story = (await listSuccessStories()).find((row) => row.refCode === filed.refCode);
     expect(story, 'the finished project never became a public story').toMatchObject({
@@ -263,7 +239,6 @@ describe('a report becomes a deployed solution', () => {
     expect(stats.solutionsDeployed).toBeGreaterThan(0);
     expect(stats.peopleImpacted).toBeGreaterThanOrEqual(1200);
 
-    // And the institution still sees its own project, now finished.
     const own = await listOrganizationProjects(await as(principal));
     expect(own.find((row) => row.id === projectId)).toMatchObject({ status: 'deployed' });
   });

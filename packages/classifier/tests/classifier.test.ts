@@ -203,3 +203,64 @@ describe('TextSimilarityDetector', () => {
     expect(matches).toHaveLength(1);
   });
 });
+
+describe('reports in Hinglish and Hindi', () => {
+  const detector = new TextSimilarityDetector();
+
+  it.each([
+    [
+      'Gaon ka chapakal kharab',
+      'Hamare tole ka chapakal 2 mahine se kharab hai, paani nahi milta',
+      'water_resources',
+    ],
+    [
+      'Sadak par bade gaddhe',
+      'Mukhya sadak me gaddhe hain, roz accident hota hai',
+      'urban_development',
+    ],
+    ['Bijli nahi aa rahi', 'Transformer jal gaya, 5 din se gaon me bijli nahi hai', 'energy'],
+    ['Aspataal me dawai nahi', 'PHC me doctor nahi aate aur dawai bhi nahi milti', 'healthcare'],
+    ['धान की फसल में कीड़ा', 'किसान परेशान हैं, खेत में धान की फसल खराब हो रही है', 'agriculture'],
+  ])('classifies "%s"', (title, description, domain) => {
+    expect(tfidf.classifySync({ title, description }).domain).toBe(domain);
+  });
+
+  it('matches the same problem written in English and in Hinglish', () => {
+    const english = {
+      problemId: 'en',
+      refCode: 'AKH-1',
+      title: 'Handpump broken in village',
+      description:
+        'The handpump near the school has been broken for two months, no drinking water.',
+    };
+    const other = {
+      problemId: 'road',
+      refCode: 'AKH-2',
+      title: 'Road full of potholes',
+      description: 'The main road to the block office has deep potholes.',
+    };
+    const matches = detector.findSimilar(
+      {
+        title: 'Gaon me chapakal kharab',
+        description:
+          'School ke paas wala chapakal do mahine se kharab hai, peene ka paani nahi hai.',
+      },
+      [english, other],
+    );
+    expect(matches.map((m) => m.problemId)).toEqual(['en']);
+  });
+
+  it('matches the same problem written in Hindi and in Hinglish', () => {
+    const hindi = {
+      problemId: 'hi',
+      refCode: 'AKH-3',
+      title: 'गाँव में बिजली नहीं',
+      description: 'ट्रांसफार्मर खराब है, पाँच दिन से बिजली नहीं है।',
+    };
+    const matches = detector.findSimilar(
+      { title: 'Gaon me bijli nahi', description: 'Transformer kharab hai, 5 din se bijli gayab.' },
+      [hindi],
+    );
+    expect(matches[0]?.problemId).toBe('hi');
+  });
+});

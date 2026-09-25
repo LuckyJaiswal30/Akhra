@@ -9,7 +9,6 @@ export interface ProposalContent {
   budgetEstimate: string | null;
 }
 
-/** A proposal as both its team and its reviewer read it. */
 export function ProposalSummary({
   proposal,
   labels,

@@ -5,7 +5,7 @@ import type {
   DomainScore,
   IProblemClassifier,
 } from '../types';
-import { buildIdf, cosineSimilarity, normalize, termFrequency, tfIdfVector } from '../text';
+import { buildIdf, concepts, cosineSimilarity, termFrequency, tfIdfVector } from '../text';
 
 const KEYWORD_WEIGHT = 0.7;
 const VECTOR_WEIGHT = 0.3;
@@ -29,12 +29,12 @@ interface Lexicon {
 
 function buildLexicon(): Lexicon {
   const corpora = DOMAIN_LIST.map((def) =>
-    normalize([def.labelEn, def.description, ...def.keywords, ...def.keywordsHi].join(' ')),
+    concepts([def.labelEn, def.description, ...def.keywords, ...def.keywordsHi].join(' ')),
   );
   const idf = buildIdf(corpora);
 
   const models: DomainModel[] = DOMAIN_LIST.map((def, index) => {
-    const stems = new Set([...def.keywords, ...def.keywordsHi].flatMap((k) => normalize(k)));
+    const stems = new Set([...def.keywords, ...def.keywordsHi].flatMap((k) => concepts(k)));
     return {
       domain: def.id,
       vector: tfIdfVector(corpora[index] ?? [], idf),
@@ -107,7 +107,7 @@ export class TfIdfClassifier implements IProblemClassifier {
 
   scoreDomains(input: ClassifyInput): DomainScore[] {
     const rawText = `${input.title} ${input.title} ${input.description}`.toLowerCase();
-    const tokens = normalize(
+    const tokens = concepts(
       [...Array<string>(TITLE_REPEAT).fill(input.title), input.description].join(' '),
     );
     const frequencies = termFrequency(tokens);

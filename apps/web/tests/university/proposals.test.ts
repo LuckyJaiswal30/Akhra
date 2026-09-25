@@ -52,7 +52,6 @@ async function as(user: TestUser) {
   return getActor();
 }
 
-/** A Ranchi report accepted by the test university, with a project in planning. */
 async function plannedProject(): Promise<{ problemId: string; projectId: string }> {
   const problemId = await createReport({ districtCode: 'RAN', status: 'routed' });
   await referTo(problemId, university);

@@ -45,7 +45,6 @@ export interface TrackedProblem extends ProblemSummary {
   reopenCount: number;
   resolutionTrack: 'department' | 'research' | null;
   submitterId: string | null;
-  /** The report this one was merged into, whose progress its reporter now follows. */
   mergedInto: { refCode: string; title: string; status: string } | null;
 }
 
@@ -73,7 +72,6 @@ export async function listProblems(
   const conditions = [
     filter.domain ? eq(problems.domain, filter.domain) : undefined,
     filter.districtCode ? eq(problems.districtCode, filter.districtCode) : undefined,
-    // A merged duplicate is one case with its original; listing both would show it twice.
     filter.status ? eq(problems.status, filter.status) : ne(problems.status, 'duplicate'),
     filter.q
       ? or(

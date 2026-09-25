@@ -78,10 +78,6 @@ export function InvitePanel({
       />
     );
 
-  /**
-   * Someone who already signs in to Akhra only needs to sign in. Offering them a sign-up form and
-   * refusing it after they have chosen a password is a wasted form and a confusing one.
-   */
   if (hasAccount) {
     return (
       <div className="space-y-4">

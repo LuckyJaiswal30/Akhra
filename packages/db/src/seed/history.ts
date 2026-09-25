@@ -145,11 +145,6 @@ const WEIGHTS: [Domain, number][] = [
   ['accessibility', 1],
 ];
 
-/**
- * What a completed project in each field left behind. A project that reached the ground recorded
- * something — the public Success Stories page shows only those that did, so a history row without
- * a delivery would be a card with nothing on it.
- */
 const DELIVERED: Record<
   Domain,
   { project: string; summary: string; outcome: string; metric: string }
@@ -396,7 +391,6 @@ export async function seedHistory(tx: Transaction, now = new Date()): Promise<nu
         target: projects.id,
         set: { title: sql`excluded.title`, summary: sql`excluded.summary` },
       });
-    // Every project that reached the field did so on an approved proposal.
     await tx
       .insert(proposals)
       .values(
@@ -414,8 +408,6 @@ export async function seedHistory(tx: Transaction, now = new Date()): Promise<nu
       )
       .onConflictDoNothing();
 
-    // What each one left behind. Deterministic, so a re-seed does not change the public figures:
-    // the reach follows the district's place in the list, not a random draw.
     await tx.delete(outcomes).where(
       inArray(
         outcomes.projectId,
@@ -458,7 +450,7 @@ export async function seedHistory(tx: Transaction, now = new Date()): Promise<nu
       fromStatus: index === 0 ? null : (stages[index - 1] ?? null),
       toStatus: stage,
       actorLabel: index === 0 ? r.submitter.name : 'Akhra',
-      note: index === 0 ? 'Report received.' : null,
+      note: null,
       isPublic: true,
       createdAt: new Date(now.getTime() - Math.max(1, r.daysAgo - index * span) * DAY),
     }));

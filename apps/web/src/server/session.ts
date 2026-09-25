@@ -111,7 +111,6 @@ export function isAdmin(actor: Actor): boolean {
   return actor.role === 'gov_admin' || actor.role === 'super_admin';
 }
 
-/** A super administrator, or a government officer whose posting covers this district. */
 export function canOverseeDistrict(actor: Actor, districtCode: string): boolean {
   return isAdmin(actor) && inJurisdiction(actor, districtCode);
 }

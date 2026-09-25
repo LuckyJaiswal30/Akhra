@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
     if (process.env.NODE_ENV === 'production') headers.push(HSTS);
     return [{ source: '/:path*', headers }];
   },
+  async rewrites() {
+    return ['/apple-touch-icon.png', '/apple-touch-icon-precomposed.png'].map((source) => ({
+      source,
+      destination: '/apple-icon.png',
+    }));
+  },
 };
 
 export default withNextIntl(nextConfig);

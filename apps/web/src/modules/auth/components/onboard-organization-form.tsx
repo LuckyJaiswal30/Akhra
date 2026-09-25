@@ -59,7 +59,6 @@ export function OnboardOrganizationForm({ labels, locale }: { labels: Labels; lo
       <Field label={labels.orgName!} htmlFor="org-name" error={fieldError('name')} required>
         <Input id="org-name" name="name" maxLength={200} required />
       </Field>
-      {/* These two sit in a third-width column, where side by side clips both labels. */}
       <div className="grid gap-4">
         <Field label={labels.orgType!} htmlFor="org-type" error={fieldError('type')} required>
           <Select

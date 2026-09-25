@@ -4,11 +4,6 @@ import { X } from 'lucide-react';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-/**
- * Built on the native <dialog> element, which brings the things a hand-rolled modal usually gets
- * wrong for free: focus is trapped inside, Escape closes, the rest of the page is inert, and the
- * backdrop is drawn by the browser.
- */
 export function Dialog({
   open,
   onClose,
@@ -27,7 +22,6 @@ export function Dialog({
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  // Many dialogs can share a page; a fixed id would label every one of them with the first title.
   const titleId = useId();
 
   useEffect(() => {
@@ -37,7 +31,6 @@ export function Dialog({
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  // Escape and backdrop dismissal happen inside the browser, so tell React the state changed.
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
@@ -54,7 +47,6 @@ export function Dialog({
       ref={ref}
       aria-labelledby={titleId}
       onClick={(event) => {
-        // A click that lands on the dialog element itself is a click on the backdrop.
         if (event.target === ref.current) onClose();
       }}
       className={cn(

@@ -1,7 +1,6 @@
 import { DOMAIN_DEFINITIONS, JHARKHAND_DISTRICTS, type Domain } from '@akhra/shared';
 import type { SectorDistrictCell } from '../dashboard';
 
-/** Five steps of one hue. The two darkest carry light text; the rest carry ink. */
 const STEPS = [
   { background: 'var(--seq-1)', text: 'text-ink' },
   { background: 'var(--seq-2)', text: 'text-ink' },
@@ -16,10 +15,6 @@ function stepFor(value: number, max: number) {
   ]!;
 }
 
-/**
- * Where each kind of problem comes from: districts down the side, sectors across the top. Shade
- * shows how many, and the number is always printed, so nothing depends on reading the colour.
- */
 export function SectorDistrictGrid({
   cells,
   locale,

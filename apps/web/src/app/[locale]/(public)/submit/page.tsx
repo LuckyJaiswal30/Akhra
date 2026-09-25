@@ -29,6 +29,7 @@ export default async function SubmitPage({ params }: { params: Promise<{ locale:
     voiceStart: t('voiceStart'),
     voiceStop: t('voiceStop'),
     voiceHint: t('voiceHint'),
+    voiceLanguage: t('voiceLanguage'),
     contactNotice: t('contactNotice'),
     privacyLink: t('privacyLink'),
     step_problem: t('step_problem'),

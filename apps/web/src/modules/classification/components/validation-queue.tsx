@@ -65,10 +65,6 @@ export function ValidationQueue({
   labels: Record<string, string>;
   departments?: DepartmentOption[];
 }) {
-  /**
-   * A decision moves the report out of its tab, unmounting the row in the same commit as the result,
-   * so the queue confirms once the report leaves the list. A refusal leaves the row with its message.
-   */
   const [acting, setActing] = useState<{ id: string; refCode: string } | null>(null);
   const [done, setDone] = useState<{ title: string; message: string } | null>(null);
   const present = entries.some((entry) => entry.id === acting?.id);
@@ -112,7 +108,6 @@ export function ValidationQueue({
   );
 }
 
-/** Reports an action's success message up to the queue, for the rows that survive it. */
 function useReportDone(state: ActionState<unknown>, onDone: (message: string) => void): void {
   const seen = useRef<ActionState<unknown>>(null);
   useEffect(() => {
@@ -493,8 +488,6 @@ function AssignDepartmentForm({
               {labels.selectDepartment}
             </option>
             {departments.map((department) => (
-              // The full name, as it appears on an order. An officer choosing where a citizen's
-              // report goes should not have to decode "UD&HD".
               <option key={department.id} value={department.id}>
                 {department.name}
               </option>

@@ -33,7 +33,6 @@ const RESULT_TONE = {
   inconclusive: 'bg-well text-subtle',
 } as const;
 
-/** What the institution is doing about a report, shown on the public tracker its reporter reads. */
 export async function SolutionPanel({
   solution,
   locale,

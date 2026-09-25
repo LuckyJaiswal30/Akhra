@@ -1,14 +1,5 @@
 import type { Metadata } from 'next';
 
-/**
- * The 404 for an address that is outside every locale — `/pricing`, a mistyped link, an old
- * bookmark. Next.js matches `[locale]` against that first segment, the locale layout rejects it,
- * and the not-found inside `[locale]` is never reached; without this file a visitor would land on
- * the framework's own black-and-white page, with no way back into Akhra.
- *
- * It renders its own document, because the root layout deliberately owns no `<html>` — the locale
- * layout does — and it cannot know which language to answer in, so it answers in both.
- */
 export const metadata: Metadata = {
   title: 'Page not found | Akhra',
   robots: { index: false },

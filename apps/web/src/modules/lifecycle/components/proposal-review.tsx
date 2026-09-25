@@ -16,10 +16,6 @@ import { reviewProposalAction } from '../actions';
 import { INITIAL_LIFECYCLE_STATE } from '../state';
 import { useDeciding } from './review-queue';
 
-/**
- * The district officer's decision on a proposal. Approving needs no explanation; asking for changes
- * or refusing does, because the team has to know what to do next.
- */
 export function ProposalReviewForm({
   projectId,
   proposalId,

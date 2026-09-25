@@ -14,7 +14,6 @@ const CHECKS = [
       '(GEMINI_API_KEY|GROQ_API_KEY|RESEND_API_KEY|CLERK_SECRET_KEY|CLERK_WEBHOOK_SIGNING_SECRET|INVITE_SIGNING_SECRET|DATABASE_URL)\\s*=\\s*["\']?[A-Za-z0-9_\\-]{12,}',
     hint: 'Secrets belong in .env.local, which is gitignored.',
     allow: [/\.env\.example$/, /README\.md$/, /docs\//, /scripts\//],
-    // A value computed by a function call is code, not a committed literal.
     ignore: /=\s*[A-Za-z_$][\w$.]*\(/,
   },
   {

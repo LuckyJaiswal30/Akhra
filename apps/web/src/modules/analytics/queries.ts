@@ -11,10 +11,6 @@ import {
 import { logger } from '@/server/logger';
 import { cachedSnapshot, forgetSnapshots } from './snapshot';
 
-/**
- * The public figures change as reports and outcomes are recorded — minutes matter to nobody reading
- * them, and every visitor recomputing them would be a dozen aggregates per page view.
- */
 const PUBLIC_TTL_MS = 5 * 60 * 1000;
 
 export interface PlatformStats {
@@ -35,7 +31,6 @@ const EMPTY_STATS: PlatformStats = {
   peopleImpacted: 0,
 };
 
-/** Outcome measures that count people rather than things, matched on the measure's name. */
 export const PEOPLE_METRIC =
   '(household|people|person|farmer|student|resident|villager|patient|famil|beneficiar|women|children|learner|worker|citizen|enrol)';
 
@@ -142,12 +137,6 @@ export interface SuccessStory {
   }[];
 }
 
-/**
- * A success story is a project that reached the field **and recorded what changed**. Reaching the
- * field is a status; a story is an outcome — a deployment, a patent, a policy change, a number of
- * people served. Without one there is nothing to tell, and a page of cards that each say only "this
- * finished" is worse than a shorter page of cards that each say something.
- */
 async function computeSuccessStories(): Promise<SuccessStory[]> {
   return withoutRls(getDb(), async (tx) => {
     const rows = await tx
@@ -217,18 +206,8 @@ async function computeSuccessStories(): Promise<SuccessStory[]> {
   });
 }
 
-/**
- * What the public pages read. Each is a stored snapshot, refreshed after the response once it is
- * older than {@link PUBLIC_TTL_MS}, so a busy home page costs one row read rather than a dozen
- * aggregates. Dates are not part of these shapes: a snapshot is JSON, and a Date would come back
- * as a string.
- */
 const PUBLIC_KEYS = ['public:stats:v1', 'public:impact:v1', 'public:stories:v1'];
 
-/**
- * Called when something happened that a visitor would expect to see immediately — a new report
- * should raise the counter on the home page, not five minutes later.
- */
 export function expirePublicFigures(): Promise<void> {
   return forgetSnapshots(PUBLIC_KEYS);
 }
@@ -237,8 +216,6 @@ async function published<T>(key: string, compute: () => Promise<T>, whenDown: T)
   try {
     return await cachedSnapshot(key, PUBLIC_TTL_MS, compute);
   } catch (error) {
-    // A database blip empties the figures for one render, never for the five minutes a stored
-    // snapshot would last: nothing is written unless the query came back.
     logger.warn(
       { err: error instanceof Error ? error.message : String(error), key },
       'public figures unavailable for this render',

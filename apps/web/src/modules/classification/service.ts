@@ -118,9 +118,7 @@ export type DuplicateCheckPath = 'fingerprint' | 'text' | 'gemini' | 'groq';
 
 export interface DuplicateReport {
   matches: DuplicateMatch[];
-  /** How the matches were found. */
   checkedBy: DuplicateCheckPath;
-  /** True when a tier failed and the answer is weaker than it should be. Never hide this. */
   degraded: boolean;
 }
 
@@ -148,13 +146,6 @@ const candidateColumns = {
   description: problems.description,
 };
 
-/**
- * Tier 0. An exact fingerprint match is the same report worded the same way, so it is reported
- * with full confidence. This runs on a plain indexed equality check: no extension, no model, no
- * scoring. It is the one tier that still answers when everything else is unavailable, and it
- * deliberately ignores the district, because a report filed twice under two districts is still
- * the same report.
- */
 async function fingerprintMatches(
   fingerprint: string | null,
   excludeId: string | undefined,
@@ -176,7 +167,6 @@ async function fingerprintMatches(
   return rows.map((row) => ({ ...row, similarity: 1 }));
 }
 
-/** Tier 1 candidates, narrowed by trigram similarity in Postgres. */
 function trigramCandidates(
   districtCode: string,
   needle: string,
@@ -198,10 +188,6 @@ function trigramCandidates(
   );
 }
 
-/**
- * The same candidates without pg_trgm: the most recent open reports in the district. Scoring still
- * happens locally, so a missing extension costs recall on old reports rather than the whole check.
- */
 function recentCandidates(
   districtCode: string,
   excludeId: string | undefined,
@@ -227,6 +213,28 @@ function merge(primary: DuplicateMatch[], secondary: DuplicateMatch[]): Duplicat
   return [...primary, ...secondary.filter((match) => !seen.has(match.problemId))].slice(
     0,
     MAX_DUPLICATES,
+  );
+}
+
+function sameDomainCandidates(
+  districtCode: string,
+  domain: Domain,
+  excludeId: string | undefined,
+): Promise<Candidate[]> {
+  return withoutRls(getDb(), (tx) =>
+    tx
+      .select(candidateColumns)
+      .from(problems)
+      .where(
+        and(
+          eq(problems.districtCode, districtCode),
+          eq(problems.domain, domain),
+          sql`${problems.status} = any(${activeStatusArray})`,
+          excludeId ? ne(problems.id, excludeId) : undefined,
+        ),
+      )
+      .orderBy(desc(problems.createdAt))
+      .limit(SHORTLIST_SIZE),
   );
 }
 
@@ -286,6 +294,12 @@ export async function findDuplicates(input: {
     };
   };
 
+  const related = input.domain
+    ? await sameDomainCandidates(input.districtCode, input.domain, input.excludeId).catch(() => [])
+    : [];
+  const known = new Set(candidates.map((candidate) => candidate.problemId));
+  candidates = [...candidates, ...related.filter((candidate) => !known.has(candidate.problemId))];
+
   if (candidates.length === 0) return settled([], 'text');
 
   const textMatches = duplicateDetector.findSimilar(report, candidates);
@@ -295,13 +309,19 @@ export async function findDuplicates(input: {
     threshold: SHORTLIST_THRESHOLD,
     limit: SHORTLIST_SIZE,
   });
-  if (shortlist.length === 0) return settled(textMatches, 'text');
-
   const byId = new Map(candidates.map((candidate) => [candidate.problemId, candidate]));
+  const toJudge = [
+    ...new Set([
+      ...shortlist.map((match) => match.problemId),
+      ...related.map((candidate) => candidate.problemId),
+    ]),
+  ].slice(0, SHORTLIST_SIZE);
+  if (toJudge.length === 0) return settled(textMatches, 'text');
+
   const verdict = await duplicateJudge
     .judge(
       report,
-      shortlist.map((match) => byId.get(match.problemId)!),
+      toJudge.map((id) => byId.get(id)!),
     )
     .catch(() => null);
 

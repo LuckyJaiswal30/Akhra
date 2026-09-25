@@ -14,8 +14,6 @@ export default async function PublicLayout({
     <>
       <SiteHeader locale={locale} />
       <div className="flex-1">{children}</div>
-      {/* A public service has to say how it handles your information and how accessible it is, on
-          every page, not only once you have an account. */}
       <SiteFooter />
     </>
   );

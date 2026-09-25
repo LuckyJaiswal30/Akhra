@@ -134,11 +134,9 @@ export async function createUser(options: {
   };
 }
 
-/** Each run starts at a random thousand so concurrent or leftover fixtures never share a code. */
 const referenceBase = Math.floor(Math.random() * 900) * 1000;
 let reportSequence = 0;
 
-/** A report owned by the test run. Reference codes under AKH-9998 are removed by cleanupTestData. */
 export async function createReport(
   options: {
     districtCode?: string;
@@ -170,7 +168,6 @@ export async function createReport(
   return row.id;
 }
 
-/** Refers a report to an institution, as a district officer's routing decision would. */
 export async function referTo(
   problemId: string,
   organizationId: string,
@@ -301,9 +298,6 @@ export async function runSql(query: ReturnType<typeof sql>): Promise<void> {
 export async function cleanupTestData(): Promise<void> {
   await withoutRls(getDb(), async (tx) => {
     await tx.execute(sql`delete from problems where ref_code like 'AKH-9998-%'`);
-    // A report filed through the real submission action gets a real reference code, so it is found
-    // through the projects and referrals that only a test organisation can own. Projects, proposals
-    // and milestones cascade from the report.
     await tx.execute(sql`delete from problems where id in (
       select problem_id from projects
         where organization_id in (select id from organizations where name like 'TEST %')

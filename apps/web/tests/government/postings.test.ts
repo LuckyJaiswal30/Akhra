@@ -202,7 +202,6 @@ describe('nobody signs their own posting order', () => {
         .from(users)
         .where(and(eq(users.role, 'super_admin'), ne(users.id, onlyOne.id))),
     );
-    // There is at least the acting super admin besides the target, so the repost must succeed.
     expect(others.length).toBeGreaterThan(0);
 
     const res = await callRoute(repost, {
