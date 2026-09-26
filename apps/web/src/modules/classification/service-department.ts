@@ -16,7 +16,7 @@ import {
   REOPEN_WINDOW_DAYS,
   type ProblemStatus,
 } from '@akhra/shared';
-import { notifyReporter, notifyUsers } from '@/modules/notifications';
+import { notifyReporter, notifyReporterUpdate, notifyUsers } from '@/modules/notifications';
 import { logger } from '@/server/logger';
 import { ForbiddenError, assertCanAct, query, type Actor } from '@/server/session';
 import { transitionWithin } from './service-admin';
@@ -112,7 +112,7 @@ export async function assignToDepartment(
         type: 'report_assigned',
         title: `New report for your department: ${problem.refCode}`,
         body: `"${problem.title}" has been assigned to you. The action taken is due within 21 days.`,
-        linkUrl: '/government/queue',
+        linkUrl: '/department',
         email: true,
       },
     );
@@ -157,6 +157,53 @@ export async function recordActionTaken(
   });
   await notifyReporter(problemId, 'action_taken', note);
   logger.info({ problemId, actorId: actor.userId }, 'action taken recorded');
+}
+
+export async function recordProgressUpdate(
+  actor: Actor,
+  problemId: string,
+  note: string,
+): Promise<void> {
+  const [problem] = await query(actor, (tx) =>
+    tx
+      .select({
+        status: problems.status,
+        districtCode: problems.districtCode,
+        assignedOrgId: problems.assignedOrgId,
+      })
+      .from(problems)
+      .where(eq(problems.id, problemId))
+      .limit(1),
+  );
+  if (!problem) throw new ForbiddenError('That report is not available to you');
+  assertCanAct(actor, problem);
+  if (problem.status !== 'assigned') {
+    throw Errors.invalidTransition('A progress update can be posted only while the work is open.');
+  }
+
+  const now = new Date();
+  await withoutRls(getDb(), async (tx) => {
+    await tx.insert(statusEvents).values({
+      entityType: 'problem',
+      entityId: problemId,
+      problemId,
+      fromStatus: 'assigned',
+      toStatus: 'assigned',
+      actorId: actor.userId,
+      actorLabel: actor.name,
+      note,
+    });
+    await tx
+      .update(problems)
+      .set({ interimReminderSentAt: now, updatedAt: now })
+      .where(eq(problems.id, problemId));
+  });
+  await notifyReporterUpdate(
+    problemId,
+    { type: 'problem_progress', title: 'Progress on your report', body: note },
+    { title: 'आपकी रिपोर्ट पर प्रगति', body: note },
+  );
+  logger.info({ problemId, actorId: actor.userId }, 'progress update recorded');
 }
 
 export interface ReporterProblem {
@@ -292,7 +339,7 @@ export async function reopenReport(problem: ReporterProblem, reason: string): Pr
         type: 'report_reopened',
         title: `Reopened by the reporter: ${reopened.refCode}`,
         body: `"${reopened.title}" was reopened: ${reason}`,
-        linkUrl: '/government/queue',
+        linkUrl: '/department',
         email: true,
       },
     );
@@ -361,6 +408,9 @@ export interface DepartmentReport {
   actionTakenNote: string | null;
   reopenCount: number;
   reporterNote: string | null;
+  blockName: string | null;
+  officerNote: string | null;
+  lastUpdate: { note: string; at: Date } | null;
 }
 
 const BUCKET_STATUS: Record<DepartmentBucket, ProblemStatus[]> = {
@@ -381,14 +431,15 @@ export async function departmentReports(
   bucket: DepartmentBucket,
 ): Promise<DepartmentReport[]> {
   const organizationId = departmentScope(actor);
-  return query(actor, (tx) =>
-    tx
+  return query(actor, async (tx) => {
+    const rows = await tx
       .select({
         id: problems.id,
         refCode: problems.refCode,
         title: problems.title,
         description: problems.description,
         districtName: districts.nameEn,
+        blockName: problems.blockName,
         status: problems.status,
         createdAt: problems.createdAt,
         dueAt: problems.dueAt,
@@ -396,9 +447,11 @@ export async function departmentReports(
         actionTakenNote: problems.actionTakenNote,
         reopenCount: problems.reopenCount,
         reporterNote: problems.reporterNote,
+        departmentName: organizations.name,
       })
       .from(problems)
       .innerJoin(districts, eq(problems.districtCode, districts.code))
+      .innerJoin(organizations, eq(problems.assignedOrgId, organizations.id))
       .where(
         and(
           eq(problems.assignedOrgId, organizationId),
@@ -406,8 +459,42 @@ export async function departmentReports(
         ),
       )
       .orderBy(asc(problems.dueAt), asc(problems.createdAt))
-      .limit(100),
-  );
+      .limit(100);
+    if (rows.length === 0) return [];
+
+    const events = await tx
+      .select({
+        problemId: statusEvents.problemId,
+        fromStatus: statusEvents.fromStatus,
+        note: statusEvents.note,
+        createdAt: statusEvents.createdAt,
+      })
+      .from(statusEvents)
+      .where(
+        and(
+          inArray(
+            statusEvents.problemId,
+            rows.map((row) => row.id),
+          ),
+          eq(statusEvents.toStatus, 'assigned'),
+        ),
+      )
+      .orderBy(asc(statusEvents.createdAt));
+
+    return rows.map(({ departmentName, ...row }) => {
+      const mine = events.filter((event) => event.problemId === row.id);
+      const prefix = `${departmentName}: `;
+      const assigned = mine
+        .filter((event) => event.fromStatus !== 'assigned' && event.note?.startsWith(prefix))
+        .at(-1);
+      const update = mine.filter((event) => event.fromStatus === 'assigned' && event.note).at(-1);
+      return {
+        ...row,
+        officerNote: assigned?.note ? assigned.note.slice(prefix.length) : null,
+        lastUpdate: update?.note ? { note: update.note, at: update.createdAt } : null,
+      };
+    });
+  });
 }
 
 export interface DepartmentStats {

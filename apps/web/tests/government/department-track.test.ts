@@ -5,7 +5,9 @@ import { FIX_DAYS, REOPEN_WINDOW_DAYS } from '@akhra/shared';
 import {
   assignToDepartment,
   confirmResolved,
+  departmentReports,
   recordActionTaken,
+  recordProgressUpdate,
   reopenReport,
   reporterProblemFor,
   autoCloseSettledReports,
@@ -169,6 +171,42 @@ describe('a report that needs a department to fix it', () => {
     await expect(
       recordActionTaken(await getActor(), report.id, 'We had a look at it today.'),
     ).rejects.toThrow();
+  });
+
+  it('shows the department the officer’s note, and keeps the report open after a progress update', async () => {
+    const report = await reportFrom({ submitterId: citizen.id });
+    actAs(officer);
+    await assignToDepartment(await getActor(), report.id, departmentId, 'Ward 4, near the school');
+    actAs(departmentStaff);
+
+    await recordProgressUpdate(
+      await getActor(),
+      report.id,
+      'Mechanic inspected it today; the new cylinder arrives on Friday.',
+    );
+
+    const [card] = await departmentReports(await getActor(), 'open');
+    expect(card).toMatchObject({
+      id: report.id,
+      officerNote: 'Ward 4, near the school',
+      lastUpdate: { note: 'Mechanic inspected it today; the new cylinder arrives on Friday.' },
+    });
+    expect((await stored(report.id)).status).toBe('assigned');
+    const [reminder] = await withoutRls(getDb(), (tx) =>
+      tx
+        .select({ sentAt: problems.interimReminderSentAt })
+        .from(problems)
+        .where(eq(problems.id, report.id)),
+    );
+    expect(reminder?.sentAt).not.toBeNull();
+
+    const received = await withoutRls(getDb(), (tx) =>
+      tx
+        .select({ type: notifications.type })
+        .from(notifications)
+        .where(eq(notifications.userId, citizen.id)),
+    );
+    expect(received.map((n) => n.type)).toContain('problem_progress');
   });
 });
 

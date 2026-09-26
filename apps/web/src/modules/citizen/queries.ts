@@ -32,6 +32,7 @@ export interface TrackedProblem extends ProblemSummary {
   blockName: string | null;
   timeline: {
     id: string;
+    fromStatus: string | null;
     toStatus: string;
     note: string | null;
     actorLabel: string | null;
@@ -127,6 +128,7 @@ export async function trackByRefCode(refCode: string): Promise<TrackedProblem | 
     const timeline = await tx
       .select({
         id: statusEvents.id,
+        fromStatus: statusEvents.fromStatus,
         toStatus: statusEvents.toStatus,
         note: statusEvents.note,
         actorLabel: statusEvents.actorLabel,

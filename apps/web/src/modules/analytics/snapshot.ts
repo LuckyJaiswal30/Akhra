@@ -72,10 +72,12 @@ export async function cachedSnapshot<T>(
   compute: () => Promise<T>,
 ): Promise<T> {
   const stored = await read<T>(key);
+  const age = stored ? Date.now() - stored.computedAt.getTime() : Infinity;
 
-  if (stored && Date.now() - stored.computedAt.getTime() <= ttlMs) return stored.payload;
+  if (stored && age <= ttlMs) return stored.payload;
 
-  if (stored) {
+  // Slightly stale figures are served while they refresh; figures from a quiet week are not.
+  if (stored && age <= Math.max(ttlMs * 12, 60 * 60 * 1000)) {
     afterResponse(async () => {
       try {
         await writeSnapshot(key, await compute());

@@ -320,7 +320,8 @@
     "mergedBody": "Someone reported the same problem earlier, so the officer is handling both as one case. Every update on it reaches you too.",
     "mergedFollow": "Follow {ref}",
     "notFoundHelp": "Have not reported it yet?",
-    "reportNew": "Report a problem"
+    "reportNew": "Report a problem",
+    "progressUpdate": "Progress update"
   },
   "problems": {
     "title": "Browse reports",
@@ -1156,10 +1157,16 @@
     "statAwaiting": "Waiting on the reporter",
     "statClosed": "Closed this year",
     "empty": "Nothing waiting here right now.",
-    "openHint": "Each report must be answered within 21 days of being assigned, as CPGRAMS requires. Record an interim update if it will take longer.",
+    "openHint": "Each report must be answered within 21 days of being assigned, as CPGRAMS requires. If it will take longer, post a progress update.",
     "awaitingHint": "You have recorded what was done. The person who reported it has 30 days to confirm it or send it back.",
     "closedHint": "Reports your department settled. A closed report can still be reopened once by the reporter, within 30 days.",
-    "scopeNote": "You see only the reports assigned to your department."
+    "scopeNote": "You see only the reports assigned to your department.",
+    "officerNote": "From the district officer",
+    "lastUpdate": "Your last update",
+    "progressTitle": "Not finished yet? Post a progress update",
+    "progressHint": "Say what has been done so far and when you expect to finish. It appears on the public tracker and the person who reported it is told. The report stays open.",
+    "progressPlaceholder": "For example: a mechanic inspected the handpump on Monday; the new part arrives by Friday.",
+    "postProgress": "Post update"
   },
   "proposalReview": {
     "title": "Proposals to review",

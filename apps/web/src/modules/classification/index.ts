@@ -10,6 +10,7 @@ export {
 export {
   assignToDepartment,
   recordActionTaken,
+  recordProgressUpdate,
   listDepartments,
   confirmResolved,
   reopenReport,

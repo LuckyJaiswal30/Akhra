@@ -12,6 +12,7 @@ const REPORTER_LABEL = 'The person who reported it';
 
 export interface TimelineEvent {
   id: string;
+  fromStatus?: string | null;
   toStatus: string;
   note: string | null;
   actorLabel: string | null;
@@ -98,7 +99,11 @@ export function StatusTimeline({
                 {definition ? (
                   <>
                     <p className="font-medium">
-                      {isHindi ? definition.labelHi : definition.labelEn}
+                      {event.fromStatus === event.toStatus
+                        ? t('progressUpdate')
+                        : isHindi
+                          ? definition.labelHi
+                          : definition.labelEn}
                     </p>
                     {event.note && <p className="text-subtle mt-0.5 text-sm">{event.note}</p>}
                   </>

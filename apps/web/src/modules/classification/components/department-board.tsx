@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import { AlarmClock, RotateCcw } from 'lucide-react';
 import { ActionFeedback, Button, Textarea, useActionForm } from '@/components/ui';
 import { formatDate } from '@/lib/utils';
-import { actionTakenAction, type AdminActionState } from '../actions';
+import { actionTakenAction, progressUpdateAction, type AdminActionState } from '../actions';
 import type { DepartmentBucket, DepartmentReport } from '../service-department';
 
 const INITIAL: AdminActionState = null;
@@ -57,7 +57,10 @@ function ReportCard({
     <article className="py-6">
       <div className="text-subtle flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
         <span className="font-mono">{report.refCode}</span>
-        <span>{report.districtName}</span>
+        <span>
+          {report.districtName}
+          {report.blockName && `, ${report.blockName}`}
+        </span>
         <span>{formatDate(report.createdAt, intlLocale)}</span>
         {report.dueAt && bucket === 'open' && (
           <span
@@ -80,6 +83,22 @@ function ReportCard({
       <h3 className="mt-1.5 font-medium">{report.title}</h3>
       <p className="text-subtle mt-2 text-sm">{report.description}</p>
 
+      {report.officerNote && (
+        <div className="border-line bg-well/40 mt-4 rounded-md border p-3">
+          <p className="text-xs font-medium">{labels.officerNote}</p>
+          <p className="mt-1 text-sm whitespace-pre-line">{report.officerNote}</p>
+        </div>
+      )}
+
+      {report.lastUpdate && bucket === 'open' && (
+        <div className="border-line bg-well/40 mt-4 rounded-md border p-3">
+          <p className="text-xs font-medium">
+            {labels.lastUpdate} · {formatDate(report.lastUpdate.at, intlLocale)}
+          </p>
+          <p className="mt-1 text-sm whitespace-pre-line">{report.lastUpdate.note}</p>
+        </div>
+      )}
+
       {report.reopenCount > 0 && report.reporterNote && (
         <div className="border-warning/40 bg-warning-wash mt-4 rounded-md border p-3">
           <p className="text-xs font-medium">{labels.reporterSaid}</p>
@@ -98,8 +117,16 @@ function ReportCard({
       )}
 
       {bucket === 'open' && (
-        <div className="border-line mt-5 border-t pt-5">
+        <div className="border-line mt-5 space-y-5 border-t pt-5">
           <ActionTakenForm problemId={report.id} labels={labels} />
+          <details className="group">
+            <summary className="text-sal cursor-pointer text-sm font-medium">
+              {labels.progressTitle}
+            </summary>
+            <div className="mt-3">
+              <ProgressUpdateForm problemId={report.id} labels={labels} />
+            </div>
+          </details>
         </div>
       )}
     </article>
@@ -131,6 +158,35 @@ function ActionTakenForm({
       />
       <Button type="submit" size="sm" disabled={isPending}>
         {isPending ? labels.saving : labels.recordActionTaken}
+      </Button>
+    </form>
+  );
+}
+
+function ProgressUpdateForm({
+  problemId,
+  labels,
+}: {
+  problemId: string;
+  labels: Record<string, string>;
+}) {
+  const [state, action, isPending] = useActionState(progressUpdateAction, INITIAL);
+  const form = useActionForm(action, state);
+
+  return (
+    <form {...form} className="space-y-3">
+      <input type="hidden" name="problemId" value={problemId} />
+      <ActionFeedback state={state} />
+      <p className="text-subtle text-xs">{labels.progressHint}</p>
+      <Textarea
+        name="note"
+        rows={3}
+        placeholder={labels.progressPlaceholder}
+        maxLength={1000}
+        required
+      />
+      <Button type="submit" size="sm" variant="secondary" disabled={isPending}>
+        {isPending ? labels.saving : labels.postProgress}
       </Button>
     </form>
   );

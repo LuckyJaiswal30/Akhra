@@ -278,6 +278,14 @@ export const actionTakenSchema = z.object({
     .max(1000),
 });
 
+export const progressUpdateSchema = z.object({
+  note: z
+    .string({ error: 'Say what has been done so far; the person who reported it reads this.' })
+    .trim()
+    .min(10, 'Say what has been done so far; the person who reported it reads this.')
+    .max(1000),
+});
+
 export const reporterDecisionSchema = z.object({
   refCode: refCodeSchema,
   phoneLast4: z

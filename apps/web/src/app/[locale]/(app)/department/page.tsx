@@ -59,6 +59,12 @@ export default async function DepartmentPage({
     actionTakenPlaceholder: tq('actionTakenPlaceholder'),
     recordActionTaken: tq('recordActionTaken'),
     saving: tq('saving'),
+    officerNote: t('officerNote'),
+    lastUpdate: t('lastUpdate'),
+    progressTitle: t('progressTitle'),
+    progressHint: t('progressHint'),
+    progressPlaceholder: t('progressPlaceholder'),
+    postProgress: t('postProgress'),
   };
 
   const hint = { open: t('openHint'), awaiting: t('awaitingHint'), closed: t('closedHint') }[

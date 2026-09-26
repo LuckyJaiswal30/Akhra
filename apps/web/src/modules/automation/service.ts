@@ -262,7 +262,7 @@ async function notifyDepartment(
   if (staff.length === 0) return;
   await notifyUsers(
     staff.map((person) => person.id),
-    { ...input, linkUrl: '/government/queue', email: true },
+    { ...input, linkUrl: '/department', email: true },
   );
 }
 

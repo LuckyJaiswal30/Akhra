@@ -83,6 +83,14 @@ describe('figures kept in a snapshot', () => {
     expect(await cachedSnapshot(name, 60_000, async () => ({ total: 2 }))).toEqual({ total: 1 });
   });
 
+  it('recounts figures left over from a quiet week before showing them', async () => {
+    const name = key('old');
+    await writeSnapshot(name, { total: 1 });
+    await age(name, 7 * 24 * 60);
+
+    expect(await cachedSnapshot(name, 60_000, async () => ({ total: 2 }))).toEqual({ total: 2 });
+  });
+
   it('stores nothing when the figures cannot be computed', async () => {
     const name = key('failing');
     await expect(

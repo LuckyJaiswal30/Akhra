@@ -7,6 +7,7 @@ import {
   assignDepartmentSchema,
   DISTRICT_ROLES,
   GOVERNMENT_ROLES,
+  progressUpdateSchema,
   reporterDecisionSchema,
   routeProblemSchema,
   validateProblemSchema,
@@ -19,6 +20,7 @@ import {
   assignToDepartment,
   confirmResolved,
   recordActionTaken,
+  recordProgressUpdate,
   reopenReport,
   reporterProblemFor,
 } from './service-department';
@@ -150,7 +152,23 @@ export async function actionTakenAction(
 
     await recordActionTaken(actor, problemId, input.note);
     revalidatePath('/government/queue');
+    revalidatePath('/department');
     return { message: 'Recorded. The person who reported it has been told.' };
+  });
+}
+
+export async function progressUpdateAction(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  return runAction('progress update', async () => {
+    const actor = await requireRole(...GOVERNMENT_ROLES);
+    const problemId = formId(formData, 'problemId');
+    const input = parseInput(progressUpdateSchema, { note: formData.get('note') });
+
+    await recordProgressUpdate(actor, problemId, input.note);
+    revalidatePath('/department');
+    return { message: 'Update posted. The person who reported it has been told.' };
   });
 }
 
