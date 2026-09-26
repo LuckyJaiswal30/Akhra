@@ -25,6 +25,17 @@ India Hackathon prototype, not an official government service.
 - **Notifications** go out in the app and by email, with reminders and escalations run nightly.
 - **Reporters close the loop.** They confirm a department's fix, or reopen it within 30 days.
 
+## Team
+
+| Name             | GitHub                                                               | Role                                              |
+| ---------------- | -------------------------------------------------------------------- | ------------------------------------------------- |
+| Lucky Jaiswal    | [@LuckyJaiswal30](https://github.com/LuckyJaiswal30)                 | Development, design and architecture              |
+| Chetan Pathak    | [@ChetanPathak21](https://github.com/ChetanPathak21)                 | Planning, problem research, presentation and demo |
+| Anshika Mishra   | [@anshikam0618-a11y](https://github.com/anshikam0618-a11y)           | Testing, bug finding, presentation and demo       |
+| Kavya Tripathi   | [@kavyatri9090](https://github.com/kavyatri9090)                     | UI ideas and feedback                             |
+| Shashank Mishra  | [@1ShashankMishra](https://github.com/1ShashankMishra)               | Presentation preparation                          |
+| Kavya Srivastava | [@kavyasrivastava769-bot](https://github.com/kavyasrivastava769-bot) | Presentation preparation                          |
+
 ## Running it locally
 
 You need Node.js 22.12 or newer, pnpm 11, and PostgreSQL 15 or newer (Docker is easiest).
