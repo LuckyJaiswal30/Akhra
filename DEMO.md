@@ -58,8 +58,42 @@ still classifies reports, and the public pages work without signing in.
 
 ## Talking points
 
-<!-- TODO (Chetan): the problem in Jharkhand this solves, who uses it, and why it is different. -->
+- **The gap.** People in Jharkhand see problems first, but there is no single place to report them
+  and follow them. Universities have students and research labs, and industry has money and
+  know-how, but they rarely hear about these problems.
+- **What Akhra does.** One report goes to the district officer, who sends it to a department for a
+  quick fix, or to the university best suited to solve it, with industry partners joining in.
+- **Why people will use it.** No account is needed. It works in Hindi, English and Hinglish, by
+  typing or speaking, and on a slow phone connection. The reporter follows every step with a
+  reference code, and nothing closes until they say it is fixed.
+- **Why officers can trust it.** Each district sees only its own reports, enforced by the database
+  itself. Every decision is recorded, and overdue reports are raised with the state automatically.
+- **Why it matches NEP 2020.** Students and faculty work on real problems from their own state, and
+  the dashboard shows what came out of it: projects, patents, startups and people reached.
 
 ## What we tested
 
-<!-- TODO (Anshika): the flows you tried, on which phones and browsers, and the bugs you found and got fixed. -->
+**Automatic checks.** Every change runs 428 tests on a real database: who may see and change which
+report, every status change, classification and duplicate checks, and one report walked from the
+citizen to a deployed solution. A browser check opens every public page in English and Hindi, on a
+phone and a laptop screen.
+
+**On the running app.**
+
+- A report filed with no account, with a photo and a map pin, then tracked by its code.
+- The full department path: sent to the Water department, marked done, confirmed by the reporter,
+  reopened, fixed again and closed.
+- A wrong phone number refused, an officer from another district refused, and a department refused
+  when it tried to confirm its own work.
+- The same problem reported in Hinglish and in Hindi, and caught as a duplicate.
+- Every public page in a 360-pixel-wide phone browser, in both languages.
+
+**Bugs found and fixed.**
+
+- The reporter was not told when the department said the work was done.
+- A closed report could not be reopened from the tracker, even within 30 days.
+- A reporter answering honestly could be locked out by the limit meant for guessers.
+- Spoken Hindi came out garbled on the English page.
+- Dates followed the server's clock, not India time.
+- Messages from the server were in English on Hindi pages.
+- Drop-down lists looked broken in Safari.

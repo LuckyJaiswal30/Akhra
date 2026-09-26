@@ -11,12 +11,32 @@ India Hackathon prototype, not an official government service.
 
 ## Problem statement
 
-- **Smart India Hackathon problem statement ID:** <!-- TODO: add the ID -->
-- **Title:** <!-- TODO: add the exact title -->
-- **Organisation:** <!-- TODO: add the ministry or department -->
+- **Smart India Hackathon problem statement ID:** 26043
+- **Title:** A digital platform to crowdsource societal challenges and facilitate collaborative
+  problem solving through universities and industry partnerships
+- **Organisation:** Government of Jharkhand
+- **Department:** Department of Higher & Technical Education
+- **Category:** Software
+- **Theme:** Smart Education
 - **Live demo:** <!-- TODO: add the link once it is hosted -->
 
 A step-by-step demo is in [DEMO.md](DEMO.md).
+
+### What the problem statement asks for, and where it is in Akhra
+
+| Asked for                | In Akhra                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Citizen engagement       | Individuals, community groups, Panchayati Raj institutions, urban local bodies and government departments report with photos, video, PDFs and a map pin |
+| AI problem management    | Automatic category (Gemini, then Groq, then an offline model), a priority score, duplicate detection across languages, and university ranking           |
+| University collaboration | Referral inbox, accept or decline, student and faculty teams with a faculty mentor, versioned proposals                                                 |
+| Industry partnership     | Corporates, startups, MSMEs, CSR foundations, research labs and innovation hubs offer mentoring, funding, co-development, pilots or technology transfer |
+| Project lifecycle        | Proposal approval, milestones, documents, field tests, outcomes and patents (filed, published, granted), and the stage of each project                  |
+| Analytics dashboard      | Reports by month, category and district, a district map, institution and industry participation, completion rate, patents, startups and people reached  |
+| Notifications            | In-app notifications, email, a conversation on every report, and nightly reminders and escalations                                                      |
+
+Two things go beyond the brief. A routine problem, like a broken chapakal, goes straight to the
+department that can fix it, with a 21-day deadline. And every report closes only when the person
+who reported it confirms the fix.
 
 ## Features
 
