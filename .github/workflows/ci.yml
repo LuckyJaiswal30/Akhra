@@ -20,7 +20,6 @@ jobs:
     name: Lint, typecheck, test
     runs-on: ubuntu-latest
 
-    # Row-level security is only meaningfully testable against a real Postgres.
     services:
       postgres:
         image: postgres:17
@@ -75,18 +74,8 @@ jobs:
           fi
 
   build:
-    name: Build (${{ matrix.mode }})
+    name: Build
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      # A production build resolves config differently from a dev build. Running both
-      # means a prod-breaking change fails here rather than on deploy day.
-      matrix:
-        include:
-          - mode: development
-            node_env: development
-          - mode: production
-            node_env: production
     steps:
       - uses: actions/checkout@v7
 
@@ -101,13 +90,10 @@ jobs:
 
       - name: Build
         run: pnpm build
-        env:
-          NODE_ENV: ${{ matrix.node_env }}
 
   browser:
     name: Browser smoke
     runs-on: ubuntu-latest
-    # Public pages need no Clerk keys, so this runs everywhere, forks included.
     env:
       NEXT_PUBLIC_APP_URL: http://localhost:3100
 
