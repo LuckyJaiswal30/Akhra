@@ -18,7 +18,7 @@ India Hackathon prototype, not an official government service.
 - **Department:** Department of Higher & Technical Education
 - **Category:** Software
 - **Theme:** Smart Education
-- **Live demo:** <!-- TODO: add the link once it is hosted -->
+- **Live demo:** [akhra.imlucky.dev](https://akhra.imlucky.dev)
 
 A step-by-step demo is in [DEMO.md](DEMO.md).
 

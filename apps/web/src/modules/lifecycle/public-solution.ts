@@ -73,70 +73,69 @@ async function load(tx: Transaction, problemId: string): Promise<PublicSolution 
 
   if (!project) return null;
 
-  const [[team], [plan], milestoneRows, testRows, outcomeRows, partnerRows] = await Promise.all([
-    tx
-      .select({ value: count() })
-      .from(projectMembers)
-      .where(eq(projectMembers.projectId, project.id)),
-    tx
-      .select({
-        abstract: proposals.abstract,
-        methodology: proposals.methodology,
-        expectedOutcomes: proposals.expectedOutcomes,
-        timelineMonths: proposals.timelineMonths,
-        approvedAt: proposals.reviewedAt,
-      })
-      .from(proposals)
-      .where(and(eq(proposals.projectId, project.id), eq(proposals.status, 'approved')))
-      .orderBy(desc(proposals.version))
-      .limit(1),
-    tx
-      .select({
-        id: milestones.id,
-        title: milestones.title,
-        status: milestones.status,
-        dueDate: milestones.dueDate,
-      })
-      .from(milestones)
-      .where(eq(milestones.projectId, project.id))
-      .orderBy(asc(milestones.orderIndex), asc(milestones.createdAt)),
-    tx
-      .select({
-        id: projectTests.id,
-        title: projectTests.title,
-        method: projectTests.method,
-        result: projectTests.result,
-        findings: projectTests.findings,
-        conductedOn: projectTests.conductedOn,
-      })
-      .from(projectTests)
-      .where(eq(projectTests.projectId, project.id))
-      .orderBy(desc(projectTests.conductedOn)),
-    tx
-      .select({
-        id: outcomes.id,
-        type: outcomes.outcomeType,
-        title: outcomes.title,
-        detail: outcomes.detail,
-        metricName: outcomes.impactMetricName,
-        metricValue: outcomes.impactMetricValue,
-        reference: outcomes.reference,
-        ipStatus: outcomes.ipStatus,
-      })
-      .from(outcomes)
-      .where(eq(outcomes.projectId, project.id))
-      .orderBy(desc(outcomes.recordedAt)),
-    tx
-      .select({ name: organizations.name })
-      .from(industryInterests)
-      .innerJoin(organizations, eq(organizations.id, industryInterests.organizationId))
-      .where(
-        and(
-          eq(industryInterests.projectId, project.id),
-          inArray(industryInterests.status, ['accepted']),
-        ),
+  // One transaction is one connection, so these run one after another.
+  const [team] = await tx
+    .select({ value: count() })
+    .from(projectMembers)
+    .where(eq(projectMembers.projectId, project.id));
+  const [plan] = await tx
+    .select({
+      abstract: proposals.abstract,
+      methodology: proposals.methodology,
+      expectedOutcomes: proposals.expectedOutcomes,
+      timelineMonths: proposals.timelineMonths,
+      approvedAt: proposals.reviewedAt,
+    })
+    .from(proposals)
+    .where(and(eq(proposals.projectId, project.id), eq(proposals.status, 'approved')))
+    .orderBy(desc(proposals.version))
+    .limit(1);
+  const milestoneRows = await tx
+    .select({
+      id: milestones.id,
+      title: milestones.title,
+      status: milestones.status,
+      dueDate: milestones.dueDate,
+    })
+    .from(milestones)
+    .where(eq(milestones.projectId, project.id))
+    .orderBy(asc(milestones.orderIndex), asc(milestones.createdAt));
+  const testRows = await tx
+    .select({
+      id: projectTests.id,
+      title: projectTests.title,
+      method: projectTests.method,
+      result: projectTests.result,
+      findings: projectTests.findings,
+      conductedOn: projectTests.conductedOn,
+    })
+    .from(projectTests)
+    .where(eq(projectTests.projectId, project.id))
+    .orderBy(desc(projectTests.conductedOn));
+  const outcomeRows = await tx
+    .select({
+      id: outcomes.id,
+      type: outcomes.outcomeType,
+      title: outcomes.title,
+      detail: outcomes.detail,
+      metricName: outcomes.impactMetricName,
+      metricValue: outcomes.impactMetricValue,
+      reference: outcomes.reference,
+      ipStatus: outcomes.ipStatus,
+    })
+    .from(outcomes)
+    .where(eq(outcomes.projectId, project.id))
+    .orderBy(desc(outcomes.recordedAt));
+  const partnerRows = await tx
+    .select({ name: organizations.name })
+    .from(industryInterests)
+    .innerJoin(organizations, eq(organizations.id, industryInterests.organizationId))
+    .where(
+      and(
+        eq(industryInterests.projectId, project.id),
+        inArray(industryInterests.status, ['accepted']),
       ),
-  ]);
+    );
 
   return {
     title: project.title,
