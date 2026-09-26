@@ -106,8 +106,47 @@ Password for all of them: `akhra2026`. If Clerk asks for a code, use `424242`.
 | `industry.agri+clerk_test@example.com`   | Industry partner, Krishi Setu Agritech            |
 | `dept.water+clerk_test@example.com`      | Department officer, Drinking Water and Sanitation |
 
-The same script also creates faculty, student, panchayat and other partner accounts, listed in
-`packages/db/src/seed/users.ts`.
+`pnpm db:seed` adds 52 accounts to the database, and `pnpm clerk:demo-users` creates the same 52 in
+your Clerk development instance so they can sign in. All of them follow the pattern
+`name+clerk_test@example.com` and are listed in `packages/db/src/seed/users.ts`.
+
+| Role                 | Accounts | Who                                                                        |
+| -------------------- | -------- | -------------------------------------------------------------------------- |
+| State desk           | 1        | `gov`, all 24 districts                                                    |
+| District officer     | 24       | `district.<code>`, one per district, for example `district.ran`, `.dha`    |
+| Department officer   | 10       | `dept.water`, `.health`, `.education`, `.rural`, `.agriculture` and others |
+| University admin     | 2        | `university` (BAU Ranchi), `university.med` (RIMS Ranchi)                  |
+| Faculty              | 4        | `faculty`, `faculty.env`, `faculty.water`, `faculty.edu`                   |
+| Student              | 2        | `student.priya`, `student.amit`                                            |
+| Industry admin       | 5        | `industry`, `industry.csr`, `industry.energy`, `industry.agri`, and others |
+| Industry team member | 1        | `industry.agri.member`                                                     |
+| Citizen              | 3        | `citizen`, `citizen.sunita`, `panchayat` (a mukhiya)                       |
+
+The Ranchi officer is `district.ranchi`, not `district.ran`. No super administrator is seeded;
+make one yourself as described below.
+
+### Becoming an administrator
+
+A super administrator can onboard universities and industry partners, give government access and
+change officers' postings, all from `/admin`. Nobody can grant this role from the website until one
+exists, so the first one is made from the command line:
+
+1. Create your account on the sign-in page (_Create account_, or _Continue with Google_), or skip
+   this and pass `--name` in the next step to reserve the account first.
+2. Run:
+
+   ```bash
+   pnpm admin:bootstrap --email you@example.com --name "Your Name"
+   ```
+
+   Against the hosted database, put its connection string in front:
+   `DATABASE_URL="postgresql://…" pnpm admin:bootstrap --email you@example.com`.
+
+3. Sign in with that email and open `/admin`.
+
+The command refuses if a super administrator already exists; add `--force` only if you mean it.
+After that, promote others from `/admin` with _Make super administrator_. Every grant is written to
+the audit log.
 
 ## Environment variables
 
