@@ -177,6 +177,8 @@ const HINDI: Record<string, string> = {
   'Response recorded.': 'जवाब दर्ज हो गया।',
   'Say what was done to resolve it; the reporter sees this note.':
     'बताइए कि इसे सुलझाने के लिए क्या किया गया। रिपोर्ट करने वाले यह टिप्पणी देखेंगे।',
+  'Your report could not be sent. Please try again.':
+    'आपकी रिपोर्ट नहीं भेजी जा सकी। कृपया फिर से कोशिश करें।',
   'Update posted. The person who reported it has been told.':
     'जानकारी दर्ज हो गई। रिपोर्ट करने वाले व्यक्ति को बता दिया गया है।',
   'Say what has been done so far; the person who reported it reads this.':

@@ -106,12 +106,6 @@ export default async function TrackPage({
       {ref && !problem && (
         <div className="mt-6">
           <Alert tone="error">{t('notFound')}</Alert>
-          <p className="text-subtle mt-3 text-sm">
-            {t('notFoundHelp')}{' '}
-            <Link href="/submit" className="text-sal font-medium underline">
-              {t('reportNew')}
-            </Link>
-          </p>
         </div>
       )}
 

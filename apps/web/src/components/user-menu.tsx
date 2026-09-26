@@ -5,6 +5,7 @@ import { buttonVariants } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { unreadCount } from '@/modules/notifications';
 import { getActor } from '@/server/session';
+import { CAPSULE_WIDTH } from './header-capsule';
 import { ProfileMenu } from './profile-menu';
 
 export async function UserMenu({ locale }: { locale: string }) {
@@ -15,7 +16,10 @@ export async function UserMenu({ locale }: { locale: string }) {
     return (
       <Link
         href="/sign-in"
-        className={buttonVariants({ size: 'md', className: 'px-4 whitespace-nowrap xl:px-7' })}
+        className={buttonVariants({
+          size: 'md',
+          className: `px-4 whitespace-nowrap xl:px-7 ${CAPSULE_WIDTH}`,
+        })}
       >
         {t('signIn')}
         <ArrowRight aria-hidden className="hidden h-4 w-4 sm:block" />

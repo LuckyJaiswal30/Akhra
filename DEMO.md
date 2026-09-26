@@ -199,12 +199,15 @@ the offline model still classifies reports, and the public pages work without si
   reference code, and nothing closes until they say it is fixed.
 - **Why officers can trust it.** Each district sees only its own reports, enforced by the database
   itself. Every decision is recorded, and overdue reports are raised with the state automatically.
+- **Why spam does not swamp it.** Hourly limits per number and per network address, a hidden
+  field that catches form-filling bots, duplicate detection, and a person checks every report
+  before it goes anywhere.
 - **Why it matches NEP 2020.** Students and faculty work on real problems from their own state, and
   the dashboard shows what came out of it: projects, patents, startups and people reached.
 
 ## What we tested
 
-**431 automated tests in 47 files run on every change**, against a real PostgreSQL database, not
+**433 automated tests in 48 files run on every change**, against a real PostgreSQL database, not
 mocks. GitHub runs them together with lint, type checks, a production build and a browser check of
 every public page in English and Hindi, on a phone and a laptop screen.
 
@@ -230,6 +233,24 @@ every public page in English and Hindi, on a phone and a laptop screen.
 - The reporter's name and number are erased one year after the report closes.
 - A script disguised as a PDF, a file over 10 MB or an unsupported type is refused. Photos are stored
   privately and shown only to people allowed to see the report.
+
+**Bots and spam.** A bot that floods the form with reports is slowed down at several points, and
+none of its reports reaches a department without a person looking at it first.
+
+- One mobile number, or one signed-in account, can file 5 reports an hour.
+- One network address can file 20 anonymous reports an hour. This is set higher than the per-number
+  limit because a village or a CSC (Common Service Centre) often shares one address, and a bot can
+  invent new mobile numbers but not new addresses as easily.
+- The form has a field people never see. Form-filling bots fill it in, and the report is refused
+  before anything is stored.
+- Uploads are limited to 20 an hour, and only real images, videos and PDFs are accepted.
+- A repeat of the same report is flagged as a likely duplicate, so the officer can merge it into
+  the original.
+- Every report waits in the district officer's queue until someone validates it, sends it to a
+  department or marks it _Not taken up_. Spam never reaches a department or a university.
+
+A bot spread across many addresses could still get past the limits. For a real launch we would add
+a human check such as Cloudflare Turnstile on the report form.
 
 **The AI keeps working when the AI is down.**
 

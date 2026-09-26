@@ -1,9 +1,10 @@
 'use client';
 
 import { useClerk, useUser } from '@clerk/nextjs';
-import { ChevronDown, LogOut, UserCog } from 'lucide-react';
+import { LogOut, UserCog } from 'lucide-react';
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
+import { CAPSULE_WIDTH } from './header-capsule';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 export function ProfileMenu({
@@ -57,7 +58,8 @@ export function ProfileMenu({
         aria-expanded={open}
         aria-label={labels.menu}
         onClick={() => setOpen((value) => !value)}
-        className="hover:bg-well flex items-center gap-2.5 rounded-full p-0.5 transition-colors lg:pr-3"
+        title={`${displayName} · ${roleLabel}`}
+        className={`hover:bg-well flex h-11 items-center gap-2 rounded-full p-0.5 transition-colors ${CAPSULE_WIDTH} lg:border-line lg:border lg:p-1 lg:pr-3`}
       >
         {image ? (
           <Image
@@ -65,23 +67,20 @@ export function ProfileMenu({
             alt=""
             width={40}
             height={40}
-            className="bg-sal-wash h-10 w-10 rounded-full object-cover"
+            className="bg-sal-wash h-10 w-10 shrink-0 rounded-full object-cover lg:h-8 lg:w-8"
           />
         ) : (
           <span
             aria-hidden
-            className="bg-sal-wash text-sal grid h-10 w-10 place-items-center rounded-full font-semibold"
+            className="bg-sal-wash text-sal grid h-10 w-10 shrink-0 place-items-center rounded-full font-semibold lg:h-8 lg:w-8 lg:text-sm"
           >
             {displayName.slice(0, 1).toUpperCase()}
           </span>
         )}
-        <span className="hidden text-left leading-tight lg:block">
-          <span className="text-ink block max-w-40 truncate text-sm font-medium">
-            {displayName}
-          </span>
-          <span className="text-subtle block text-xs">{roleLabel}</span>
+        <span className="hidden min-w-0 flex-1 text-left leading-tight lg:block">
+          <span className="text-ink block truncate text-sm font-medium">{displayName}</span>
+          <span className="text-subtle block truncate text-xs">{roleLabel}</span>
         </span>
-        <ChevronDown aria-hidden className="text-subtle hidden h-4 w-4 lg:block" />
       </button>
 
       {open && (
@@ -94,7 +93,7 @@ export function ProfileMenu({
         >
           <div className="border-line border-b px-3 pt-1.5 pb-2.5 lg:hidden">
             <p className="text-ink truncate text-sm font-medium">{displayName}</p>
-            <p className="text-subtle text-xs">{roleLabel}</p>
+            <p className="text-subtle truncate text-xs">{roleLabel}</p>
           </div>
           <Link
             href="/account"

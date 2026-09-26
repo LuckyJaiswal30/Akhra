@@ -319,8 +319,6 @@
     "mergedTitle": "This report was merged into {ref}",
     "mergedBody": "Someone reported the same problem earlier, so the officer is handling both as one case. Every update on it reaches you too.",
     "mergedFollow": "Follow {ref}",
-    "notFoundHelp": "Have not reported it yet?",
-    "reportNew": "Report a problem",
     "progressUpdate": "Progress update"
   },
   "problems": {

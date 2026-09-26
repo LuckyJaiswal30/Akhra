@@ -147,6 +147,14 @@ export function SubmitForm({
 
   return (
     <form {...form} onInput={rememberDraft} className="space-y-6" noValidate>
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden
+        className="absolute -left-[9999px] h-px w-px opacity-0"
+      />
       <input type="hidden" name="locale" value={locale} />
       <div>
         <p className="text-ink font-medium" aria-live="polite">

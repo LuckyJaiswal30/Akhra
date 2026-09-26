@@ -1,6 +1,6 @@
 'use server';
 
-import { createProblemSchema, type ActionState } from '@akhra/shared';
+import { AppError, createProblemSchema, type ActionState } from '@akhra/shared';
 import { formId, parseInput, runAction } from '@/server/api';
 import { serverEnv } from '@/server/env';
 import { headers } from 'next/headers';
@@ -28,6 +28,10 @@ export async function submitProblemAction(
   formData: FormData,
 ): Promise<SubmitState> {
   return runAction('problem submission', async () => {
+    // People never see this field; form-filling bots fill it in.
+    if (String(formData.get('website') ?? '').trim()) {
+      throw new AppError('VALIDATION_FAILED', 'Your report could not be sent. Please try again.');
+    }
     const input = parseInput(createProblemSchema, {
       title: formData.get('title'),
       description: formData.get('description'),
