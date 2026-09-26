@@ -41,6 +41,13 @@ class ConsoleMailer implements Mailer {
   }
 }
 
+const RESERVED_DOMAIN =
+  /@(?:[^@]+\.)?(?:example\.(?:com|org|net)|[^@]+\.(?:test|invalid|localhost))$/i;
+
+export function canReceiveMail(address: string): boolean {
+  return !RESERVED_DOMAIN.test(address.trim());
+}
+
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 const RESEND_TIMEOUT_MS = 8000;
 
@@ -52,6 +59,13 @@ export class ResendMailer implements Mailer {
   ) {}
 
   async send(email: OutgoingEmail): Promise<SendResult> {
+    if (!canReceiveMail(email.to)) {
+      logger.info(
+        { to: email.to, subject: email.subject },
+        'email not sent (reserved test address)',
+      );
+      return { delivered: false, providerMessageId: null };
+    }
     if (!this.options.apiKey) {
       throw new MailDeliveryError(
         'MAIL_DRIVER=resend but RESEND_API_KEY is not set.',
