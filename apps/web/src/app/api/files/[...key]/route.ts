@@ -50,11 +50,13 @@ export async function GET(
 
   if (serverEnv.FILE_STORAGE_DRIVER === 'blob') {
     try {
-      const { head } = await import('@vercel/blob');
-      const blob = await head(storageKey, { token: serverEnv.BLOB_READ_WRITE_TOKEN });
-      const upstream = await fetch(blob.url);
-      if (!upstream.ok || !upstream.body) return notFound();
-      return new NextResponse(upstream.body, { headers: headersFor(extension, blob.size) });
+      const { get } = await import('@vercel/blob');
+      const found = await get(storageKey, {
+        access: 'private',
+        token: serverEnv.BLOB_READ_WRITE_TOKEN,
+      });
+      if (!found || found.statusCode !== 200 || !found.stream) return notFound();
+      return new NextResponse(found.stream, { headers: headersFor(extension, found.blob.size) });
     } catch {
       return notFound();
     }

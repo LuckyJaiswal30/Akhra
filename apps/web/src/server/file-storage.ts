@@ -141,7 +141,7 @@ class VercelBlobStorage implements FileStorage {
 
     const { put } = await import('@vercel/blob');
     const blob = await put(storageKey, file, {
-      access: 'public',
+      access: 'private',
       contentType: type,
       token: serverEnv.BLOB_READ_WRITE_TOKEN,
     });
