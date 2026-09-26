@@ -26,6 +26,7 @@ import { useOnlineStatus } from '@/lib/use-online-status';
 import { submitProblemAction, type SubmitState } from '../actions';
 import type { SubmissionResult } from '../service';
 import { clearDraft, draftFromForm, loadDraft, parseLocation, saveDraft } from '../draft';
+import { HumanCheck } from './human-check';
 import type { ReporterProfile } from '../queries';
 import { AttachmentPicker, type AttachmentPickerLabels } from './attachment-picker';
 import { VoiceInput } from './voice-input';
@@ -48,8 +49,11 @@ const STEP_FIELDS: Record<Step, string[]> = {
     'submitterEmail',
     'submitterOrganization',
     'consentToPublish',
+    'humanCheck',
   ],
 };
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export interface SubmitFormLabels {
   [key: string]: string;
@@ -442,6 +446,15 @@ export function SubmitForm({
             </p>
           )}
         </div>
+
+        {TURNSTILE_SITE_KEY && !profile && step === 'contact' && (
+          <HumanCheck
+            siteKey={TURNSTILE_SITE_KEY}
+            locale={locale}
+            resetSignal={state && !state.ok ? state : null}
+            error={fieldError(state, 'humanCheck')}
+          />
+        )}
       </div>
 
       <div className="border-line flex items-center justify-between gap-3 border-t pt-5">

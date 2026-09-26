@@ -154,37 +154,39 @@ the audit log.
 that schema in sync. Everything optional has a local default: email is printed to the console,
 uploads go to local disk, and classification falls back to the offline model.
 
-| Variable                            | Needed        | Default                         | Purpose                                                       |
-| ----------------------------------- | ------------- | ------------------------------- | ------------------------------------------------------------- |
-| `DATABASE_URL`                      | Required      | None                            | PostgreSQL connection string                                  |
-| `DATABASE_POOL_MAX`                 | Optional      | `5`                             | Connections per server instance                               |
-| `INVITE_SIGNING_SECRET`             | Required      | None                            | Signs invitation links (`openssl rand -base64 48`, 32+ chars) |
-| `INVITE_TTL_HOURS`                  | Optional      | `72`                            | How long an invitation link stays valid                       |
-| `NEXT_PUBLIC_APP_URL`               | Required      | None                            | Public URL of the app, for example `http://localhost:3000`    |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | For sign-in   | None                            | Clerk publishable key                                         |
-| `CLERK_SECRET_KEY`                  | For sign-in   | None                            | Clerk secret key                                              |
-| `CLERK_WEBHOOK_SIGNING_SECRET`      | Deployed      | None                            | Verifies Clerk webhooks at `/api/webhooks/clerk`              |
-| `CRON_SECRET`                       | Deployed      | None                            | Bearer token for `/api/cron/maintenance`                      |
-| `AI_PROVIDER_CHAIN`                 | Optional      | `gemini,groq,tfidf`             | Classifier tiers, tried in order                              |
-| `AI_TIMEOUT_MS`                     | Optional      | `6000`                          | Per-call timeout for an AI provider                           |
-| `AI_BREAKER_THRESHOLD`              | Optional      | `3`                             | Failures before a provider is skipped                         |
-| `AI_BREAKER_COOLDOWN_MS`            | Optional      | `60000`                         | How long a failing provider is skipped                        |
-| `GEMINI_API_KEY`                    | Optional      | tier skipped                    | Google AI Studio key                                          |
-| `GEMINI_MODEL`                      | Optional      | `gemini-3.6-flash`              | Gemini model ID                                               |
-| `GROQ_API_KEY`                      | Optional      | tier skipped                    | Groq key                                                      |
-| `GROQ_MODEL`                        | Optional      | `openai/gpt-oss-20b`            | Groq model ID                                                 |
-| `MAIL_DRIVER`                       | Optional      | `console`                       | `console` logs email; `resend` sends it                       |
-| `RESEND_API_KEY`                    | With `resend` | None                            | Resend API key                                                |
-| `MAIL_FROM`                         | Optional      | `Akhra <onboarding@resend.dev>` | Sender address                                                |
-| `FILE_STORAGE_DRIVER`               | Optional      | `local`                         | `local` disk or Vercel `blob`                                 |
-| `LOCAL_UPLOAD_DIR`                  | Optional      | `.uploads`                      | Upload folder for the `local` driver                          |
-| `MAX_UPLOAD_BYTES`                  | Optional      | `10485760`                      | Largest accepted attachment                                   |
-| `BLOB_READ_WRITE_TOKEN`             | With `blob`   | None                            | Vercel Blob token                                             |
-| `RATE_LIMIT_SUBMISSIONS_PER_HOUR`   | Optional      | `5`                             | Reports one visitor can file per hour                         |
-| `LOG_LEVEL`                         | Optional      | `info`                          | `silent`, `fatal`, `error`, `warn`, `info`, `debug`, `trace`  |
-| `ALLOW_SEED`                        | Optional      | `false`                         | `true` allows `pnpm db:seed` (never in production)            |
-| `TEST_DATABASE_URL`                 | Tests         | `<db>_test`                     | Database the test suite uses                                  |
-| `E2E_BASE_URL`                      | Tests         | None                            | Run browser tests against an already running app              |
+| Variable                            | Needed        | Default                         | Purpose                                                                |
+| ----------------------------------- | ------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| `DATABASE_URL`                      | Required      | None                            | PostgreSQL connection string                                           |
+| `DATABASE_POOL_MAX`                 | Optional      | `5`                             | Connections per server instance                                        |
+| `INVITE_SIGNING_SECRET`             | Required      | None                            | Signs invitation links (`openssl rand -base64 48`, 32+ chars)          |
+| `INVITE_TTL_HOURS`                  | Optional      | `72`                            | How long an invitation link stays valid                                |
+| `NEXT_PUBLIC_APP_URL`               | Required      | None                            | Public URL of the app, for example `http://localhost:3000`             |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | For sign-in   | None                            | Clerk publishable key                                                  |
+| `CLERK_SECRET_KEY`                  | For sign-in   | None                            | Clerk secret key                                                       |
+| `CLERK_WEBHOOK_SIGNING_SECRET`      | Deployed      | None                            | Verifies Clerk webhooks at `/api/webhooks/clerk`                       |
+| `CRON_SECRET`                       | Deployed      | None                            | Bearer token for `/api/cron/maintenance`                               |
+| `AI_PROVIDER_CHAIN`                 | Optional      | `gemini,groq,tfidf`             | Classifier tiers, tried in order                                       |
+| `AI_TIMEOUT_MS`                     | Optional      | `6000`                          | Per-call timeout for an AI provider                                    |
+| `AI_BREAKER_THRESHOLD`              | Optional      | `3`                             | Failures before a provider is skipped                                  |
+| `AI_BREAKER_COOLDOWN_MS`            | Optional      | `60000`                         | How long a failing provider is skipped                                 |
+| `GEMINI_API_KEY`                    | Optional      | tier skipped                    | Google AI Studio key                                                   |
+| `GEMINI_MODEL`                      | Optional      | `gemini-3.6-flash`              | Gemini model ID                                                        |
+| `GROQ_API_KEY`                      | Optional      | tier skipped                    | Groq key                                                               |
+| `GROQ_MODEL`                        | Optional      | `openai/gpt-oss-20b`            | Groq model ID                                                          |
+| `MAIL_DRIVER`                       | Optional      | `console`                       | `console` logs email; `resend` sends it                                |
+| `RESEND_API_KEY`                    | With `resend` | None                            | Resend API key                                                         |
+| `MAIL_FROM`                         | Optional      | `Akhra <onboarding@resend.dev>` | Sender address                                                         |
+| `FILE_STORAGE_DRIVER`               | Optional      | `local`                         | `local` disk or Vercel `blob`                                          |
+| `LOCAL_UPLOAD_DIR`                  | Optional      | `.uploads`                      | Upload folder for the `local` driver                                   |
+| `MAX_UPLOAD_BYTES`                  | Optional      | `10485760`                      | Largest accepted attachment                                            |
+| `BLOB_READ_WRITE_TOKEN`             | With `blob`   | None                            | Vercel Blob token                                                      |
+| `RATE_LIMIT_SUBMISSIONS_PER_HOUR`   | Optional      | `5`                             | Reports one visitor can file per hour                                  |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`    | Deployed      | check skipped                   | Cloudflare Turnstile site key for the human check on anonymous reports |
+| `TURNSTILE_SECRET_KEY`              | Deployed      | check skipped                   | Cloudflare Turnstile secret key, checked on the server                 |
+| `LOG_LEVEL`                         | Optional      | `info`                          | `silent`, `fatal`, `error`, `warn`, `info`, `debug`, `trace`           |
+| `ALLOW_SEED`                        | Optional      | `false`                         | `true` allows `pnpm db:seed` (never in production)                     |
+| `TEST_DATABASE_URL`                 | Tests         | `<db>_test`                     | Database the test suite uses                                           |
+| `E2E_BASE_URL`                      | Tests         | None                            | Run browser tests against an already running app                       |
 
 ## Commands
 

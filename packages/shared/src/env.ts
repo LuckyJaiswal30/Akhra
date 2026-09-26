@@ -54,6 +54,7 @@ const serverSchema = z.object({
   MAIL_FROM: z.string().default('Akhra <onboarding@resend.dev>'),
 
   RATE_LIMIT_SUBMISSIONS_PER_HOUR: z.coerce.number().int().positive().default(5),
+  TURNSTILE_SECRET_KEY: z.string().optional(),
 
   LOG_LEVEL: z.enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
@@ -63,6 +64,7 @@ const serverSchema = z.object({
 const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url('NEXT_PUBLIC_APP_URL must be a full URL, e.g. http://localhost:3000'),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
@@ -165,6 +167,11 @@ export function collectConfigWarnings(env: ServerEnv): string[] {
   if (isProd && env.FILE_STORAGE_DRIVER === 'local') {
     warnings.push(
       'Running in production with FILE_STORAGE_DRIVER=local — uploads will not survive a serverless redeploy.',
+    );
+  }
+  if (isProd && !env.TURNSTILE_SECRET_KEY) {
+    warnings.push(
+      'TURNSTILE_SECRET_KEY is missing: anonymous reports have no human check, only rate limits.',
     );
   }
   if (isProd && env.ALLOW_SEED) {

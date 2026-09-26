@@ -6,10 +6,13 @@ import { serverEnv } from '@/server/env';
 import { headers } from 'next/headers';
 import { clientIdentifier, consumeRateLimit, rateLimitedError } from '@/server/rate-limit';
 import { getActor } from '@/server/session';
+import { checkHuman } from '@/server/turnstile';
 import { submitProblem, type SubmissionResult } from './service';
 import { supportProblem, withdrawSupport, type SupportState } from './support';
 
 export type SubmitState = ActionState<SubmissionResult>;
+
+const HUMAN_CHECK_MESSAGE = 'Please complete the check that you are not a robot, then send again.';
 
 const ONE_HOUR = 60 * 60 * 1000;
 
@@ -51,13 +54,22 @@ export async function submitProblemAction(
     });
 
     const actor = await getActor();
+    const address = clientIdentifier(await headers());
+    if (!actor.userId) {
+      const token = formData.get('cf-turnstile-response');
+      const human = await checkHuman(typeof token === 'string' ? token : null, address);
+      if (human === 'failed') {
+        throw new AppError('VALIDATION_FAILED', HUMAN_CHECK_MESSAGE, {
+          fields: { humanCheck: HUMAN_CHECK_MESSAGE },
+        });
+      }
+    }
     const limit = await consumeRateLimit(
       `submit:${actor.userId ?? input.submitterPhone}`,
       serverEnv.RATE_LIMIT_SUBMISSIONS_PER_HOUR,
       ONE_HOUR,
     );
     if (!limit.allowed) throw rateLimitedError(limit.resetAt, 'reports this hour');
-    const address = clientIdentifier(await headers());
     if (!actor.userId && address !== 'unknown') {
       // The phone number is typed by the sender, so a spammer would change it; the network address
       // is not. Set higher, because a village or a CSC often shares one address.

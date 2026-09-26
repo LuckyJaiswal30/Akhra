@@ -199,15 +199,15 @@ the offline model still classifies reports, and the public pages work without si
   reference code, and nothing closes until they say it is fixed.
 - **Why officers can trust it.** Each district sees only its own reports, enforced by the database
   itself. Every decision is recorded, and overdue reports are raised with the state automatically.
-- **Why spam does not swamp it.** Hourly limits per number and per network address, a hidden
-  field that catches form-filling bots, duplicate detection, and a person checks every report
-  before it goes anywhere.
+- **Why spam does not swamp it.** A human check on anonymous reports, hourly limits per number and
+  per network address, a hidden field that catches form-filling bots, duplicate detection, and a
+  person checks every report before it goes anywhere.
 - **Why it matches NEP 2020.** Students and faculty work on real problems from their own state, and
   the dashboard shows what came out of it: projects, patents, startups and people reached.
 
 ## What we tested
 
-**433 automated tests in 48 files run on every change**, against a real PostgreSQL database, not
+**437 automated tests in 48 files run on every change**, against a real PostgreSQL database, not
 mocks. GitHub runs them together with lint, type checks, a production build and a browser check of
 every public page in English and Hindi, on a phone and a laptop screen.
 
@@ -241,6 +241,10 @@ none of its reports reaches a department without a person looking at it first.
 - One network address can file 20 anonymous reports an hour. This is set higher than the per-number
   limit because a village or a CSC (Common Service Centre) often shares one address, and a bot can
   invent new mobile numbers but not new addresses as easily.
+- An anonymous report has to pass Cloudflare Turnstile, a free human check. Most people never see
+  a puzzle; at most they tick one box, shown in Hindi on the Hindi page. The server checks every
+  token with Cloudflare, and a token works only once. Signed-in people skip it, because Clerk
+  already checked them at sign-up.
 - The form has a field people never see. Form-filling bots fill it in, and the report is refused
   before anything is stored.
 - Uploads are limited to 20 an hour, and only real images, videos and PDFs are accepted.
@@ -249,8 +253,8 @@ none of its reports reaches a department without a person looking at it first.
 - Every report waits in the district officer's queue until someone validates it, sends it to a
   department or marks it _Not taken up_. Spam never reaches a department or a university.
 
-A bot spread across many addresses could still get past the limits. For a real launch we would add
-a human check such as Cloudflare Turnstile on the report form.
+No check stops every bot: paid services solve captchas with real people. Together these make spam
+slow and costly, and whatever gets through still has to pass a district officer.
 
 **The AI keeps working when the AI is down.**
 

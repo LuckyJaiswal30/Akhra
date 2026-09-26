@@ -1,8 +1,9 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq, inArray } from 'drizzle-orm';
 import { getDb, problems, statusEvents, withoutRls } from '@akhra/db';
 import { submitProblemAction } from '@/modules/citizen';
 import { serverEnv } from '@/server/env';
+import { checkHuman } from '@/server/turnstile';
 import { actAs, cleanupTestData, formData } from '../helpers';
 
 const created: string[] = [];
@@ -60,5 +61,37 @@ describe('a bot filling the report form', () => {
     const blocked = await submit(report(phone));
     expect(blocked?.ok).toBe(false);
     expect(blocked && !blocked.ok && blocked.error.code).toBe('RATE_LIMITED');
+  });
+});
+
+describe('the check that a person is sending the report', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const cloudflareSays = (body: unknown) =>
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(body)));
+
+  it('passes when Cloudflare confirms the token', async () => {
+    const fetch = cloudflareSays({ success: true });
+    expect(await checkHuman('token', '203.0.113.7', 'secret')).toBe('passed');
+    expect(String((fetch.mock.calls[0]?.[1]?.body as URLSearchParams).get('remoteip'))).toBe(
+      '203.0.113.7',
+    );
+  });
+
+  it('fails when Cloudflare rejects the token, or when there is no token at all', async () => {
+    cloudflareSays({ success: false, 'error-codes': ['invalid-input-response'] });
+    expect(await checkHuman('forged', null, 'secret')).toBe('failed');
+    expect(await checkHuman(null, null, 'secret')).toBe('failed');
+  });
+
+  it('lets the report through when Cloudflare cannot be reached, leaving the hourly limits', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network down'));
+    expect(await checkHuman('token', null, 'secret')).toBe('skipped');
+  });
+
+  it('is skipped when no secret is configured, as in local development', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    expect(await checkHuman(null, null, '')).toBe('skipped');
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
