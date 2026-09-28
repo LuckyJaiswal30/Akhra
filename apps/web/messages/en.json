@@ -2,7 +2,8 @@
   "brand": {
     "name": "Akhra",
     "tagline": "Report a problem in your area and follow it until it is fixed.",
-    "slogan": "The meeting ground, for all of Jharkhand"
+    "slogan": "The meeting ground, for all of Jharkhand",
+    "shareAlt": "Akhra: report a local problem in Jharkhand once, and follow it until it is fixed."
   },
   "nav": {
     "track": "Track a report",

@@ -30,15 +30,37 @@ import { getActor } from '@/server/session';
 import { Alert, Button, Field, Input, StatusBadge } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { formatDate } from '@/lib/utils';
+import { canDrawReport, siteImage } from '@/server/og';
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ ref?: string | string[] }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  const [{ locale }, search] = await Promise.all([params, searchParams]);
   const t = await getTranslations({ locale, namespace: 'track' });
-  return { title: t('title'), description: t('subtitle') };
+  const ref = typeof search.ref === 'string' ? search.ref.trim().toUpperCase() : '';
+  const problem = /^AKH-\d{4}-\d{6}$/.test(ref) ? await trackByRefCode(ref) : null;
+  if (!problem) return { title: t('title'), description: t('subtitle') };
+
+  const image = canDrawReport(problem)
+    ? `/api/og/report?ref=${problem.refCode}&locale=${locale === 'hi' ? 'hi' : 'en'}`
+    : siteImage(locale);
+  const title = `${problem.refCode}: ${problem.title}`;
+  return {
+    title,
+    description: t('subtitle'),
+    openGraph: {
+      title,
+      siteName: 'Akhra',
+      locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
+      type: 'article',
+      images: [{ url: image, width: 1200, height: 630, alt: problem.title }],
+    },
+    twitter: { card: 'summary_large_image', images: [image] },
+  };
 }
 
 export default async function TrackPage({

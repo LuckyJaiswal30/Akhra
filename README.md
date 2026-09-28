@@ -41,8 +41,8 @@ who reported it confirms the fix.
 ## Features
 
 - **Citizens** report with photos, video or PDFs, a district and a map pin. They can write in Hindi,
-  English or Hinglish, or speak the report. No account is needed, and a half-written report is saved
-  on the phone. Updates come back in the language they reported in.
+  English or Hinglish, or speak the report. A half-written report is saved on the phone, and updates
+  come back in the language they reported in.
 - **Classification** tries Gemini, then Groq, then a TF-IDF model that runs on our own server, so it
   still works when both AI services are down. It also scores priority and flags likely duplicates,
   even when the same problem was reported in another language.
@@ -206,6 +206,7 @@ uploads go to local disk, and classification falls back to the offline model.
 | `pnpm admin:bootstrap`                        | Reserve the first super administrator                                   |
 | `pnpm cron:local`                             | Run the nightly jobs against a local server                             |
 | `pnpm email:preview`                          | Render every email to `.email-previews/`                                |
+| `pnpm og:render`                              | Redraw the site's share images in `apps/web/public/og/` with Chrome     |
 
 ## Credits
 

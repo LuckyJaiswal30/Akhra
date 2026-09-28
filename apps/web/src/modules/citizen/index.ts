@@ -10,6 +10,7 @@ export {
   listProblemFiles,
   canReadAttachment,
   type ProblemFile,
+  type TrackedProblem,
 } from './queries';
 export { SubmitForm } from './components/submit-form';
 export { StatusTimeline } from './components/status-timeline';

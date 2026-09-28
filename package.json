@@ -2,7 +2,7 @@
   "name": "akhra",
   "private": true,
   "version": "0.1.0",
-  "description": "Akhra — civic innovation platform connecting citizens, universities, industry and government in Jharkhand",
+  "description": "Akhra \u2014 civic innovation platform connecting citizens, universities, industry and government in Jharkhand",
   "engines": {
     "node": ">=22.12.0",
     "pnpm": ">=11.0.0"
@@ -30,7 +30,8 @@
     "email:preview": "pnpm --filter @akhra/web exec tsx scripts/preview-emails.tsx",
     "email:clerk": "pnpm --filter @akhra/web exec tsx scripts/clerk-email-templates.tsx",
     "cron:local": "curl -fsS -X POST -H \"authorization: Bearer $CRON_SECRET\" \"${NEXT_PUBLIC_APP_URL:-http://localhost:3000}/api/cron/maintenance\"",
-    "clerk:demo-users": "pnpm --filter @akhra/db clerk-demo-users"
+    "clerk:demo-users": "pnpm --filter @akhra/db clerk-demo-users",
+    "og:render": "pnpm --filter @akhra/web exec tsx scripts/render-share-images.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

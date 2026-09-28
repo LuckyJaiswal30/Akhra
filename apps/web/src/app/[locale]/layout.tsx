@@ -6,6 +6,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ComponentProps, ReactNode } from 'react';
 import { routing } from '@/i18n/routing';
+import { appUrl } from '@/server/env';
+import { siteImage } from '@/server/og';
 import { signInEnabled } from '@/server/sign-in-mode';
 
 const plexSans = IBM_Plex_Sans({
@@ -38,8 +40,16 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'brand' });
   return {
+    metadataBase: new URL(appUrl),
     title: { default: t('name'), template: `%s | ${t('name')}` },
     description: t('tagline'),
+    openGraph: {
+      siteName: t('name'),
+      locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
+      type: 'website',
+      images: [{ url: siteImage(locale), width: 1200, height: 630, alt: t('shareAlt') }],
+    },
+    twitter: { card: 'summary_large_image', images: [siteImage(locale)] },
   };
 }
 
