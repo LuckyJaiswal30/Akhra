@@ -1,7 +1,7 @@
 'use client';
 
 import type { Route } from 'next';
-import { useSignIn } from '@clerk/nextjs';
+import { useClerk, useSignIn } from '@clerk/nextjs';
 import { ArrowRight, Mail, MailCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
@@ -18,22 +18,28 @@ import {
 } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { BackButton, CodeStep, SuccessPanel, fill, type Labels } from './auth-parts';
-import { clerkCode, clerkFieldError, clerkMessage } from './clerk-errors';
+import { clerkCode, clerkFieldError, clerkMessage, continueIfSignedIn } from './clerk-errors';
 import { checklistLabels, passwordRuleMessage } from './password-labels';
 
 type Step = 'email' | 'code' | 'password' | 'done';
+// A Google-only account has no password to reset, so it signs in with an email code and sets one.
+type Mode = 'reset' | 'emailCode';
 
 export function ForgotPasswordCard({
   labels,
   signInPath,
+  dashboardPath,
   policy,
 }: {
   labels: Labels;
   signInPath: string;
+  dashboardPath: string;
   policy: PasswordPolicy;
 }) {
   const { signIn, fetchStatus } = useSignIn();
+  const clerk = useClerk();
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>('reset');
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,22 +59,24 @@ export function ForgotPasswordCard({
     setError(null);
     setEmail(identifier);
     const created = await signIn.create({ identifier });
+    if (continueIfSignedIn(created.error, dashboardPath)) return;
     setUnknown(Boolean(created.error));
     if (created.error && clerkCode(created.error) !== 'form_identifier_not_found') {
       setError({ message: clerkMessage(created.error, labels) });
       return;
     }
     if (!created.error) {
-      const sent = await signIn.resetPasswordEmailCode.sendCode();
-      if (sent.error) {
-        setError({
-          message:
-            clerkCode(sent.error) === 'factor_not_found'
-              ? labels.errorResetGoogle!
-              : clerkMessage(sent.error, labels),
-        });
+      const canReset = signIn.supportedFirstFactors.some(
+        (factor) => factor.strategy === 'reset_password_email_code',
+      );
+      let sent = canReset ? await signIn.resetPasswordEmailCode.sendCode() : null;
+      const useEmailCode = !canReset || clerkCode(sent?.error) === 'factor_not_found';
+      if (useEmailCode) sent = await signIn.emailCode.sendCode();
+      if (sent?.error) {
+        setError({ message: clerkMessage(sent.error, labels) });
         return;
       }
+      setMode(useEmailCode ? 'emailCode' : 'reset');
     }
     setStep('code');
   }
@@ -86,6 +94,15 @@ export function ForgotPasswordCard({
       return;
     }
     setError(null);
+    if (mode === 'emailCode') {
+      try {
+        await clerk.user?.updatePassword({ newPassword: password, signOutOfOtherSessions: true });
+        window.location.assign(dashboardPath);
+      } catch (failure) {
+        setError(clerkFieldError(failure, labels));
+      }
+      return;
+    }
     const { error: failure } = await signIn.resetPasswordEmailCode.submitPassword({
       password,
       signOutOfOtherSessions: true,
@@ -94,12 +111,15 @@ export function ForgotPasswordCard({
       setError(clerkFieldError(failure, labels));
       return;
     }
-    if (signIn.status === 'complete') setStep('done');
-    else
-      setError({
-        message:
-          signIn.status === 'needs_second_factor' ? labels.secondFactor! : labels.errorGeneric!,
+    // The new password is saved either way. Signing in straight away saves a trip back through the
+    // sign-in page; if Clerk wants more checks first, the person signs in normally.
+    if (signIn.status === 'complete') {
+      const { error: notFinalized } = await signIn.finalize({
+        navigate: () => window.location.assign(dashboardPath),
       });
+      if (!notFinalized) return;
+    }
+    setStep('done');
   }
 
   const checklist = checklistLabels(labels);
@@ -150,9 +170,29 @@ export function ForgotPasswordCard({
           submitLabel={labels.verifyCode!}
           busy={busy}
           onBack={() => setStep('email')}
-          onResend={async () => (unknown ? null : signIn.resetPasswordEmailCode.sendCode())}
+          onResend={async () =>
+            unknown
+              ? null
+              : mode === 'emailCode'
+                ? signIn.emailCode.sendCode()
+                : signIn.resetPasswordEmailCode.sendCode()
+          }
           onVerify={async (code) => {
             if (unknown) return labels.errorCodeIncorrect!;
+            if (mode === 'emailCode') {
+              const { error: failure } = await signIn.emailCode.verifyCode({ code });
+              if (failure) return clerkMessage(failure, labels);
+              if (signIn.status !== 'complete') {
+                return signIn.status === 'needs_second_factor'
+                  ? labels.secondFactor!
+                  : labels.errorGeneric!;
+              }
+              // Stay here: the person still has to choose a password before going anywhere.
+              const { error: notFinalized } = await signIn.finalize({ navigate: () => undefined });
+              if (notFinalized) return clerkMessage(notFinalized, labels);
+              setStep('password');
+              return null;
+            }
             const { error: failure } = await signIn.resetPasswordEmailCode.verifyCode({ code });
             if (failure) return clerkMessage(failure, labels);
             if (signIn.status !== 'needs_new_password') return labels.errorGeneric!;
@@ -164,16 +204,18 @@ export function ForgotPasswordCard({
 
       {step === 'password' && (
         <div className="space-y-6">
-          <BackButton label={labels.back!} onClick={() => setStep('code')} />
+          {mode === 'reset' && <BackButton label={labels.back!} onClick={() => setStep('code')} />}
           <div>
             <h1
               data-step-heading
               tabIndex={-1}
               className="text-ink text-3xl font-bold outline-none"
             >
-              {labels.newPasswordTitle}
+              {mode === 'emailCode' ? labels.setPasswordTitle : labels.newPasswordTitle}
             </h1>
-            <p className="text-subtle mt-2">{labels.newPasswordSubtitle}</p>
+            <p className="text-subtle mt-2">
+              {mode === 'emailCode' ? labels.setPasswordSubtitle : labels.newPasswordSubtitle}
+            </p>
           </div>
           <form onSubmit={submitPassword} className="space-y-5" noValidate>
             {error && !['password', 'confirmPassword'].includes(error.field ?? '') && (

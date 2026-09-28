@@ -182,10 +182,21 @@ colleagues from their _Team_ tab.
 district, a state-wide officer, or a department officer. Every action on this page is written to
 the audit log.
 
+**C4. Suspend a spam account.** Open **People**. It lists every account, newest first, with its
+role, district and number of reports. Search for the account and press **Suspend**. The dialog
+offers to remove the reports no officer has reviewed yet, and says how many will stay because an
+officer already accepted them. Add a reason if you like and confirm. The account is signed out on
+every device, and the removed reports disappear from the public list, the tracker, the queue and
+the dashboard. **Reactivate** lets the person back in. The removed reports stay removed, and the
+person gets a notification and an email, in their language, saying so and that they can report a
+real problem again.
+
 ## If something fails on stage
 
-Every screen from step 4 of the five-minute demo already has sample data. If the internet is slow,
-the offline model still classifies reports, and the public pages work without signing in.
+Every screen from step 4 of the five-minute demo already has sample data. If Gemini and Groq are
+slow or down, the model on our own server still classifies reports, and the public pages work
+without signing in. If the stage Wi-Fi drops mid-report, the form keeps what was typed and sends it
+once the connection is back.
 
 ## Talking points
 
@@ -195,8 +206,9 @@ the offline model still classifies reports, and the public pages work without si
 - **What Akhra does.** One report goes to the district officer, who sends it to a department for a
   quick fix, or to the university best suited to solve it, with industry partners joining in.
 - **Why people will use it.** No account is needed. It works in Hindi, English and Hinglish, by
-  typing or speaking, and on a slow phone connection. The reporter follows every step with a
-  reference code, and nothing closes until they say it is fixed.
+  typing or speaking. On a patchy connection the form keeps what was typed on the phone and waits
+  for signal before sending. The reporter follows every step with a reference code, and nothing
+  closes until they say it is fixed.
 - **Why officers can trust it.** Each district sees only its own reports, enforced by the database
   itself. Every decision is recorded, and overdue reports are raised with the state automatically.
 - **Why spam does not swamp it.** A human check on anonymous reports, hourly limits per number and
@@ -207,7 +219,7 @@ the offline model still classifies reports, and the public pages work without si
 
 ## What we tested
 
-**437 automated tests in 48 files run on every change**, against a real PostgreSQL database, not
+**446 automated tests in 49 files run on every change**, against a real PostgreSQL database, not
 mocks. GitHub runs them together with lint, type checks, a production build and a browser check of
 every public page in English and Hindi, on a phone and a laptop screen.
 
@@ -252,6 +264,10 @@ none of its reports reaches a department without a person looking at it first.
   the original.
 - Every report waits in the district officer's queue until someone validates it, sends it to a
   department or marks it _Not taken up_. Spam never reaches a department or a university.
+- A super administrator can suspend a spamming account from _Admin → People_. It is signed out on
+  every device at once, and its unreviewed reports leave the public pages and every count, while
+  reports an officer already accepted stay. Removed reports stay removed even if the account comes
+  back.
 
 No check stops every bot: paid services solve captchas with real people. Together these make spam
 slow and costly, and whatever gets through still has to pass a district officer.
@@ -288,6 +304,11 @@ pin, and tracked them by their codes.
 - The department never saw the district officer's instructions, and it was asked for progress
   updates but had no way to post one.
 - Reminder emails sent department officers to a page they were not allowed to open.
+- "Forgot password" did not work for someone who signed up with Google, because such an account
+  has no password to reset. It now emails them a sign-in code and lets them choose a password.
+- After a password reset, the person landed on a sign-in page that could not sign them in and told
+  them to refresh. They now go straight to their dashboard, and anyone already signed in who opens
+  a sign-in page is taken to their dashboard instead.
 - After a quiet week the dashboard could show week-old figures on first open.
 - Messages from the server were in English on Hindi pages, and dates followed the server's clock
   instead of India time.

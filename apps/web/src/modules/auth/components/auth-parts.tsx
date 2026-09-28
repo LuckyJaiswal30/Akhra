@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { JharkhandLandscape } from '@/components/illustrations/jharkhand-landscape';
 import { Button, OtpInput, buttonVariants } from '@/components/ui';
-import { clerkMessage } from './clerk-errors';
+import { clerkMessage, continueIfSignedIn } from './clerk-errors';
 
 export type Labels = Record<string, string>;
 
@@ -77,7 +77,7 @@ export function GoogleButton({
           redirectCallbackUrl: callbackUrl,
           redirectUrl: completeUrl,
         });
-        if (error) onError(clerkMessage(error, labels));
+        if (error && !continueIfSignedIn(error, completeUrl)) onError(clerkMessage(error, labels));
       }}
       className={buttonVariants({ variant: 'secondary', size: 'lg', className: 'w-full' })}
     >

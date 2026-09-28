@@ -23,7 +23,7 @@ import {
 } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { CodeStep, Divider, GoogleButton, SuccessPanel, fill, type Labels } from './auth-parts';
-import { clerkFieldError, clerkMessage } from './clerk-errors';
+import { clerkFieldError, clerkMessage, continueIfSignedIn } from './clerk-errors';
 import { checklistLabels, passwordRuleMessage } from './password-labels';
 import { DistrictField, PhoneField, phoneError, saveSignupDraft } from './profile-fields';
 import { useFocusOnChange, type FieldErrors, type Paths } from './auth-card-parts';
@@ -94,6 +94,7 @@ export function CreatePanel({
       } satisfies SignupMetadata,
     });
     if (failure) {
+      if (continueIfSignedIn(failure, paths.afterAuth)) return;
       const { field, message } = clerkFieldError(failure, labels);
       if (field === 'email' || field === 'password') setErrors({ [field]: message });
       else setFormError(message);

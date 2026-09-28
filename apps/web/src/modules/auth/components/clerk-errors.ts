@@ -22,7 +22,6 @@ const MESSAGE_BY_CODE: Record<string, string> = {
   captcha_invalid: 'errorCaptcha',
   captcha_missing_token: 'errorCaptcha',
   captcha_not_enabled: 'errorCaptcha',
-  session_exists: 'errorSessionExists',
 };
 
 const FIELD_BY_CODE: Record<string, 'email' | 'password' | 'code'> = {
@@ -56,6 +55,14 @@ export function clerkFieldError(
 ): { field?: 'email' | 'password' | 'code'; message: string } {
   const code = clerkCode(error);
   return { field: code ? FIELD_BY_CODE[code] : undefined, message: clerkMessage(error, labels) };
+}
+
+// Clerk refuses a new sign-in while one is already active. The person is in, so take them onward
+// with a full page load, which lets the server see the session too.
+export function continueIfSignedIn(error: unknown, target: string): boolean {
+  if (clerkCode(error) !== 'session_exists') return false;
+  window.location.assign(target);
+  return true;
 }
 
 export function safeReturnPath(value: string | null | undefined, fallback: string): string {

@@ -52,6 +52,7 @@ export async function exportReportsCsv(actor: Actor, filter: DashboardFilter): P
       .leftJoin(organizations, eq(problems.assignedOrgId, organizations.id))
       .where(
         and(
+          eq(problems.isPublic, true),
           districtCode ? eq(problems.districtCode, districtCode) : undefined,
           filter.domain ? eq(problems.domain, filter.domain) : undefined,
         ),

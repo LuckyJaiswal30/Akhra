@@ -13,6 +13,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       label={t('title')}
       nav={[
         { href: '/admin', label: t('tabAccess') },
+        { href: '/admin/people', label: t('tabPeople') },
         { href: '/government', label: analytics('tabDashboard') },
         { href: '/government/queue', label: analytics('tabQueue') },
         { href: '/government/proposals', label: analytics('tabProposals') },

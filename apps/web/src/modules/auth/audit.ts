@@ -10,7 +10,9 @@ export type AuditAction =
   | 'user.promoted'
   | 'user.reposted'
   | 'user.signed_up'
-  | 'user.signed_out_everywhere';
+  | 'user.signed_out_everywhere'
+  | 'user.suspended'
+  | 'user.reactivated';
 
 export interface AuditEntry {
   action: AuditAction;

@@ -6,7 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { Alert, Button, Field, Input, PasswordInput } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { CodeStep, Divider, GoogleButton, fill, useFinishTo, type Labels } from './auth-parts';
-import { clerkFieldError, clerkMessage } from './clerk-errors';
+import { clerkFieldError, clerkMessage, continueIfSignedIn } from './clerk-errors';
 import { useFocusOnChange, type Paths } from './auth-card-parts';
 
 export function SignInPanel({
@@ -66,6 +66,7 @@ export function SignInPanel({
     setEmail(emailAddress);
     const { error: failure } = await signIn.password({ emailAddress, password });
     if (failure) {
+      if (continueIfSignedIn(failure, paths.afterAuth)) return;
       setError(clerkFieldError(failure, labels));
       return;
     }

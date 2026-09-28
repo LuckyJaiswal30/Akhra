@@ -278,6 +278,11 @@ export const actionTakenSchema = z.object({
     .max(1000),
 });
 
+export const suspendAccountSchema = z.object({
+  reason: z.string().trim().max(300, 'Keep the reason under 300 characters').optional(),
+  removeReports: z.boolean().default(true),
+});
+
 export const progressUpdateSchema = z.object({
   note: z
     .string({ error: 'Say what has been done so far; the person who reported it reads this.' })

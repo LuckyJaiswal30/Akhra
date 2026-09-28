@@ -179,6 +179,14 @@ const HINDI: Record<string, string> = {
     'बताइए कि इसे सुलझाने के लिए क्या किया गया। रिपोर्ट करने वाले यह टिप्पणी देखेंगे।',
   'Please complete the check that you are not a robot, then send again.':
     'कृपया पुष्टि करें कि आप रोबोट नहीं हैं, फिर रिपोर्ट दोबारा भेजें।',
+  'Only a super administrator can manage accounts.':
+    'खातों का प्रबंधन सिर्फ़ सुपर प्रशासक कर सकते हैं।',
+  'You cannot suspend your own account.': 'आप अपना खाता निलंबित नहीं कर सकते।',
+  'That account is already suspended.': 'यह खाता पहले से निलंबित है।',
+  'Akhra always needs one active super administrator.':
+    'अखरा में हमेशा एक सक्रिय सुपर प्रशासक होना ज़रूरी है।',
+  'That account is already active.': 'यह खाता पहले से सक्रिय है।',
+  'Keep the reason under 300 characters': 'कारण 300 अक्षरों से कम रखें।',
   'Your report could not be sent. Please try again.':
     'आपकी रिपोर्ट नहीं भेजी जा सकी। कृपया फिर से कोशिश करें।',
   'Update posted. The person who reported it has been told.':

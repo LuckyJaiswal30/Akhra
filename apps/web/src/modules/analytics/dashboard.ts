@@ -106,7 +106,8 @@ const FUNNEL_ORDER = [
 ] as const;
 
 function problemScope(filter: DashboardFilter, alias = 'p'): SQL {
-  const parts: SQL[] = [sql`true`];
+  // Reports removed along with a suspended account are out of every count.
+  const parts: SQL[] = [sql`${sql.raw(alias)}.is_public = true`];
   if (filter.domain) parts.push(sql`${sql.raw(alias)}.domain = ${filter.domain}`);
   if (filter.districtCode)
     parts.push(sql`${sql.raw(alias)}.district_code = ${filter.districtCode}`);

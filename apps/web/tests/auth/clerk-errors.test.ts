@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { clerkFieldError, clerkMessage } from '@/modules/auth/components/clerk-errors';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  clerkFieldError,
+  clerkMessage,
+  continueIfSignedIn,
+} from '@/modules/auth/components/clerk-errors';
 import en from '../../messages/en.json';
 import hi from '../../messages/hi.json';
 
@@ -18,7 +22,17 @@ describe('what a Clerk refusal tells the person', () => {
   });
 
   it('reads runtime errors that carry their code directly', () => {
-    expect(clerkMessage({ code: 'session_exists' }, labels)).toBe(labels.errorSessionExists);
+    expect(clerkMessage({ code: 'user_locked' }, labels)).toBe(labels.errorTooMany);
+  });
+
+  it('takes someone who is already signed in onward, instead of asking them to refresh', () => {
+    const assign = vi.fn();
+    vi.stubGlobal('window', { location: { assign } });
+    expect(continueIfSignedIn({ code: 'session_exists' }, '/dashboard')).toBe(true);
+    expect(assign).toHaveBeenCalledWith('/dashboard');
+    expect(continueIfSignedIn(apiError('form_password_incorrect'), '/dashboard')).toBe(false);
+    expect(assign).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
   });
 
   it('keeps unknown accounts and wrong passwords indistinguishable', () => {
@@ -43,9 +57,9 @@ describe('what a Clerk refusal tells the person', () => {
     const hindi = hi.auth as Record<string, string>;
     for (const key of [
       'errorUseGoogle',
-      'errorResetGoogle',
+      'setPasswordTitle',
+      'setPasswordSubtitle',
       'errorCaptcha',
-      'errorSessionExists',
       'stuckTitle',
       'stuckBody',
       'signOut',

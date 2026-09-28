@@ -43,9 +43,9 @@ who reported it confirms the fix.
 - **Citizens** report with photos, video or PDFs, a district and a map pin. They can write in Hindi,
   English or Hinglish, or speak the report. No account is needed, and a half-written report is saved
   on the phone. Updates come back in the language they reported in.
-- **Classification** tries Gemini, then Groq, then an offline TF-IDF model, so it still works without
-  internet. It also scores priority and flags likely duplicates, even when the same problem was
-  reported in another language.
+- **Classification** tries Gemini, then Groq, then a TF-IDF model that runs on our own server, so it
+  still works when both AI services are down. It also scores priority and flags likely duplicates,
+  even when the same problem was reported in another language.
 - **District officers** see only their own district's reports, enforced by PostgreSQL row-level
   security as well as the app.
 - **Universities** get referrals ranked by expertise, faculty, facilities and distance, then form
@@ -55,6 +55,10 @@ who reported it confirms the fix.
   gets an impact page.
 - **Notifications** go out in the app and by email, with reminders and escalations run nightly.
 - **Reporters close the loop.** They confirm a department's fix, or reopen it within 30 days.
+- **Super administrators** see every account under _Admin → People_ and can suspend a spam account.
+  It is signed out everywhere, and its reports that no officer has reviewed leave the public pages
+  and every count. They stay removed if the account is reactivated, and the person is told they
+  can report a real problem again.
 
 ## Team
 
@@ -146,7 +150,7 @@ exists, so the first one is made from the command line:
 
 The command refuses if a super administrator already exists; add `--force` only if you mean it.
 After that, promote others from `/admin` with _Make super administrator_. Every grant is written to
-the audit log.
+the audit log. _Admin → People_ lists every account, including citizens who signed up on their own.
 
 ## Environment variables
 
