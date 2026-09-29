@@ -128,7 +128,7 @@ export async function submitProblem(
         submitterOrganization: payload.submitterOrganization ?? null,
         affectedScale: payload.affectedScale,
         safetyRisk: payload.safetyRisk,
-        duplicateCandidates: duplicates.length > 0 ? duplicates : null,
+        duplicateCandidates: duplicates.length > 0 || !duplicateReport.degraded ? duplicates : null,
         contentFingerprint: contentFingerprint(payload.title, payload.description),
       })
       .returning({ id: problems.id, refCode: problems.refCode, domain: problems.domain });

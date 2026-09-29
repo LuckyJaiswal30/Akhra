@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AlarmClock } from 'lucide-react';
 import { DISTRICT_BY_CODE, PRIORITY_LEVELS, PRIORITY_REASONS, type Domain } from '@akhra/shared';
 import {
-  findDuplicates,
+  checkQueuedReport,
   listDepartments,
   listValidationQueue,
   suggestOrganizations,
@@ -48,33 +48,32 @@ export default async function ValidationQueuePage({
     stage === 'route' ? 'route' : stage === 'department' ? 'department' : 'validate';
   const queueStatus =
     mode === 'route' ? 'validated' : mode === 'department' ? 'assigned' : 'submitted';
-  const items = await listValidationQueue(actor, queueStatus);
-  const departments = mode === 'validate' ? await listDepartments() : [];
+  const [items, departments, waiting] = await Promise.all([
+    listValidationQueue(actor, queueStatus),
+    mode === 'validate' ? listDepartments() : Promise.resolve([]),
+    countEscalated(actor.jurisdiction),
+  ]);
 
-  const entries: QueueEntry[] = [];
-  for (const item of items) {
-    const suggestions =
+  const entries: QueueEntry[] = await inBatches(items, 4, async (item) => {
+    const [suggestions, checked, files] = await Promise.all([
       mode === 'route' && item.domain
-        ? await suggestOrganizations({ domain: item.domain, districtCode: item.districtCode })
-        : [];
-
-    let duplicates = mode === 'validate' ? (item.duplicateCandidates ?? []) : [];
-    let duplicateCheckFailed = false;
-    if (mode === 'validate' && !item.duplicateCandidates) {
-      const checked = await findDuplicates({
-        title: item.title,
-        description: item.description,
-        districtCode: item.districtCode,
-        domain: item.domain as Domain | null,
-        excludeId: item.id,
-      });
-      duplicates = checked.matches;
-      duplicateCheckFailed = checked.degraded;
-    }
-
-    const files = await listProblemFiles(actor, item.id);
-    entries.push({ ...item, suggestions, duplicates, files, duplicateCheckFailed });
-  }
+        ? suggestOrganizations({ domain: item.domain, districtCode: item.districtCode })
+        : [],
+      mode === 'validate' && !item.duplicateCandidates
+        ? checkQueuedReport({ ...item, domain: item.domain as Domain | null })
+        : null,
+      listProblemFiles(actor, item.id),
+    ]);
+    const duplicates =
+      mode === 'validate' ? (checked?.matches ?? item.duplicateCandidates ?? []) : [];
+    return {
+      ...item,
+      suggestions,
+      duplicates,
+      files,
+      duplicateCheckFailed: checked?.degraded ?? false,
+    };
+  });
 
   const labels: Record<string, string> = {
     recorded: t('recorded'),
@@ -132,7 +131,6 @@ export default async function ValidationQueuePage({
   };
   for (const level of PRIORITY_LEVELS) labels[`priority_${level}`] = t(`priority_${level}`);
   for (const reason of PRIORITY_REASONS) labels[`reason_${reason}`] = t(`reason_${reason}`);
-  const waiting = await countEscalated(actor.jurisdiction);
   const district = actor.jurisdiction ? DISTRICT_BY_CODE[actor.jurisdiction] : undefined;
   const districtName = district ? (locale === 'hi' ? district.nameHi : district.nameEn) : null;
 
@@ -198,4 +196,13 @@ function TabLink({
       {children}
     </Link>
   );
+}
+
+// A few reports at a time: the first visit may ask the AI service about each one.
+async function inBatches<T, R>(items: T[], size: number, run: (item: T) => Promise<R>) {
+  const results: R[] = [];
+  for (let start = 0; start < items.length; start += size) {
+    results.push(...(await Promise.all(items.slice(start, start + size).map(run))));
+  }
+  return results;
 }

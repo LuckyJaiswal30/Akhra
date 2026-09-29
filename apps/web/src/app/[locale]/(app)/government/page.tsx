@@ -195,7 +195,17 @@ export default async function GovernmentDashboardPage({
           </p>
           {kpis.criticalOpen > 0 && (
             <Link
-              href="/government/queue"
+              href={{
+                pathname: '/government/queue',
+                query: {
+                  stage:
+                    kpis.criticalStage === 'validated'
+                      ? 'route'
+                      : kpis.criticalStage === 'assigned'
+                        ? 'department'
+                        : 'validate',
+                },
+              }}
               className="bg-danger-wash text-danger mt-4 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium"
             >
               <TriangleAlert aria-hidden className="h-4 w-4 shrink-0" />

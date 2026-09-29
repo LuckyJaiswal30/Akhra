@@ -1,4 +1,4 @@
-export { classifyProblem, findDuplicates } from './service';
+export { checkQueuedReport, classifyProblem, findDuplicates } from './service';
 export { suggestOrganizations } from './routing';
 export { PRIORITY_BATCH, refreshOpenPriorities, refreshPriority } from './priority';
 export {

@@ -21,12 +21,15 @@ const plexDeva = IBM_Plex_Sans_Devanagari({
   weight: ['400', '500', '600'],
   variable: '--font-plex-deva',
   display: 'swap',
+  // Hindi pages still load it as soon as their text needs it; English pages no longer wait on it.
+  preload: false,
 });
 const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: '500',
   variable: '--font-plex-mono',
   display: 'swap',
+  preload: false,
 });
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

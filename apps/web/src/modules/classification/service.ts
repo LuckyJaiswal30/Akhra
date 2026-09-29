@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import {
   contentFingerprint,
   createClassifier,
@@ -342,4 +342,32 @@ export async function findDuplicates(input: {
     .slice(0, MAX_DUPLICATES);
 
   return settled(judged, verdict.tier as DuplicateCheckPath);
+}
+
+/**
+ * Checks a report waiting for review and keeps the answer, so the queue asks once, not on every
+ * visit. A check that could not finish is not kept, and is tried again next time.
+ */
+export async function checkQueuedReport(report: {
+  id: string;
+  title: string;
+  description: string;
+  districtCode: string;
+  domain: Domain | null;
+}): Promise<DuplicateReport> {
+  const checked = await findDuplicates({ ...report, excludeId: report.id });
+  if (!checked.degraded) {
+    await withoutRls(getDb(), (tx) =>
+      tx
+        .update(problems)
+        .set({ duplicateCandidates: checked.matches })
+        .where(and(eq(problems.id, report.id), isNull(problems.duplicateCandidates))),
+    ).catch((error: unknown) =>
+      logger.warn(
+        { err: error instanceof Error ? error.message : String(error), problemId: report.id },
+        'duplicate check not saved',
+      ),
+    );
+  }
+  return checked;
 }

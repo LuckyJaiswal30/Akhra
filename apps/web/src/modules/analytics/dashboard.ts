@@ -22,6 +22,8 @@ export interface Kpis {
   startups: number;
   communityReach: number;
   criticalOpen: number;
+  /** The earliest queue step holding an open critical report, so the alert opens the right tab. */
+  criticalStage: 'submitted' | 'validated' | 'assigned' | null;
 }
 
 export interface MonthlyPoint {
@@ -192,7 +194,11 @@ export async function computeDashboard(
              join projects pr on pr.id = o.project_id join scoped s on s.id = pr.problem_id
              where o.impact_metric_name ~* ${PEOPLE_METRIC}) as community_reach,
           (select count(*) from scoped
-             where priority = 'critical' and status in ${OPEN_STATUS_LIST}) as critical_open
+             where priority = 'critical' and status in ${OPEN_STATUS_LIST}) as critical_open,
+          (select status::text from scoped
+             where priority = 'critical' and status in ${OPEN_STATUS_LIST}
+             order by array_position(array['submitted', 'validated', 'assigned'], status::text)
+             limit 1) as critical_stage
       `)
       ).rows[0] ?? {};
 
@@ -389,6 +395,7 @@ export async function computeDashboard(
         startups: num(kpiRow.startups),
         communityReach: num(kpiRow.community_reach),
         criticalOpen: num(kpiRow.critical_open),
+        criticalStage: (kpiRow.critical_stage ?? null) as Kpis['criticalStage'],
       },
       monthly,
       domains,
