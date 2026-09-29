@@ -148,9 +148,10 @@ export async function expressInterest(
 
   await notifyOrganizations([project.ownerId], ['university_admin', 'faculty'], {
     type: 'industry_offer',
-    title: `New industry offer on "${project.title}"`,
-    body: input.message,
+    title: `A company has made an offer on “${project.title}”`,
+    body: input.message ? `They wrote: “${input.message}”` : undefined,
     linkUrl: '/university/partnerships',
+    linkLabel: 'See the offer',
     email: true,
   });
 }
@@ -222,16 +223,17 @@ export async function respondToInterest(
   if (status === 'withdrawn') {
     await notifyOrganizations([interest.projectOrganizationId], ['university_admin', 'faculty'], {
       type: 'offer_withdrawn',
-      title: `${interest.partnerName} withdrew its offer on "${interest.projectTitle}"`,
+      title: `${interest.partnerName} took back its offer on “${interest.projectTitle}”`,
       body: note,
       linkUrl: '/university/partnerships',
     });
   } else {
     await notifyOrganizations([interest.organizationId], ['industry_admin', 'industry_partner'], {
       type: `offer_${status}`,
-      title: `Your offer on "${interest.projectTitle}" was ${status}`,
-      body: note,
+      title: `Your offer on “${interest.projectTitle}” was ${status === 'accepted' ? 'accepted' : 'turned down'}`,
+      body: note ? `The university wrote: “${note}”` : undefined,
       linkUrl: '/industry/offers',
+      linkLabel: 'Open your offers',
       email: true,
     });
   }

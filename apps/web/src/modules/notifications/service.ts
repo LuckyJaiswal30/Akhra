@@ -1,11 +1,17 @@
 import { after } from 'next/server';
 import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { emailOutbox, getDb, notifications, users, withoutRls } from '@akhra/db';
-import { STATUS_DEFINITIONS, type ProblemStatus, type Role } from '@akhra/shared';
+import {
+  DISTRICT_BY_CODE,
+  DOMAIN_DEFINITIONS,
+  type Domain,
+  type ProblemStatus,
+  type Role,
+} from '@akhra/shared';
 import { isProductionRuntime } from '@/server/dev-only';
 import { appUrl } from '@/server/env';
 import { logger } from '@/server/logger';
-import { renderEmail } from '@/server/email-template';
+import { renderEmail, type ReportEmail } from '@/server/email-template';
 import { getMailer, MailDeliveryError } from '@/server/mailer';
 import { query, type Actor } from '@/server/session';
 import {
@@ -15,14 +21,18 @@ import {
   type Reporter,
   organizationMemberIds,
 } from './recipients';
+import { reporterMessage } from './reporter-messages';
 
 export interface NotificationInput {
   type: string;
   title: string;
   body?: string;
   linkUrl?: string;
+  linkLabel?: string;
   email?: boolean;
   locale?: string;
+  /** Emails about one report show it with its progress; the notice in the app does not. */
+  report?: ReportEmail;
 }
 
 function inBackground(task: () => Promise<void>): void {
@@ -87,7 +97,9 @@ async function deliver(
           title: content.title,
           body: content.body,
           linkUrl: content.linkUrl,
+          linkLabel: content.linkLabel,
           locale: content.locale,
+          report: content.report,
         })
           .then((r) => r.html)
           .catch(() => undefined)
@@ -219,12 +231,40 @@ export async function notifyEscalation(
   }
 }
 
-async function sendToReporters(
-  problemId: string,
-  build: (reporter: Reporter) => NotificationInput,
-) {
+interface ReporterNotice {
+  type: string;
+  subject: string;
+  lead: string;
+  details?: string;
+}
+
+async function sendToReporters(problemId: string, build: (reporter: Reporter) => ReporterNotice) {
   for (const reporter of await findReporters(problemId)) {
-    const input = build(reporter);
+    const hindi = reporter.locale === 'hi';
+    const notice = build(reporter);
+    const details = [mergedPrefix(reporter), notice.details].filter(Boolean).join(' ');
+    const district = DISTRICT_BY_CODE[reporter.report.districtCode];
+    const domain = reporter.report.domain
+      ? DOMAIN_DEFINITIONS[reporter.report.domain as Domain]
+      : undefined;
+    const input: NotificationInput = {
+      type: notice.type,
+      title: `${notice.subject} (${reporter.refCode})`,
+      body: [notice.lead, details].filter(Boolean).join(' '),
+      linkUrl: `/track?ref=${reporter.refCode}`,
+      linkLabel: hindi ? 'अपनी रिपोर्ट देखें' : 'Follow your report',
+      locale: reporter.locale,
+      report: {
+        refCode: reporter.refCode,
+        title: reporter.title,
+        district: hindi ? district?.nameHi : district?.nameEn,
+        category: hindi ? domain?.labelHi : domain?.labelEn,
+        status: reporter.report.status,
+        track: reporter.report.track,
+        lead: notice.lead,
+        details: details || undefined,
+      },
+    };
     if (reporter.userId) await notifyUsers([reporter.userId], { ...input, email: !reporter.email });
     if (reporter.email) notifyEmail(reporter.email, input);
   }
@@ -233,10 +273,14 @@ async function sendToReporters(
 function mergedPrefix(reporter: Reporter): string {
   if (!reporter.mergedInto) return '';
   return reporter.locale === 'hi'
-    ? `आपकी रिपोर्ट ${reporter.refCode} को ${reporter.mergedInto} में मिला दिया गया है, जो इसी समस्या के बारे में है। `
-    : `Your report ${reporter.refCode} was merged into ${reporter.mergedInto}, which covers the same problem. `;
+    ? `आपकी रिपोर्ट ${reporter.refCode} को ${reporter.mergedInto} से जोड़ा गया है, जो इसी समस्या के बारे में है।`
+    : `Your report ${reporter.refCode} was joined to ${reporter.mergedInto}, which is about the same problem.`;
 }
 
+/**
+ * Tells the reporter, in their language, that their report has moved to a new step. A note is
+ * passed on only when a person wrote it, such as the officer's reason for turning a report down.
+ */
 export async function notifyReporter(
   problemId: string,
   status: ProblemStatus,
@@ -244,19 +288,13 @@ export async function notifyReporter(
 ): Promise<void> {
   try {
     await sendToReporters(problemId, (reporter) => {
-      const hindi = reporter.locale === 'hi';
-      const label = hindi ? STATUS_DEFINITIONS[status].labelHi : STATUS_DEFINITIONS[status].labelEn;
-      const update = hindi
-        ? `"${reporter.title}" की स्थिति अब: ${label}।`
-        : `"${reporter.title}" is now: ${label}.`;
+      const message = reporterMessage(status, reporter.report, reporter.locale);
+      const quoted = note?.trim() ? `\n\n${message.noteLabel} “${note.trim()}”` : '';
       return {
         type: `problem_${status}`,
-        title: hindi
-          ? `आपकी रिपोर्ट ${reporter.refCode} पर अपडेट`
-          : `Update on your report ${reporter.refCode}`,
-        body: `${mergedPrefix(reporter)}${update}${note ? `\n\n${note}` : ''}`,
-        linkUrl: `/track?ref=${reporter.refCode}`,
-        locale: reporter.locale,
+        subject: message.subject,
+        lead: message.lead,
+        details: `${message.next}${quoted}`.trim() || undefined,
       };
     });
   } catch (error) {
@@ -267,21 +305,23 @@ export async function notifyReporter(
   }
 }
 
+export interface ReporterUpdate {
+  subject: string;
+  lead: string;
+  details?: string;
+}
+
+/** News on a report that does not move it to a new step, such as a department's progress note. */
 export async function notifyReporterUpdate(
   problemId: string,
-  input: Omit<NotificationInput, 'linkUrl' | 'locale'>,
-  hindi?: { title: string; body?: string },
+  type: string,
+  text: { en: ReporterUpdate; hi: ReporterUpdate },
 ): Promise<void> {
   try {
-    await sendToReporters(problemId, (reporter) => {
-      const text = reporter.locale === 'hi' && hindi ? { ...input, ...hindi } : input;
-      return {
-        ...text,
-        body: `${mergedPrefix(reporter)}${text.body ?? ''}`.trim() || undefined,
-        linkUrl: `/track?ref=${reporter.refCode}`,
-        locale: reporter.locale,
-      };
-    });
+    await sendToReporters(problemId, (reporter) => ({
+      type,
+      ...(reporter.locale === 'hi' ? text.hi : text.en),
+    }));
   } catch (error) {
     logger.error(
       { err: error instanceof Error ? error.message : String(error), problemId },

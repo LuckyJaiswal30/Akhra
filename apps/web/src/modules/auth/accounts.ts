@@ -333,6 +333,7 @@ function reactivationNotice(locale: string, removedReports: number) {
       ? `आप फिर से साइन इन करके रिपोर्ट दर्ज कर सकते हैं।${reports}`
       : `You can sign in and report problems again.${reports}`,
     linkUrl: '/submit',
+    linkLabel: hindi ? 'समस्या दर्ज करें' : 'Report a problem',
     email: true,
     locale: hindi ? 'hi' : 'en',
   };

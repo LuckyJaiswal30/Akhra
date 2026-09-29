@@ -20,10 +20,11 @@ export function inviteEmail(details: {
     : ' for the Government of Jharkhand';
   return {
     type: 'invite',
-    title: `You have been invited to Akhra as ${role}`,
+    title: `You are invited to join Akhra as ${role}`,
     body:
       `${details.inviterName ?? 'An Akhra administrator'} has invited you to join Akhra as ${role}${where}.\n\n` +
-      `This invitation is for this email address only, can be used once, and expires on ${dateFormat.format(details.expiresAt)} IST.`,
+      `The link works once, only for this email address, until ${dateFormat.format(details.expiresAt)} IST.`,
     linkUrl: `/invite/${details.token}`,
+    linkLabel: 'Accept the invitation',
   };
 }

@@ -1,6 +1,15 @@
 import { and, desc, eq, inArray, isNull, or } from 'drizzle-orm';
-import { getDb, industryInterests, problems, projects, users, withoutRls } from '@akhra/db';
-import type { Role } from '@akhra/shared';
+import {
+  getDb,
+  industryInterests,
+  organizations,
+  problemRoutings,
+  problems,
+  projects,
+  users,
+  withoutRls,
+} from '@akhra/db';
+import type { ProblemStatus, ResolutionTrack, Role } from '@akhra/shared';
 
 export async function organizationMemberIds(
   organizationIds: string[],
@@ -71,37 +80,67 @@ export interface Reporter {
   email: string | null;
   locale: string;
   mergedInto: string | null;
+  /** Where the report the updates are about stands, shared by everyone merged into it. */
+  report: ReportState;
 }
+
+export interface ReportState {
+  districtCode: string;
+  domain: string | null;
+  status: ProblemStatus;
+  track: ResolutionTrack | null;
+  department: string | null;
+  institutions: string[];
+}
+
+const reporterColumns = {
+  refCode: problems.refCode,
+  title: problems.title,
+  userId: problems.submitterId,
+  email: problems.submitterEmail,
+  locale: problems.locale,
+};
 
 export async function findReporters(problemId: string): Promise<Reporter[]> {
   return withoutRls(getDb(), async (tx) => {
     const [original] = await tx
       .select({
-        refCode: problems.refCode,
-        title: problems.title,
-        userId: problems.submitterId,
-        email: problems.submitterEmail,
-        locale: problems.locale,
+        ...reporterColumns,
+        districtCode: problems.districtCode,
+        domain: problems.domain,
+        status: problems.status,
+        track: problems.resolutionTrack,
+        department: organizations.name,
       })
       .from(problems)
+      .leftJoin(organizations, eq(problems.assignedOrgId, organizations.id))
       .where(eq(problems.id, problemId))
       .limit(1);
     if (!original) return [];
 
+    const institutions = await tx
+      .select({ name: organizations.name })
+      .from(problemRoutings)
+      .innerJoin(organizations, eq(problemRoutings.organizationId, organizations.id))
+      .where(eq(problemRoutings.problemId, problemId));
+
     const merged = await tx
-      .select({
-        refCode: problems.refCode,
-        title: problems.title,
-        userId: problems.submitterId,
-        email: problems.submitterEmail,
-        locale: problems.locale,
-      })
+      .select(reporterColumns)
       .from(problems)
       .where(and(eq(problems.duplicateOfId, problemId), eq(problems.status, 'duplicate')));
 
+    const { districtCode, domain, status, track, department, ...own } = original;
+    const report: ReportState = {
+      districtCode,
+      domain,
+      status,
+      track,
+      department,
+      institutions: institutions.map((row) => row.name),
+    };
     return [
-      { ...original, mergedInto: null },
-      ...merged.map((row) => ({ ...row, mergedInto: original.refCode })),
+      { ...own, mergedInto: null, report },
+      ...merged.map((row) => ({ ...row, mergedInto: original.refCode, report })),
     ];
   });
 }

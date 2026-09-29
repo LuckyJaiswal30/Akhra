@@ -101,9 +101,10 @@ export async function escalateStaleReports(now = new Date()): Promise<number> {
     const district = DISTRICT_BY_CODE[report.districtCode]?.nameEn ?? report.districtCode;
     await notifyEscalation(report.districtCode, {
       type: 'report_escalated',
-      title: `Waiting ${days(report.createdAt, now)} days in ${district}: ${report.refCode}`,
-      body: `"${report.title}" is still ${report.status} after ${ESCALATE_AFTER_HOURS} hours. It now shows as escalated in the validation queue.`,
+      title: `Waiting ${days(report.createdAt, now)} days for the next step (${report.refCode})`,
+      body: `“${report.title}” in ${district} has not moved for more than ${ESCALATE_AFTER_HOURS / 24} days. It is now marked as late in the queue.`,
       linkUrl: '/government/queue',
+      linkLabel: 'Open the queue',
       email: true,
     });
   }
@@ -146,10 +147,10 @@ export async function remindExpiringInvites(now = new Date()): Promise<number> {
     });
     await queueEmail(invite.email, {
       type: 'invite_reminder',
-      title: 'Your Akhra invitation expires soon',
+      title: 'Your Akhra invitation ends soon',
       body:
-        `Your invitation to Akhra expires on ${when} IST.\n\n` +
-        'Open the invitation link you were sent to accept it. If you no longer have it, ask whoever invited you for a new one.',
+        `Your invitation to Akhra ends on ${when} IST.\n\n` +
+        'Open the link in the first email to accept it. If you cannot find it, ask the person who invited you to send a new one.',
     });
   }
 
@@ -198,12 +199,13 @@ export async function remindDueMilestones(now = new Date()): Promise<number> {
     await notifyOrganizations([milestone.organizationId], ['university_admin', 'faculty'], {
       type: overdue ? 'milestone_overdue' : 'milestone_due',
       title: overdue
-        ? `Milestone overdue: ${milestone.title}`
-        : `Milestone due soon: ${milestone.title}`,
+        ? `A step is late: ${milestone.title}`
+        : `A step is due soon: ${milestone.title}`,
       body: milestone.dueDate
-        ? `Due ${milestone.dueDate.toLocaleDateString('en-IN', { dateStyle: 'long', timeZone: 'Asia/Kolkata' })}.`
+        ? `${overdue ? 'It was due on' : 'It is due on'} ${milestone.dueDate.toLocaleDateString('en-IN', { dateStyle: 'long', timeZone: 'Asia/Kolkata' })}.`
         : undefined,
       linkUrl: `/projects/${milestone.projectId}`,
+      linkLabel: 'Open the project',
       email: true,
     });
   }
@@ -262,7 +264,7 @@ async function notifyDepartment(
   if (staff.length === 0) return;
   await notifyUsers(
     staff.map((person) => person.id),
-    { ...input, linkUrl: '/department', email: true },
+    { ...input, linkUrl: '/department', linkLabel: 'Open the report', email: true },
   );
 }
 
@@ -299,8 +301,8 @@ export async function remindInterimUpdates(now = new Date()): Promise<number> {
     const left = problem.dueAt ? Math.max(0, days(now, problem.dueAt)) : 0;
     await notifyDepartment(problem, {
       type: 'report_interim_due',
-      title: `Update needed on ${problem.refCode}`,
-      body: `"${problem.title}" is still open with ${left} day${left === 1 ? '' : 's'} left of the ${FIX_DAYS}-day limit. Record what has been done so far.`,
+      title: `Please post an update (${problem.refCode})`,
+      body: `“${problem.title}” is still open, with ${left} day${left === 1 ? '' : 's'} left of the ${FIX_DAYS} days. Write a short update on what has been done so far.`,
     });
   }
   return due.length;
@@ -338,14 +340,15 @@ export async function escalateOverdueReports(now = new Date()): Promise<number> 
   for (const problem of overdue) {
     await notifyDepartment(problem, {
       type: 'report_overdue',
-      title: `Overdue: ${problem.refCode}`,
-      body: `"${problem.title}" has passed the ${FIX_DAYS}-day limit and is now shown as overdue to the district officer.`,
+      title: `Past the ${FIX_DAYS}-day limit (${problem.refCode})`,
+      body: `“${problem.title}” has passed the ${FIX_DAYS}-day limit. Your district officer can now see that it is late.`,
     });
     await notifyEscalation(problem.districtCode, {
       type: 'report_overdue',
-      title: `Overdue with the department: ${problem.refCode}`,
-      body: `"${problem.title}" has passed the ${FIX_DAYS}-day limit with its department.`,
+      title: `Late with the department (${problem.refCode})`,
+      body: `“${problem.title}” has passed the ${FIX_DAYS}-day limit and the department has not said the work is done.`,
       linkUrl: '/government/queue',
+      linkLabel: 'Open the queue',
       email: true,
     });
   }

@@ -369,31 +369,32 @@ export async function updateMilestoneStatus(
   if (toStatus === 'submitted') {
     await notifyDistrictOfficers(changed.districtCode, {
       type: 'milestone_submitted',
-      title: `Milestone ready for approval: ${changed.title}`,
+      title: `A step is ready for you to check: ${changed.title}`,
       linkUrl,
     });
   } else if (toStatus === 'approved' || toStatus === 'rejected') {
     if (toStatus === 'approved' && changed.problemId) {
-      await notifyReporterUpdate(
-        changed.problemId,
-        {
-          type: 'milestone_reached',
-          title: 'A step on your report is complete',
-          body: `The team has completed: ${changed.title}.`,
+      await notifyReporterUpdate(changed.problemId, 'milestone_reached', {
+        en: {
+          subject: 'The team has finished a step',
+          lead: `The team has finished a step: ${changed.title}.`,
+          details: 'Your district officer has checked it and agreed.',
         },
-        {
-          title: 'आपकी रिपोर्ट पर एक चरण पूरा हुआ',
-          body: `टीम ने यह काम पूरा कर लिया है: ${changed.title}।`,
+        hi: {
+          subject: 'टीम ने एक चरण पूरा किया',
+          lead: `टीम ने यह चरण पूरा कर लिया है: ${changed.title}।`,
+          details: 'आपके ज़िला अधिकारी ने इसे जाँचकर मंज़ूरी दी है।',
         },
-      );
+      });
     }
     await notifyOrganizations([changed.organizationId], ['university_admin', 'faculty'], {
       type: `milestone_${toStatus}`,
       title:
         toStatus === 'approved'
-          ? `Milestone approved: ${changed.title}`
-          : `Milestone sent back: ${changed.title}`,
+          ? `Step approved: ${changed.title}`
+          : `Step sent back for changes: ${changed.title}`,
       linkUrl,
+      linkLabel: 'Open the project',
       email: true,
     });
   }

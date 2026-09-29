@@ -27,9 +27,9 @@ export interface ProposalForReview {
 }
 
 const DECISION_MESSAGE: Record<ProposalDecision, (project: string) => string> = {
-  approved: (project) => `Proposal approved: ${project}`,
-  revision_requested: (project) => `Changes requested on your proposal: ${project}`,
-  rejected: (project) => `Proposal not approved: ${project}`,
+  approved: (project) => `Your plan was approved: ${project}`,
+  revision_requested: (project) => `Changes are needed in your plan: ${project}`,
+  rejected: (project) => `Your plan was not approved: ${project}`,
 };
 
 export async function listProposalsForReview(actor: Actor): Promise<ProposalForReview[]> {
@@ -150,13 +150,14 @@ export async function reviewProposal(
   });
 
   if (input.decision === 'approved') {
-    await notifyReporter(target.problemId, 'in_progress', approvalNote);
+    await notifyReporter(target.problemId, 'in_progress');
   }
   await notifyOrganizations([target.organizationId], ['university_admin', 'faculty'], {
     type: `proposal_${input.decision}`,
     title: DECISION_MESSAGE[input.decision](target.projectTitle),
-    body: input.note,
+    body: input.note ? `The district officer wrote: “${input.note}”` : undefined,
     linkUrl: `/projects/${target.projectId}`,
+    linkLabel: 'Open the project',
     email: true,
   });
 

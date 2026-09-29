@@ -10,7 +10,13 @@ import {
   type Transaction,
 } from '@akhra/db';
 import { contentFingerprint } from '@akhra/classifier';
-import { formatRefCode, type CreateProblemPayload } from '@akhra/shared';
+import {
+  DISTRICT_BY_CODE,
+  DOMAIN_DEFINITIONS,
+  formatRefCode,
+  type CreateProblemPayload,
+  type Domain,
+} from '@akhra/shared';
 import { classifyProblem, findDuplicates, refreshPriority } from '@/modules/classification';
 import { expirePublicFigures } from '@/modules/analytics';
 import { notifyEmail } from '@/modules/notifications';
@@ -188,16 +194,31 @@ export async function submitProblem(
 
   if (payload.submitterEmail) {
     const hindi = locale === 'hi';
+    const district = DISTRICT_BY_CODE[payload.districtCode];
+    const domain = created.domain ? DOMAIN_DEFINITIONS[created.domain as Domain] : undefined;
+    const lead = hindi ? 'धन्यवाद। आपकी रिपोर्ट हमें मिल गई है।' : 'Thank you. We got your report.';
+    const details = hindi
+      ? `अब आपके ज़िला अधिकारी इसे जाँचेंगे। इस पर नज़र रखने के लिए यह कोड संभालकर रखें: ${created.refCode}।`
+      : `Your district officer will check it next. Keep this code to follow it: ${created.refCode}.`;
     notifyEmail(payload.submitterEmail, {
       type: 'submission_received',
       title: hindi
-        ? `आपकी रिपोर्ट ${created.refCode} मिल गई है`
-        : `We received your report ${created.refCode}`,
-      body: hindi
-        ? `धन्यवाद। "${payload.title}" हमें मिल गई है और आपके ज़िला अधिकारी इसे देखेंगे। प्रगति देखने के लिए यह संदर्भ कोड संभालकर रखें: ${created.refCode}।`
-        : `Thank you. "${payload.title}" has been received and your district officer will look at it. Keep this reference code to follow its progress: ${created.refCode}.`,
+        ? `आपकी रिपोर्ट हमें मिल गई है (${created.refCode})`
+        : `We got your report (${created.refCode})`,
+      body: `${lead} ${details}`,
       linkUrl: `/track?ref=${created.refCode}`,
+      linkLabel: hindi ? 'अपनी रिपोर्ट देखें' : 'Follow your report',
       locale: hindi ? 'hi' : 'en',
+      report: {
+        refCode: created.refCode,
+        title: payload.title,
+        district: hindi ? district?.nameHi : district?.nameEn,
+        category: hindi ? domain?.labelHi : domain?.labelEn,
+        status: 'submitted',
+        track: null,
+        lead,
+        details,
+      },
     });
   }
 

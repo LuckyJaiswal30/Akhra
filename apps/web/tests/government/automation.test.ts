@@ -149,7 +149,7 @@ describe('reminders go out before something lapses', () => {
     );
 
     expect(await remindExpiringInvites()).toBeGreaterThanOrEqual(1);
-    expect((await latestEmailTo(email))?.subject).toMatch(/expires soon/i);
+    expect((await latestEmailTo(email))?.subject).toMatch(/ends soon/i);
 
     const again = await remindExpiringInvites();
     const [row] = await withoutRls(getDb(), (tx) =>

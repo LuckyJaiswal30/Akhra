@@ -1,152 +1,49 @@
 import React, { type ReactNode } from 'react';
-import { Body, Container, Head, Html, Img, Link, Preview, Section, Text } from 'react-email';
+import { Body, Container, Head, Html, Link, Preview, Section, Text } from 'react-email';
 
 const palette = {
   paper: '#f4f7f5',
   card: '#ffffff',
   sal: '#1f6b45',
   salDeep: '#15502f',
-  leafLight: '#5aa476',
-  mint: '#eaf4ee',
   ink: '#17211c',
   subtle: '#56635c',
+  faint: '#86918b',
   line: '#e2e8e4',
-  saffron: '#ff9933',
-  indiaGreen: '#138808',
+  track: '#e2e8e4',
 };
 
 export type EmailLanguage = 'en' | 'hi';
 
+// Gmail loads no web fonts, so each phone uses its own: San Francisco, Roboto or Segoe UI.
 const FONTS: Record<EmailLanguage, string> = {
-  en: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  hi: "'Noto Sans Devanagari', 'Nirmala UI', 'Mangal', 'Helvetica Neue', Arial, sans-serif",
+  en: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  hi: "'Kohinoor Devanagari', 'Noto Sans Devanagari', 'Nirmala UI', Mangal, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif",
 };
-
-function LeafMark() {
-  const leaf = (color: string, radius: string, marginTop: string) => (
-    <span
-      style={{
-        backgroundColor: color,
-        borderRadius: radius,
-        display: 'inline-block',
-        height: '22px',
-        marginTop,
-        verticalAlign: 'top',
-        width: '13px',
-      }}
-    />
-  );
-  return (
-    <table
-      role="presentation"
-      cellPadding={0}
-      cellSpacing={0}
-      style={{ borderCollapse: 'separate' }}
-    >
-      <tbody>
-        <tr>
-          <td
-            align="center"
-            style={{
-              backgroundColor: palette.mint,
-              borderRadius: '10px',
-              height: '40px',
-              lineHeight: '0',
-              textAlign: 'center',
-              width: '40px',
-            }}
-          >
-            {leaf(palette.sal, '14px 0 14px 0', '8px')}
-            <span style={{ display: 'inline-block', width: '2px' }} />
-            {leaf(palette.leafLight, '0 14px 0 14px', '11px')}
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  );
-}
-
-function Logo({ url }: { url?: string }) {
-  if (!url) return <LeafMark />;
-  const image = (
-    <Img
-      src={url}
-      width="40"
-      height="40"
-      alt=""
-      style={{ borderRadius: '10px', display: 'block' }}
-    />
-  );
-  const variable = /^\{\{([\w.]+)\}\}$/.exec(url)?.[1];
-  if (!variable) return image;
-  return (
-    <>
-      {`{{#if ${variable}}}`}
-      {image}
-      {'{{else}}'}
-      <LeafMark />
-      {'{{/if}}'}
-    </>
-  );
-}
-
-function Tricolour() {
-  const band = (color: string) => (
-    <td
-      style={{
-        backgroundColor: color,
-        fontSize: '1px',
-        height: '4px',
-        lineHeight: '4px',
-        width: '33.33%',
-      }}
-    >
-      &nbsp;
-    </td>
-  );
-  return (
-    <table
-      role="presentation"
-      width="100%"
-      cellPadding={0}
-      cellSpacing={0}
-      style={{ borderCollapse: 'collapse' }}
-    >
-      <tbody>
-        <tr>
-          {band(palette.saffron)}
-          {band('#ffffff')}
-          {band(palette.indiaGreen)}
-        </tr>
-      </tbody>
-    </table>
-  );
-}
+const MONO = "'SF Mono', Menlo, Consolas, 'Roboto Mono', 'Courier New', monospace";
 
 const COPY: Record<EmailLanguage, { name: string; footer: string; reason: string }> = {
   en: {
     name: 'Akhra',
-    footer: 'Akhra · A Smart India Hackathon prototype for Jharkhand',
-    reason: 'You are getting this email because you used Akhra. Please do not reply to it.',
+    footer: 'A Smart India Hackathon prototype for Jharkhand.',
+    reason: 'This email was sent by Akhra. Replies to it are not read.',
   },
   hi: {
     name: 'अखरा',
-    footer: 'अखरा · झारखंड के लिए स्मार्ट इंडिया हैकथॉन का एक प्रोटोटाइप',
-    reason: 'यह ईमेल आपको इसलिए मिला क्योंकि आपने अखरा का उपयोग किया। कृपया इसका उत्तर न दें।',
+    footer: 'झारखंड के लिए स्मार्ट इंडिया हैकथॉन का एक प्रोटोटाइप।',
+    reason: 'यह ईमेल अखरा ने भेजा है। इसके जवाब पढ़े नहीं जाते।',
   },
 };
 
 export function EmailCard({
   lang,
   preview,
-  logoUrl,
-  showLogo = true,
+  reason,
   children,
 }: {
   lang: EmailLanguage;
   preview: string;
-  showLogo?: boolean;
-  logoUrl?: string;
+  reason?: string;
   children: ReactNode;
 }) {
   const font = FONTS[lang];
@@ -157,42 +54,31 @@ export function EmailCard({
         style={{
           backgroundColor: palette.card,
           border: `1px solid ${palette.line}`,
-          borderRadius: '14px',
+          borderRadius: '16px',
           margin: '0 auto',
           maxWidth: '520px',
           overflow: 'hidden',
         }}
       >
-        <Tricolour />
-        <Section style={{ padding: '26px 32px 0' }}>
-          <table role="presentation" cellPadding={0} cellSpacing={0}>
-            <tbody>
-              <tr>
-                {showLogo && (
-                  <td style={{ paddingRight: '10px', verticalAlign: 'middle' }}>
-                    <Logo url={logoUrl} />
-                  </td>
-                )}
-                <td
-                  style={{
-                    color: palette.ink,
-                    fontFamily: font,
-                    fontSize: '20px',
-                    fontWeight: 700,
-                    verticalAlign: 'middle',
-                  }}
-                >
-                  {COPY[lang].name}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </Section>
-        <Section style={{ fontFamily: font, padding: '22px 32px 6px' }}>{children}</Section>
-        <Section style={{ borderTop: `1px solid ${palette.line}`, padding: '14px 32px 18px' }}>
+        <Section style={{ padding: '28px 32px 0' }}>
           <Text
             style={{
-              color: palette.subtle,
+              color: palette.sal,
+              fontFamily: font,
+              fontSize: '19px',
+              fontWeight: 700,
+              lineHeight: '24px',
+              margin: 0,
+            }}
+          >
+            {COPY[lang].name}
+          </Text>
+        </Section>
+        <Section style={{ fontFamily: font, padding: '18px 32px 6px' }}>{children}</Section>
+        <Section style={{ borderTop: `1px solid ${palette.line}`, padding: '16px 32px 20px' }}>
+          <Text
+            style={{
+              color: palette.faint,
               fontFamily: font,
               fontSize: '12px',
               lineHeight: '18px',
@@ -201,7 +87,7 @@ export function EmailCard({
           >
             {COPY[lang].footer}
             <br />
-            {COPY[lang].reason}
+            {reason ?? COPY[lang].reason}
           </Text>
         </Section>
       </Container>
@@ -228,10 +114,10 @@ export function Heading({ children }: { children: ReactNode }) {
     <Text
       style={{
         color: palette.ink,
-        fontSize: '20px',
+        fontSize: '21px',
         fontWeight: 700,
-        lineHeight: '28px',
-        margin: '0 0 8px',
+        lineHeight: '29px',
+        margin: '0 0 10px',
       }}
     >
       {children}
@@ -255,6 +141,128 @@ export function Paragraph({ children, small = false }: { children: ReactNode; sm
   );
 }
 
+/** What just happened, in green, followed by what comes next. */
+export function Lead({ lead, children }: { lead: string; children?: ReactNode }) {
+  return (
+    <Text
+      style={{
+        color: palette.ink,
+        fontSize: '15px',
+        lineHeight: '24px',
+        margin: '0 0 16px',
+        whiteSpace: 'pre-line',
+      }}
+    >
+      <span style={{ color: palette.sal, fontWeight: 700 }}>{lead}</span>
+      {children ? ' ' : null}
+      {children}
+    </Text>
+  );
+}
+
+export function Code({ children }: { children: ReactNode }) {
+  return (
+    <span style={{ color: palette.subtle, fontFamily: MONO, whiteSpace: 'nowrap' }}>
+      {children}
+    </span>
+  );
+}
+
+/** The reference code, then where and what, above the report's own title. */
+export function ReportLine({ refCode, details }: { refCode: string; details: string[] }) {
+  return (
+    <Text
+      style={{
+        color: palette.subtle,
+        fontSize: '12px',
+        lineHeight: '18px',
+        margin: '0 0 6px',
+      }}
+    >
+      <span style={{ fontFamily: MONO, letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+        {refCode}
+      </span>
+      {details.map((detail) => (
+        <span key={detail}>{` · ${detail}`}</span>
+      ))}
+    </Text>
+  );
+}
+
+/**
+ * The report's steps as a bar. Five steps or fewer are named under the bar; a longer journey
+ * would not fit a phone, so it gets one line saying which step it is on.
+ */
+export function Progress({
+  steps,
+  reached,
+  caption,
+}: {
+  steps: string[];
+  reached: number;
+  caption: string;
+}) {
+  const named = steps.length <= 5;
+  return (
+    <Section style={{ margin: '4px 0 20px' }}>
+      <table
+        role="presentation"
+        width="100%"
+        cellPadding={0}
+        cellSpacing={0}
+        style={{ borderCollapse: 'separate', tableLayout: 'fixed' }}
+      >
+        <tbody>
+          <tr>
+            {steps.map((step, index) => (
+              <td
+                key={step}
+                style={{
+                  paddingRight: index < steps.length - 1 ? '5px' : 0,
+                  verticalAlign: 'top',
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: index <= reached ? palette.sal : palette.track,
+                    borderRadius: '3px',
+                    fontSize: '1px',
+                    height: '6px',
+                    lineHeight: '6px',
+                  }}
+                >
+                  &nbsp;
+                </div>
+                {named && (
+                  <div
+                    style={{
+                      color: index <= reached ? palette.ink : palette.faint,
+                      fontSize: '11px',
+                      fontWeight: index === reached ? 700 : 400,
+                      lineHeight: '15px',
+                      paddingRight: '4px',
+                      paddingTop: '7px',
+                    }}
+                  >
+                    {step}
+                  </div>
+                )}
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+      {!named && (
+        <Text
+          style={{ color: palette.subtle, fontSize: '12px', lineHeight: '18px', margin: '8px 0 0' }}
+        >
+          {caption}
+        </Text>
+      )}
+    </Section>
+  );
+}
+
 export function CodeBox({ code }: { code: string }) {
   return (
     <table
@@ -262,21 +270,25 @@ export function CodeBox({ code }: { code: string }) {
       width="100%"
       cellPadding={0}
       cellSpacing={0}
-      style={{ margin: '4px 0 16px' }}
+      style={{ margin: '8px 0 20px' }}
     >
       <tbody>
         <tr>
           <td
             align="center"
-            style={{ backgroundColor: palette.mint, borderRadius: '10px', padding: '16px 12px' }}
+            style={{
+              borderBottom: `1px solid ${palette.line}`,
+              borderTop: `1px solid ${palette.line}`,
+              padding: '18px 12px',
+            }}
           >
             <p
               style={{
                 color: palette.salDeep,
-                fontFamily: "'SFMono-Regular', Menlo, Consolas, 'Courier New', monospace",
+                fontFamily: MONO,
                 fontSize: '34px',
                 fontWeight: 700,
-                letterSpacing: '8px',
+                letterSpacing: '10px',
                 lineHeight: '42px',
                 margin: 0,
               }}
@@ -297,7 +309,7 @@ export function ActionButton({
 }: {
   href: string;
   label: string;
-  fallback: string;
+  fallback: ReactNode;
 }) {
   return (
     <Section style={{ margin: '4px 0 16px' }}>
@@ -310,19 +322,28 @@ export function ActionButton({
           display: 'inline-block',
           fontSize: '15px',
           fontWeight: 600,
-          padding: '12px 28px',
+          padding: '12px 26px',
           textDecoration: 'none',
         }}
       >
         {label}
       </Link>
       <Text
-        style={{ color: palette.subtle, fontSize: '12px', lineHeight: '18px', margin: '14px 0 0' }}
+        style={{ color: palette.faint, fontSize: '12px', lineHeight: '18px', margin: '14px 0 0' }}
       >
         {fallback}
-        <br />
-        <span style={{ color: palette.sal, wordBreak: 'break-all' }}>{href}</span>
       </Text>
     </Section>
+  );
+}
+
+/** For links that cannot be typed by hand, such as an invitation: the whole address. */
+export function LinkFallback({ label, href }: { label: string; href: string }) {
+  return (
+    <>
+      {label}
+      <br />
+      <span style={{ color: palette.sal, wordBreak: 'break-all' }}>{href}</span>
+    </>
   );
 }

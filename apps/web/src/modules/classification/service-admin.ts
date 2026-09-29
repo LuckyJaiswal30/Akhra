@@ -96,10 +96,16 @@ async function transitionProblem(
   actor: Actor,
   problemId: string,
   toStatus: ProblemStatus,
-  options: { note?: string; isPublic?: boolean } = {},
+  options: { note?: string; isPublic?: boolean; reporterNote?: string } = {},
 ): Promise<void> {
   await query(actor, (tx) => transitionWithin(tx, actor, problemId, toStatus, options));
-  if (options.isPublic ?? true) await notifyReporter(problemId, toStatus, options.note);
+  if (options.isPublic ?? true) {
+    await notifyReporter(
+      problemId,
+      toStatus,
+      'reporterNote' in options ? options.reporterNote : options.note,
+    );
+  }
 }
 
 export async function validateProblem(
@@ -163,7 +169,7 @@ export async function markAsDuplicate(
     tx.update(problems).set({ duplicateOfId }).where(eq(problems.duplicateOfId, problemId)),
   );
   await withoutRls(getDb(), (tx) => refreshPriority(tx, duplicateOfId));
-  await notifyReporter(problemId, 'duplicate', mergeNote);
+  await notifyReporter(problemId, 'duplicate', note);
 }
 
 export async function resolveProblem(actor: Actor, problemId: string, note: string): Promise<void> {
@@ -227,8 +233,10 @@ export async function routeProblem(
     }));
   });
 
+  // The reporter's email already names the universities; only the officer's own words are added.
   await transitionProblem(actor, problemId, 'routed', {
     note: note ?? `Sent to ${routed.map((r) => r.name).join(', ')} for review.`,
+    reporterNote: note,
   });
 
   await notifyOrganizations(
@@ -236,9 +244,12 @@ export async function routeProblem(
     ['university_admin', 'faculty'],
     {
       type: 'referral',
-      title: 'A new challenge has been routed to your institution',
-      body: note,
+      title: 'A problem has been sent to your university',
+      body:
+        'A district officer thinks your team can help solve a problem that people reported. Open it to read the details and say whether you will take it up.' +
+        (note ? `\n\nThe officer wrote: “${note}”` : ''),
       linkUrl: '/university',
+      linkLabel: 'See the problem',
       email: true,
     },
   );
@@ -422,9 +433,10 @@ async function announceTransfer(districtCode: string, problemId: string): Promis
 
   await notifyDistrictOfficers(districtCode, {
     type: 'report_transferred',
-    title: `A report has been moved to your district: ${problem.refCode}`,
-    body: `"${problem.title}" was reported under another district and has been moved to yours for triage.`,
+    title: `A report has been moved to your district (${problem.refCode})`,
+    body: `“${problem.title}” was filed under another district. It is now with you to check.`,
     linkUrl: '/government/queue',
+    linkLabel: 'Open the queue',
     email: true,
   });
 }

@@ -96,7 +96,7 @@ export async function assignToDepartment(
       .where(eq(problems.id, problemId));
   });
 
-  await notifyReporter(problemId, 'assigned', department.name);
+  await notifyReporter(problemId, 'assigned');
   const staff = await departmentOfficers(organizationId);
   const [problem] = await withoutRls(getDb(), (tx) =>
     tx
@@ -110,9 +110,10 @@ export async function assignToDepartment(
       staff.map((person) => person.id),
       {
         type: 'report_assigned',
-        title: `New report for your department: ${problem.refCode}`,
-        body: `"${problem.title}" has been assigned to you. The action taken is due within 21 days.`,
+        title: `New report for your department (${problem.refCode})`,
+        body: `“${problem.title}” needs your department to act. Please fix it and write down what you did within 21 days.`,
         linkUrl: '/department',
+        linkLabel: 'Open the report',
         email: true,
       },
     );
@@ -198,11 +199,19 @@ export async function recordProgressUpdate(
       .set({ interimReminderSentAt: now, updatedAt: now })
       .where(eq(problems.id, problemId));
   });
-  await notifyReporterUpdate(
-    problemId,
-    { type: 'problem_progress', title: 'Progress on your report', body: note },
-    { title: 'आपकी रिपोर्ट पर प्रगति', body: note },
-  );
+  const department = problem.assignedOrgId ? await departmentName(problem.assignedOrgId) : null;
+  await notifyReporterUpdate(problemId, 'problem_progress', {
+    en: {
+      subject: `${department ?? 'The department'} has shared an update`,
+      lead: `${department ?? 'The department'} has shared an update.`,
+      details: `They wrote: “${note}”`,
+    },
+    hi: {
+      subject: `${department ?? 'विभाग'} ने नई जानकारी दी है`,
+      lead: `${department ?? 'विभाग'} ने नई जानकारी दी है।`,
+      details: `उन्होंने लिखा: “${note}”`,
+    },
+  });
   logger.info({ problemId, actorId: actor.userId }, 'progress update recorded');
 }
 
@@ -337,9 +346,10 @@ export async function reopenReport(problem: ReporterProblem, reason: string): Pr
       staff.map((person) => person.id),
       {
         type: 'report_reopened',
-        title: `Reopened by the reporter: ${reopened.refCode}`,
-        body: `"${reopened.title}" was reopened: ${reason}`,
+        title: `The reporter says it is not fixed (${reopened.refCode})`,
+        body: `The person who reported “${reopened.title}” says the problem is still there. They wrote: “${reason}”`,
         linkUrl: '/department',
+        linkLabel: 'Open the report',
         email: true,
       },
     );

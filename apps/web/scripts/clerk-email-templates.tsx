@@ -5,7 +5,7 @@ import { render } from '@react-email/render';
 import { config } from 'dotenv';
 
 config({ path: ['../../.env.local', '../../.env'], quiet: true });
-const { ActionButton, CodeBox, EmailCard, EmailPage, Heading, Paragraph } =
+const { ActionButton, CodeBox, EmailCard, EmailPage, Heading, LinkFallback, Paragraph } =
   await import('../src/server/email-design');
 
 const v = (name: string) => `{{${name}}}`;
@@ -13,8 +13,10 @@ const ifThen = (name: string, then: string, otherwise = '') =>
   `{{#if ${name}}}${then}${otherwise ? `{{else}}${otherwise}` : ''}{{/if}}`;
 
 const T = {
-  codeExpires: 'It expires in a few minutes. Never share it — Akhra will never ask you for it.',
-  buttonFallback: 'If the button does not work, copy this address into your browser:',
+  codeExpires:
+    'The code works for a few minutes. Do not share it with anyone. Akhra will never ask you for it.',
+  buttonFallback: 'Button not working? Copy this address into your browser:',
+  signsOut: 'That signs you out on every device.',
 };
 
 interface ClerkTemplate {
@@ -30,23 +32,23 @@ const TEMPLATES: ClerkTemplate[] = [
   {
     slug: 'verification_code',
     name: 'Verification code',
-    subject: `${v('otp_code')} is your Akhra verification code`,
+    subject: `${v('otp_code')} is your Akhra code`,
     required: ['otp_code'],
     sample: { otp_code: '482913' },
     element: (
       <EmailPage>
         <EmailCard
           lang="en"
-          showLogo={false}
-          preview={`${v('otp_code')} is your Akhra verification code`}
+
+          preview={`${v('otp_code')} is your Akhra code`}
         >
-          <Heading>Your verification code</Heading>
+          <Heading>Your Akhra code</Heading>
           <Paragraph>Enter this code on Akhra to continue.</Paragraph>
           <CodeBox code={v('otp_code')} />
           <Paragraph small>{T.codeExpires}</Paragraph>
           <Paragraph small>
-            Didn’t request this? You can ignore this email. If you think someone else is using your
-            account, reset your password on Akhra — that signs you out of all devices.
+            Did not ask for this code? You can ignore this email. If you think someone else is using
+            your account, reset your password on Akhra. {T.signsOut}
           </Paragraph>
         </EmailCard>
       </EmailPage>
@@ -62,7 +64,7 @@ const TEMPLATES: ClerkTemplate[] = [
       <EmailPage>
         <EmailCard
           lang="en"
-          showLogo={false}
+
           preview={`${v('otp_code')} is your Akhra password reset code`}
         >
           <Heading>Reset your password</Heading>
@@ -70,9 +72,7 @@ const TEMPLATES: ClerkTemplate[] = [
           <CodeBox code={v('otp_code')} />
           <Paragraph small>{T.codeExpires}</Paragraph>
           <Paragraph small>
-            Didn’t ask for this? Ignore this email — your password stays the same. If you think
-            someone else is using your account, sign in and choose Your account → Sign out of all
-            devices.
+            Did not ask for this? Ignore this email and your password stays the same.
           </Paragraph>
         </EmailCard>
       </EmailPage>
@@ -81,7 +81,7 @@ const TEMPLATES: ClerkTemplate[] = [
   {
     slug: 'invitation',
     name: 'Invitation',
-    subject: 'You’re invited to join Akhra',
+    subject: 'You are invited to join Akhra',
     required: ['action_url'],
     sample: {
       action_url: 'https://akhra.example/invite/sample',
@@ -90,27 +90,27 @@ const TEMPLATES: ClerkTemplate[] = [
     },
     element: (
       <EmailPage>
-        <EmailCard lang="en" showLogo={false} preview="You’re invited to join Akhra">
-          <Heading>You’re invited to Akhra</Heading>
+        <EmailCard lang="en" preview="You are invited to join Akhra">
+          <Heading>You are invited to Akhra</Heading>
           <Paragraph>
             {ifThen(
               'inviter_name',
               `${v('inviter_name')} has invited you`,
               'You have been invited',
             )}{' '}
-            to join Akhra, where citizens, universities, industry and government solve Jharkhand’s
-            problems together.
+            to join Akhra. On Akhra, people report problems in their area, and officers,
+            departments, universities and companies work together to fix them.
           </Paragraph>
           <ActionButton
             href={v('action_url')}
-            label="Accept invitation"
-            fallback={T.buttonFallback}
+            label="Accept the invitation"
+            fallback={<LinkFallback label={T.buttonFallback} href={v('action_url')} />}
           />
           <Paragraph small>
-            This invitation is for this email address only
+            This invitation is only for this email address
             {ifThen(
               'invitation.expires_in_days',
-              ` and expires in ${v('invitation.expires_in_days')} days`,
+              ` and ends in ${v('invitation.expires_in_days')} days`,
             )}
             .
           </Paragraph>
@@ -126,12 +126,12 @@ const TEMPLATES: ClerkTemplate[] = [
     sample: { primary_email_address: 'you@example.com' },
     element: (
       <EmailPage>
-        <EmailCard lang="en" showLogo={false} preview="Your Akhra password was changed">
+        <EmailCard lang="en" preview="Your Akhra password was changed">
           <Heading>Your password was changed</Heading>
-          <Paragraph>
-            The password for {v('primary_email_address')} was just changed. If this wasn’t you,
-            reset it now with “Forgot password?” on the sign-in page — that signs you out of all
-            devices.
+          <Paragraph>The password for {v('primary_email_address')} was just changed.</Paragraph>
+          <Paragraph small>
+            If you did not do this, reset your password now with “Forgot password?” on the sign-in
+            page. {T.signsOut}
           </Paragraph>
         </EmailCard>
       </EmailPage>
@@ -150,20 +150,21 @@ const TEMPLATES: ClerkTemplate[] = [
     },
     element: (
       <EmailPage>
-        <EmailCard lang="en" showLogo={false} preview="New sign-in to your Akhra account">
+        <EmailCard lang="en" preview="New sign-in to your Akhra account">
           <Heading>New sign-in to your account</Heading>
           <Paragraph>
-            Someone just signed in to your Akhra account using {v('browser_name')} on{' '}
+            Someone just signed in to your Akhra account from {v('browser_name')} on{' '}
             {v('operating_system')}, near {v('location')}.
           </Paragraph>
           <Paragraph small>
-            If this wasn’t you, reset your password on Akhra — that signs you out of all devices.
+            If this was you, you do not need to do anything. If it was not you, reset your password
+            on Akhra. {T.signsOut}
           </Paragraph>
           {'{{#if revoke_session_url}}'}
           <ActionButton
             href={v('revoke_session_url')}
-            label="This wasn’t me"
-            fallback={T.buttonFallback}
+            label="This was not me"
+            fallback={<LinkFallback label={T.buttonFallback} href={v('revoke_session_url')} />}
           />
           {'{{/if}}'}
         </EmailCard>

@@ -155,10 +155,11 @@ export async function respondToRouting(
       type: `routing_${response}`,
       title:
         response === 'declined'
-          ? `${actor.name ?? 'An institution'} declined a referral`
-          : `${actor.name ?? 'An institution'} asked for a referral to be reassigned`,
-      body: note,
+          ? `${actor.name ?? 'A university'} said no to a problem you sent`
+          : `${actor.name ?? 'A university'} asked you to send a problem elsewhere`,
+      body: note ? `They wrote: “${note}”` : undefined,
       linkUrl: '/government/queue?stage=route',
+      linkLabel: 'Open the queue',
       email: true,
     });
   }
@@ -222,18 +223,19 @@ export async function createProject(
     return created;
   });
 
-  await notifyReporterUpdate(
-    input.problemId,
-    {
-      type: 'team_formed',
-      title: 'A team has taken up your report',
-      body: `${actor.name ?? 'An institution'} has formed a team and is preparing a proposal for the district officer to approve.`,
+  const team = actor.name ?? 'A university';
+  await notifyReporterUpdate(input.problemId, 'team_formed', {
+    en: {
+      subject: 'A university team has taken up your report',
+      lead: `${team} has formed a team to work on your report.`,
+      details: 'First they will write a plan. Work starts once your district officer approves it.',
     },
-    {
-      title: 'एक टीम ने आपकी रिपोर्ट पर काम शुरू किया है',
-      body: `${actor.name ?? 'एक संस्थान'} ने टीम बना ली है और ज़िला अधिकारी की मंज़ूरी के लिए प्रस्ताव तैयार कर रही है।`,
+    hi: {
+      subject: 'एक विश्वविद्यालय टीम ने आपकी रिपोर्ट अपनाई है',
+      lead: `${actor.name ?? 'एक विश्वविद्यालय'} ने आपकी रिपोर्ट पर काम करने के लिए टीम बनाई है।`,
+      details: 'पहले वे एक योजना लिखेंगे। आपके ज़िला अधिकारी की मंज़ूरी के बाद काम शुरू होगा।',
     },
-  );
+  });
 
   logger.info({ projectId: project.id, problemId: input.problemId }, 'project created');
   return project;
@@ -332,9 +334,10 @@ export async function submitProposal(
   if (input.status === 'submitted') {
     await notifyDistrictOfficers(saved.project.districtCode, {
       type: 'proposal_submitted',
-      title: `Proposal to review: ${saved.project.title}`,
-      body: `${actor.name ?? 'A university team'} has submitted version ${saved.version} of its proposal for ${saved.project.refCode}.`,
+      title: `A plan is waiting for your approval: ${saved.project.title}`,
+      body: `${actor.name ?? 'A university team'} has sent ${saved.version > 1 ? `version ${saved.version} of ` : ''}their plan for ${saved.project.refCode}. Work starts only after you approve it.`,
       linkUrl: `/projects/${projectId}`,
+      linkLabel: 'Review the plan',
       email: true,
     });
   }

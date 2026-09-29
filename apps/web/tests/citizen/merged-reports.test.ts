@@ -63,7 +63,7 @@ describe('reports merged as duplicates', () => {
 
     expect(await notificationsFor(firstReporter, 'problem_validated')).toHaveLength(1);
     const [forLater] = await notificationsFor(laterReporter, 'problem_validated');
-    expect(forLater?.body).toContain(`merged into ${await refOf(original)}`);
+    expect(forLater?.body).toContain(`joined to ${await refOf(original)}`);
   });
 
   it('writes to each reporter in the language they reported in', async () => {
@@ -82,9 +82,10 @@ describe('reports merged as duplicates', () => {
 
     const [english] = await notificationsFor(firstReporter, 'problem_rejected');
     const [hindi] = await notificationsFor(laterReporter, 'problem_rejected');
-    expect(english?.body).toContain('is now:');
-    expect(hindi?.body).toContain(`${await refOf(original)} में मिला दिया गया है`);
-    expect(hindi?.body).toContain('की स्थिति अब:');
+    expect(english?.body).toContain('could not take this report forward');
+    expect(english?.body).toContain('Reason: “Outside the scheme”');
+    expect(hindi?.body).toContain(`${await refOf(original)} से जोड़ा गया है`);
+    expect(hindi?.body).toContain('आगे नहीं बढ़ा सके');
   });
 
   it('carries earlier merges along when the original is itself merged', async () => {

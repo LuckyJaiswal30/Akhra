@@ -89,7 +89,7 @@ describe('sending an invitation', () => {
     expect(res.status).toBe(201);
     expect(res.body?.data).toMatchObject({ delivery: 'email' });
     expect(res.body?.data.inviteLink).toMatch(/\/invite\//);
-    expect((await latestEmailTo(email))?.subject).toMatch(/invited to Akhra/i);
+    expect((await latestEmailTo(email))?.subject).toMatch(/invited to join Akhra/i);
   });
 });
 
