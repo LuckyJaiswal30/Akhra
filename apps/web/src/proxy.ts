@@ -1,7 +1,8 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import type { NextRequest } from 'next/server';
+import type { NextFetchEvent, NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
+import { maybeSignedIn } from './server/clerk-cookies';
 import { signInEnabled } from './server/sign-in-mode';
 
 const handleLocale = createIntlMiddleware(routing);
@@ -11,7 +12,23 @@ function route(request: NextRequest) {
   return handleLocale(request);
 }
 
-export default signInEnabled ? clerkMiddleware((_auth, request) => route(request)) : route;
+const withClerk = clerkMiddleware((_auth, request) => route(request));
+
+// Pages where Clerk itself runs: they always go through it, cookies or not.
+const AUTH_PAGE =
+  /^(?:\/(?:en|hi))?\/(?:sign-in|sign-up|sso-callback|forgot-password|invite|complete-profile|secure-account)(?:\/|$)/;
+
+function proxy(request: NextRequest, event: NextFetchEvent) {
+  const { pathname, searchParams } = request.nextUrl;
+  const needsClerk =
+    pathname.startsWith('/api') ||
+    AUTH_PAGE.test(pathname) ||
+    [...searchParams.keys()].some((key) => key.startsWith('__clerk')) ||
+    maybeSignedIn(request.cookies.getAll().map((cookie) => cookie.name));
+  return needsClerk ? withClerk(request, event) : route(request);
+}
+
+export default signInEnabled ? proxy : route;
 
 export const config = {
   matcher: [

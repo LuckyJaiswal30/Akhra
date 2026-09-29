@@ -349,6 +349,8 @@
     "showMore": "पूरा विवरण देखें",
     "showLess": "कम दिखाएँ",
     "classifiedBy": "वर्गीकरण द्वारा",
+    "chosenByReporter": "रिपोर्ट करने वाले व्यक्ति ने चुनी",
+    "categoryDoubt": "रिपोर्ट करने वाले व्यक्ति ने {chosen} चुनी, लेकिन अखरा इसे {suggested} ({percent}%) की समस्या मानता है। सत्यापित करने से पहले श्रेणी जाँच लें।",
     "possibleDuplicates": "मौजूदा रिपोर्ट से संभावित मेल",
     "decision": "निर्णय",
     "decisionValidate": "सत्यापित करें",

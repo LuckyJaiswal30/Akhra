@@ -59,7 +59,16 @@ vi.mock('@/server/clerk', async (importOriginal) => {
   };
 });
 
-vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
+// A signed-in browser carries Clerk's session cookie; a signed-out one carries none.
+vi.mock('next/headers', () => ({
+  headers: async () => new Headers(),
+  cookies: async () => ({
+    getAll: () =>
+      (globalThis as { __clerkUserId?: string | null }).__clerkUserId
+        ? [{ name: '__session', value: 'test' }]
+        : [],
+  }),
+}));
 
 vi.mock('next/cache', () => ({
   revalidatePath: () => undefined,

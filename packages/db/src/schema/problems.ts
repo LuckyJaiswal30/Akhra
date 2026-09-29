@@ -42,6 +42,12 @@ export const problems = pgTable(
     classifiedBy: classifierTierEnum('classified_by'),
     classifierAlternatives:
       jsonb('classifier_alternatives').$type<{ domain: string; score: number }[]>(),
+    // What the classifier read, kept even when the reporter chose the category themselves.
+    classifierGuess: jsonb('classifier_guess').$type<{
+      domain: string;
+      confidence: number;
+      tier: string;
+    }>(),
 
     status: problemStatusEnum('status').notNull().default('submitted'),
     duplicateOfId: uuid('duplicate_of_id'),

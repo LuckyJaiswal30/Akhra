@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@akhra/shared', '@akhra/db', '@akhra/classifier'],
   serverExternalPackages: ['pg', 'pino', 'react-email'],
   typedRoutes: true,
+  // The stylesheet travels inside the page, so a phone paints without a second round trip for it.
+  experimental: { inlineCss: true },
   images: { remotePatterns: [{ protocol: 'https', hostname: 'img.clerk.com' }] },
   async headers() {
     const headers = [...SECURITY_HEADERS];

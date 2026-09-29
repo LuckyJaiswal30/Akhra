@@ -115,6 +115,11 @@ export async function submitProblem(
         domainConfidence: payload.domain ? 1 : classification.confidenceScore,
         classifiedBy: payload.domain ? 'manual' : classification.tier,
         classifierAlternatives: classification.alternatives,
+        classifierGuess: {
+          domain: classification.domain,
+          confidence: classification.confidenceScore,
+          tier: classification.tier,
+        },
         districtCode: payload.districtCode,
         blockName: payload.blockName ?? null,
         lat: payload.location?.lat ?? null,

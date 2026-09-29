@@ -81,6 +81,8 @@ export default async function ValidationQueuePage({
     showMore: t('showMore'),
     showLess: t('showLess'),
     classifiedBy: t('classifiedBy'),
+    chosenByReporter: t('chosenByReporter'),
+    categoryDoubt: t.raw('categoryDoubt') as string,
     possibleDuplicates: t('possibleDuplicates'),
     decision: t('decision'),
     decisionValidate: t('decisionValidate'),

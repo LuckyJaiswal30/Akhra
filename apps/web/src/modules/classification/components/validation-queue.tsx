@@ -143,6 +143,15 @@ function QueueCard({
 }) {
   const isHindi = locale === 'hi';
   const definition = entry.domain ? DOMAIN_DEFINITIONS[entry.domain] : null;
+  const domainLabel = (domain: keyof typeof DOMAIN_DEFINITIONS) =>
+    isHindi ? DOMAIN_DEFINITIONS[domain].labelHi : DOMAIN_DEFINITIONS[domain].labelEn;
+  const doubt =
+    entry.domain && entry.categoryDoubt
+      ? labels
+          .categoryDoubt!.replace('{chosen}', domainLabel(entry.domain))
+          .replace('{suggested}', domainLabel(entry.categoryDoubt.domain))
+          .replace('{percent}', String(Math.round(entry.categoryDoubt.confidence * 100)))
+      : null;
 
   return (
     <article className="py-6">
@@ -220,13 +229,26 @@ function QueueCard({
             {isHindi ? definition.labelHi : definition.labelEn}
           </span>
         )}
-        {entry.classifiedBy && (
+        {entry.classifiedBy === 'manual' ? (
           <span className="border-line text-subtle rounded-full border px-2.5 py-0.5 text-xs">
-            {labels.classifiedBy} {entry.classifiedBy}
-            {entry.domainConfidence != null && ` (${Math.round(entry.domainConfidence * 100)}%)`}
+            {labels.chosenByReporter}
           </span>
+        ) : (
+          entry.classifiedBy && (
+            <span className="border-line text-subtle rounded-full border px-2.5 py-0.5 text-xs">
+              {labels.classifiedBy} {entry.classifiedBy}
+              {entry.domainConfidence != null && ` (${Math.round(entry.domainConfidence * 100)}%)`}
+            </span>
+          )
         )}
       </div>
+
+      {doubt && (
+        <p className="border-warning/40 bg-warning-wash text-ink mt-4 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-xs">
+          <TriangleAlert aria-hidden className="text-warning mt-0.5 h-4 w-4 shrink-0" />
+          {doubt}
+        </p>
+      )}
 
       {entry.duplicateCheckFailed && (
         <p className="border-warning/40 bg-warning-wash text-ink mt-4 flex items-start gap-2.5 rounded-xl border px-4 py-3 text-xs">

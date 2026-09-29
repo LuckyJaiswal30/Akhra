@@ -1,9 +1,11 @@
 import { auth } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { cache } from 'react';
 import { ANONYMOUS, getDb, withUserContext, type Transaction } from '@akhra/db';
 import { AppError, type Role } from '@akhra/shared';
+import { maybeSignedIn } from './clerk-cookies';
 import { accountForClerkUser } from './identity';
 import { signInEnabled } from './sign-in-mode';
 
@@ -43,6 +45,9 @@ export const getActor = cache(async (): Promise<Actor> => {
     await connection();
     return ANONYMOUS_ACTOR;
   }
+  // The proxy skipped Clerk for this visitor, so asking Clerk would fail; they are signed out.
+  const cookieNames = (await cookies()).getAll().map((cookie) => cookie.name);
+  if (!maybeSignedIn(cookieNames)) return ANONYMOUS_ACTOR;
   const { userId } = await auth();
   if (!userId) return ANONYMOUS_ACTOR;
 

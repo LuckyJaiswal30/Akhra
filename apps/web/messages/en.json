@@ -349,6 +349,8 @@
     "showMore": "Show full description",
     "showLess": "Show less",
     "classifiedBy": "Classified by",
+    "chosenByReporter": "Chosen by the reporter",
+    "categoryDoubt": "The reporter chose {chosen}, but Akhra reads this as {suggested} ({percent}%). Check the category before you validate.",
     "possibleDuplicates": "Possible duplicates of existing reports",
     "decision": "Decision",
     "decisionValidate": "Validate",

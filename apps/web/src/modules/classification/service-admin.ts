@@ -22,6 +22,7 @@ import {
   transitionExists,
 } from '@akhra/shared';
 import { logger } from '@/server/logger';
+import { categoryDoubt, type CategoryDoubt } from './category-doubt';
 import {
   notifyDistrictOfficers,
   notifyOrganizations,
@@ -256,6 +257,7 @@ export interface QueueItem {
   domain: Domain | null;
   domainConfidence: number | null;
   classifiedBy: string | null;
+  categoryDoubt: CategoryDoubt | null;
   status: ProblemStatus;
   districtCode: string;
   districtName: string;
@@ -287,6 +289,7 @@ export async function listValidationQueue(
         domain: problems.domain,
         domainConfidence: problems.domainConfidence,
         classifiedBy: problems.classifiedBy,
+        classifierGuess: problems.classifierGuess,
         status: problems.status,
         districtCode: problems.districtCode,
         districtName: districts.nameEn,
@@ -320,7 +323,10 @@ export async function listValidationQueue(
       .orderBy(desc(problems.priorityScore), asc(problems.createdAt))
       .limit(100);
 
-    return rows;
+    return rows.map(({ classifierGuess, ...row }) => ({
+      ...row,
+      categoryDoubt: categoryDoubt({ ...row, classifierGuess }),
+    }));
   });
 }
 
