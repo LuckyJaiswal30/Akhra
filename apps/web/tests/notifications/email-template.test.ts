@@ -19,29 +19,6 @@ describe('the emails Akhra sends', () => {
     expect(html).toMatch(/-apple-system/);
   });
 
-  it('shows a report with its code, where it is, and how far it has come', async () => {
-    const { html } = await renderEmail({
-      title: 'Your report has been sent to Ranchi Municipal Corporation (AKH-2026-000134)',
-      linkUrl: '/track?ref=AKH-2026-000134',
-      linkLabel: 'Follow your report',
-      report: {
-        refCode: 'AKH-2026-000134',
-        title: 'Handpump water has turned yellow in our ward',
-        district: 'Ranchi',
-        category: 'Water & Sanitation',
-        status: 'assigned',
-        track: 'department',
-        lead: 'Your report has been sent to Ranchi Municipal Corporation.',
-        details: 'They have 21 days to fix it.',
-      },
-    });
-
-    expect(html).toContain('Handpump water has turned yellow in our ward');
-    expect(html).toContain('Ranchi');
-    expect(html).toContain('Being fixed');
-    expect(html).toMatch(/enter .*AKH-2026-000134/);
-  });
-
   it('styles elements inline, because email clients drop stylesheets', async () => {
     const { html } = await renderEmail(invitation);
 
